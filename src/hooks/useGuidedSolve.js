@@ -4,18 +4,13 @@ const PHASES = {
   IDLE: 'idle',
   ANIMATION: 'animation',
   STEP_INPUT: 'step_input',
-  FINAL_ANSWER: 'final_answer',
   CORRECT: 'correct',
-  WRONG: 'wrong',
-  HINT: 'hint',
 };
 
 export default function useGuidedSolve(steps) {
   const [phase, setPhase] = useState(PHASES.IDLE);
   const [stepIndex, setStepIndex] = useState(0);
   const [stepAnswers, setStepAnswers] = useState({});
-  const [, setFinalAttempt] = useState('');
-  const [wrongAttempts, setWrongAttempts] = useState(0);
 
   const totalSteps = steps ? steps.length : 0;
   const isLastStep = stepIndex >= totalSteps - 1;
@@ -29,15 +24,13 @@ export default function useGuidedSolve(steps) {
     setPhase(PHASES.ANIMATION);
     setStepIndex(0);
     setStepAnswers({});
-    setFinalAttempt('');
-    setWrongAttempts(0);
   }, []);
 
   const finishAnimation = useCallback(() => {
     if (steps && steps.length > 0) {
       setPhase(PHASES.STEP_INPUT);
     } else {
-      setPhase(PHASES.FINAL_ANSWER);
+      setPhase(PHASES.CORRECT);
     }
   }, [steps]);
 
@@ -52,42 +45,19 @@ export default function useGuidedSolve(steps) {
 
     if (isCorrect) {
       if (isLastStep) {
-        setPhase(PHASES.FINAL_ANSWER);
+        setPhase(PHASES.CORRECT);
       } else {
         setStepIndex((i) => i + 1);
       }
     }
+
     return isCorrect;
   }, [currentStep, stepIndex, isLastStep]);
-
-  const submitFinalAnswer = useCallback((answer) => {
-    const numAnswer = Number(answer);
-    const isCorrect = numAnswer === steps[totalSteps - 1]?.answer;
-
-    if (isCorrect) {
-      setPhase(PHASES.CORRECT);
-    } else {
-      setWrongAttempts((n) => n + 1);
-      setPhase(PHASES.WRONG);
-    }
-    return isCorrect;
-  }, [steps, totalSteps]);
-
-  const showHint = useCallback(() => {
-    setPhase(PHASES.HINT);
-  }, []);
-
-  const retryFinal = useCallback(() => {
-    setPhase(PHASES.FINAL_ANSWER);
-    setFinalAttempt('');
-  }, []);
 
   const reset = useCallback(() => {
     setPhase(PHASES.IDLE);
     setStepIndex(0);
     setStepAnswers({});
-    setFinalAttempt('');
-    setWrongAttempts(0);
   }, []);
 
   return {
@@ -97,13 +67,9 @@ export default function useGuidedSolve(steps) {
     totalSteps,
     currentStep,
     stepAnswers,
-    wrongAttempts,
     start,
     finishAnimation,
     submitStepAnswer,
-    submitFinalAnswer,
-    showHint,
-    retryFinal,
     reset,
   };
 }

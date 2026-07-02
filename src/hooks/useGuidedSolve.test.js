@@ -54,51 +54,38 @@ describe('useGuidedSolve', () => {
     expect(result.current.stepAnswers[0]?.correct).toBe(false);
   });
 
-  it('transitions to FINAL_ANSWER after all steps completed', () => {
+  it('transitions to CORRECT after last step answered correctly', () => {
     const { result } = renderHook(() => useGuidedSolve(mockSteps));
     act(() => result.current.start());
     act(() => result.current.finishAnimation());
     act(() => result.current.submitStepAnswer('10'));
     act(() => result.current.submitStepAnswer('5'));
     act(() => result.current.submitStepAnswer('3'));
-    expect(result.current.phase).toBe(result.current.PHASES.FINAL_ANSWER);
-  });
-
-  it('transitions to CORRECT on correct final answer', () => {
-    const { result } = renderHook(() => useGuidedSolve(mockSteps));
-    act(() => result.current.start());
-    act(() => result.current.finishAnimation());
-    act(() => result.current.submitStepAnswer('10'));
-    act(() => result.current.submitStepAnswer('5'));
-    act(() => result.current.submitStepAnswer('3'));
-    act(() => result.current.submitFinalAnswer('3'));
     expect(result.current.phase).toBe(result.current.PHASES.CORRECT);
   });
 
-  it('transitions to WRONG on incorrect final answer', () => {
+  it('stays on last step when answer is wrong', () => {
     const { result } = renderHook(() => useGuidedSolve(mockSteps));
     act(() => result.current.start());
     act(() => result.current.finishAnimation());
     act(() => result.current.submitStepAnswer('10'));
     act(() => result.current.submitStepAnswer('5'));
-    act(() => result.current.submitStepAnswer('3'));
-    act(() => result.current.submitFinalAnswer('999'));
-    expect(result.current.phase).toBe(result.current.PHASES.WRONG);
-    expect(result.current.wrongAttempts).toBe(1);
+    act(() => result.current.submitStepAnswer('999'));
+    expect(result.current.phase).toBe(result.current.PHASES.STEP_INPUT);
+    expect(result.current.stepIndex).toBe(2);
+    expect(result.current.stepAnswers[2]?.correct).toBe(false);
   });
 
-  it('allows retrying final answer after wrong', () => {
+  it('allows retrying last step after wrong answer', () => {
     const { result } = renderHook(() => useGuidedSolve(mockSteps));
     act(() => result.current.start());
     act(() => result.current.finishAnimation());
     act(() => result.current.submitStepAnswer('10'));
     act(() => result.current.submitStepAnswer('5'));
+    act(() => result.current.submitStepAnswer('999'));
+    expect(result.current.phase).toBe(result.current.PHASES.STEP_INPUT);
     act(() => result.current.submitStepAnswer('3'));
-    act(() => result.current.submitFinalAnswer('999'));
-    expect(result.current.phase).toBe(result.current.PHASES.WRONG);
-
-    act(() => result.current.retryFinal());
-    expect(result.current.phase).toBe(result.current.PHASES.FINAL_ANSWER);
+    expect(result.current.phase).toBe(result.current.PHASES.CORRECT);
   });
 
   it('reset goes back to IDLE', () => {
@@ -115,6 +102,6 @@ describe('useGuidedSolve', () => {
     expect(result.current.totalSteps).toBe(0);
     act(() => result.current.start());
     act(() => result.current.finishAnimation());
-    expect(result.current.phase).toBe(result.current.PHASES.FINAL_ANSWER);
+    expect(result.current.phase).toBe(result.current.PHASES.CORRECT);
   });
 });

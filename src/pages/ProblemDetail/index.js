@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { Typography, Card, Input, Button, Tabs, Space, Tag, Empty, Alert } from 'antd';
 import {
@@ -7,9 +7,11 @@ import {
   CloseCircleOutlined,
   BulbOutlined,
   PlayCircleOutlined,
+  RightOutlined,
 } from '@ant-design/icons';
 import { getProblem } from '../../problems/registry';
 import useGuidedSolve from '../../hooks/useGuidedSolve';
+import ComputerNumberAnimation from '../../components/animations/ComputerNumber';
 
 function DirectAnswer({ problem, problemData, onRegenerate }) {
   const [answer, setAnswer] = useState('');
@@ -110,9 +112,39 @@ function ViewHint({ problem, problemData, onRegenerate }) {
   );
 }
 
+function AnimationRenderer({ problemId, params, onComplete }) {
+  switch (problemId) {
+    case 'computer-number':
+      return <ComputerNumberAnimation params={params} onComplete={onComplete} />;
+    default:
+      return (
+        <div style={{ textAlign: 'center', padding: 40 }}>
+          <Typography.Text type="secondary">[动画组件待实现：{problemId}]</Typography.Text>
+          <br />
+          <Button type="primary" onClick={onComplete} style={{ marginTop: 16 }}>
+            继续
+          </Button>
+        </div>
+      );
+  }
+}
+
 function GuidedSolve({ problem, problemData, onRegenerate }) {
   const guided = useGuidedSolve(problemData.steps);
   const [userInput, setUserInput] = useState('');
+  const inputRefs = useRef([]);
+
+  if (inputRefs.current.length !== problemData.steps.length) {
+    inputRefs.current = Array(problemData.steps.length)
+      .fill()
+      .map((_, i) => inputRefs.current[i] || React.createRef());
+  }
+
+  useEffect(() => {
+    if (guided.phase === 'step_input' && inputRefs.current[guided.stepIndex]) {
+      inputRefs.current[guided.stepIndex].current?.focus();
+    }
+  }, [guided.phase, guided.stepIndex]);
 
   const handleStart = () => {
     guided.start();
@@ -123,18 +155,8 @@ function GuidedSolve({ problem, problemData, onRegenerate }) {
   };
 
   const handleSubmitStep = () => {
-    const correct = guided.submitStepAnswer(Number(userInput));
+    const correct = guided.submitStepAnswer(userInput);
     if (correct) setUserInput('');
-  };
-
-  const handleSubmitFinal = () => {
-    const correct = guided.submitFinalAnswer(userInput);
-    if (!correct) setUserInput('');
-  };
-
-  const handleRetry = () => {
-    setUserInput('');
-    guided.retryFinal();
   };
 
   const handleReset = () => {
@@ -161,131 +183,144 @@ function GuidedSolve({ problem, problemData, onRegenerate }) {
 
       case guided.PHASES.ANIMATION:
         return (
-          <div style={{ textAlign: 'center' }}>
-            <Typography.Title level={4}>动画演示</Typography.Title>
-            <div
-              style={{
-                width: '100%',
-                height: 280,
-                background: '#f0f5ff',
-                borderRadius: 8,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginBottom: 16,
-              }}
-            >
-              <Typography.Text type="secondary">
-                [动画组件待实现：{problem.title}]
-              </Typography.Text>
-            </div>
-            <Button type="primary" onClick={handleAnimationDone}>
-              继续
-            </Button>
-          </div>
+          <AnimationRenderer
+            problemId={problem.id}
+            params={problemData.params}
+            onComplete={handleAnimationDone}
+          />
         );
 
-      case guided.PHASES.STEP_INPUT:
+      case guided.PHASES.STEP_INPUT: {
+        const steps = problemData.steps;
         return (
           <div>
-            <Card
-              title={`第 ${guided.stepIndex + 1} 步 / 共 ${guided.totalSteps} 步`}
-              style={{ marginBottom: 16 }}
-            >
-              <Typography.Paragraph style={{ fontSize: 16, lineHeight: 1.8 }}>
-                {guided.currentStep?.description}
-              </Typography.Paragraph>
-            </Card>
+            {steps.map((step, i) => {
+              const isDone = i < guided.stepIndex;
+              const isCurrent = i === guided.stepIndex;
+              const isWrong = isCurrent && guided.stepAnswers[i]?.correct === false;
+              const answerData = guided.stepAnswers[i];
+              const isFinalStep = i === steps.length - 1;
+              const stepLabel = isFinalStep ? `第 ${i + 1} 步（最终答案）` : `第 ${i + 1} 步`;
 
-            {guided.stepAnswers[guided.stepIndex]?.correct === false && (
-              <Alert
-                type="warning"
-                showIcon
-                message="再算算看"
-                style={{ marginBottom: 12 }}
-              />
-            )}
+              return (
+                <Card
+                  key={i}
+                  size="small"
+                  style={{
+                    marginBottom: 8,
+                    background: isCurrent ? '#f0f5ff' : isDone ? '#fafafa' : '#fff',
+                    border: isCurrent ? '1px solid #1677ff' : isDone ? '1px solid #e8e8e8' : '1px dashed #e8e8e8',
+                    opacity: isDone && !isCurrent ? 0.85 : 1,
+                  }}
+                  title={
+                    <Space size={4}>
+                      {isDone ? (
+                        <CheckCircleOutlined style={{ color: '#52c41a', fontSize: 16 }} />
+                      ) : isCurrent ? (
+                        <RightOutlined style={{ color: '#1677ff', fontSize: 16 }} />
+                      ) : (
+                        <span style={{ display: 'inline-block', width: 16, height: 16, borderRadius: '50%', border: '2px solid #d9d9d9' }} />
+                      )}
+                      <span style={{ fontSize: 13, color: isCurrent ? '#1677ff' : isDone ? '#666' : '#999' }}>
+                        {stepLabel}
+                      </span>
+                    </Space>
+                  }
+                >
+                  <Typography.Paragraph style={{ fontSize: 15, lineHeight: 1.6, margin: 0, marginBottom: 8 }}>
+                    {step.description}
+                  </Typography.Paragraph>
 
-            <Space direction="vertical" style={{ width: '100%' }}>
-              <Input
-                size="large"
-                placeholder={guided.currentStep?.hint || '输入中间结果'}
-                value={userInput}
-                onChange={(e) => setUserInput(e.target.value)}
-                onPressEnter={handleSubmitStep}
-                style={{ maxWidth: 300 }}
-              />
-              <Space>
-                <Button type="primary" onClick={handleSubmitStep} disabled={!userInput}>
-                  确认
-                </Button>
-                <Button icon={<ReloadOutlined />} onClick={handleReset}>
-                  重新开始
-                </Button>
-              </Space>
-            </Space>
-          </div>
-        );
+                  {isDone && answerData && (
+                    <div style={{ fontSize: 13, color: answerData.correct ? '#52c41a' : '#ff4d4f' }}>
+                      你的答案：{answerData.value} {answerData.correct ? '✓' : '✗'}
+                    </div>
+                  )}
 
-      case guided.PHASES.FINAL_ANSWER:
-        return (
-          <div>
-            <Typography.Title level={5} style={{ marginBottom: 16 }}>
-              请填写最终答案
-            </Typography.Title>
+                  {isCurrent && (
+                    <div>
+                      {isWrong && (
+                        <Alert
+                          type="warning"
+                          showIcon
+                          message="再算算看"
+                          style={{ marginBottom: 8, fontSize: 13 }}
+                        />
+                      )}
+                      <Space.Compact style={{ width: '100%' }}>
+                        <Input
+                          key={`input-${i}-${guided.stepAnswers[i]?.correct ?? 'fresh'}`}
+                          ref={inputRefs.current[i]}
+                          placeholder={step.hint}
+                          value={userInput}
+                          onChange={(e) => setUserInput(e.target.value)}
+                          onPressEnter={handleSubmitStep}
+                          size="middle"
+                          style={{ flex: 1 }}
+                        />
+                        <Button type="primary" onClick={handleSubmitStep} disabled={!userInput}>
+                          确认
+                        </Button>
+                      </Space.Compact>
+                    </div>
+                  )}
 
-            <Space direction="vertical" style={{ width: '100%' }}>
-              <Input
-                size="large"
-                placeholder="输入最终答案"
-                value={userInput}
-                onChange={(e) => setUserInput(e.target.value)}
-                onPressEnter={handleSubmitFinal}
-                style={{ maxWidth: 300 }}
-              />
-              <Space>
-                <Button type="primary" onClick={handleSubmitFinal} disabled={!userInput}>
-                  提交答案
-                </Button>
-                <Button icon={<ReloadOutlined />} onClick={handleReset}>
-                  重新开始
-                </Button>
-              </Space>
-            </Space>
-          </div>
-        );
+                  {!isDone && !isCurrent && (
+                    <Typography.Text style={{ fontSize: 13, color: '#d9d9d9' }}>等待填写</Typography.Text>
+                  )}
+                </Card>
+              );
+            })}
 
-      case guided.PHASES.CORRECT:
-        return (
-          <div style={{ textAlign: 'center' }}>
-            <CheckCircleOutlined style={{ fontSize: 64, color: '#52c41a', marginBottom: 16 }} />
-            <Typography.Title level={4} style={{ color: '#52c41a' }}>
-              全部答对了！太棒了！
-            </Typography.Title>
-            <Space style={{ marginTop: 16 }}>
-              <Button type="primary" icon={<ReloadOutlined />} onClick={handleReset}>
-                再来一题
-              </Button>
-            </Space>
-          </div>
-        );
-
-      case guided.PHASES.WRONG:
-        return (
-          <div style={{ textAlign: 'center' }}>
-            <CloseCircleOutlined style={{ fontSize: 64, color: '#ff4d4f', marginBottom: 16 }} />
-            <Typography.Title level={4}>答案不对哦</Typography.Title>
-            <Typography.Paragraph style={{ fontSize: 16 }}>
-              提示：{problemData.hint}
-            </Typography.Paragraph>
-            <Space style={{ marginTop: 16 }}>
-              <Button type="primary" onClick={handleRetry}>
-                再试一次
-              </Button>
+            <Space style={{ marginTop: 8 }}>
               <Button icon={<ReloadOutlined />} onClick={handleReset}>
                 重新开始
               </Button>
             </Space>
+          </div>
+        );
+      }
+
+      case guided.PHASES.CORRECT:
+        return (
+          <div>
+            {problemData.steps.map((step, i) => {
+              const answerData = guided.stepAnswers[i];
+              return (
+                <Card
+                  key={i}
+                  size="small"
+                  style={{ marginBottom: 8, background: '#fafafa' }}
+                  title={
+                    <Space size={4}>
+                      <CheckCircleOutlined style={{ color: '#52c41a', fontSize: 16 }} />
+                      <span style={{ fontSize: 13, color: '#666' }}>
+                        第 {i + 1} 步
+                      </span>
+                    </Space>
+                  }
+                >
+                  <Typography.Paragraph style={{ fontSize: 15, lineHeight: 1.6, margin: 0 }}>
+                    {step.description}
+                  </Typography.Paragraph>
+                  {answerData && (
+                    <div style={{ fontSize: 13, color: '#52c41a', marginTop: 4 }}>
+                      你的答案：{answerData.value} ✓
+                    </div>
+                  )}
+                </Card>
+              );
+            })}
+
+            <div style={{ textAlign: 'center', marginTop: 20 }}>
+              <CheckCircleOutlined style={{ fontSize: 48, color: '#52c41a', marginBottom: 12 }} />
+              <Typography.Title level={4} style={{ color: '#52c41a' }}>
+                全部答对了！太棒了！
+              </Typography.Title>
+              <Button type="primary" icon={<ReloadOutlined />} onClick={handleReset}>
+                再来一题
+              </Button>
+            </div>
           </div>
         );
 
