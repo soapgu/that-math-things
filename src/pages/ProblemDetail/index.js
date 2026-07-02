@@ -314,14 +314,11 @@ export default function ProblemDetail() {
     }
   }, [problem]);
 
-  const tabItems = [
-    { key: 'direct', label: '直接答题', children: null },
-    { key: 'hint', label: '查看提示', children: null },
-    { key: 'guided', label: '辅助解题', children: null },
-  ];
+  if (!problem) {
+    return <Empty description="题目不存在" />;
+  }
 
   const renderTabContent = (tabKey) => {
-    if (!problem || !problemData) return null;
     switch (tabKey) {
       case 'direct':
         return (
@@ -352,9 +349,11 @@ export default function ProblemDetail() {
     }
   };
 
-  if (!problem) {
-    return <Empty description="题目不存在" />;
-  }
+  const tabItems = [
+    { key: 'direct', label: '直接答题', children: renderTabContent('direct') },
+    { key: 'hint', label: '查看提示', children: renderTabContent('hint') },
+    { key: 'guided', label: '辅助解题', children: renderTabContent('guided') },
+  ];
 
   return (
     <div>
@@ -371,28 +370,7 @@ export default function ProblemDetail() {
         </div>
       </div>
 
-      <Tabs
-        defaultActiveKey="direct"
-        items={tabItems}
-        renderTabBar={(props, DefaultTabBar) => (
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginBottom: 16,
-            }}
-          >
-            <DefaultTabBar {...props} style={{ flex: 1 }} />
-          </div>
-        )}
-      >
-        {tabItems.map((tab) => (
-          <Tabs.TabPane key={tab.key} tab={tab.label}>
-            {renderTabContent(tab.key)}
-          </Tabs.TabPane>
-        ))}
-      </Tabs>
+      <Tabs defaultActiveKey="direct" items={tabItems} />
     </div>
   );
 }
