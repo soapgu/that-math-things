@@ -7,8 +7,9 @@ const createProblem = () => {
   const diff = halfDiff * 2;
   const b = a - diff;
 
+  const half = diff / 2;
   const question1Answer = diff;
-  const question2Answer = diff / 2;
+  const question2Answer = half;
 
   const steps = [
     {
@@ -29,6 +30,11 @@ const createProblem = () => {
     {
       description: `差距是 ${diff}，每天缩小 2 张，需要几天？`,
       hint: `${diff} ÷ 2 = ？`,
+      answer: question2Answer,
+    },
+    {
+      description: `另一个视角：乐乐把多出的 ${diff} 张分一半（${half}张）给欢欢。每天给 1 张，正好 ${half} 天两人就一样多了`,
+      hint: `多出的 ${diff} 张 ÷ 2 = ${half} 张`,
       answer: question2Answer,
     },
   ];

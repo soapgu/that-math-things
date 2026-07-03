@@ -38,9 +38,10 @@ describe('stickerProblem', () => {
     }
   });
 
-  it('has 4 steps', () => {
+  it('has 5 steps including the new perspective step', () => {
     const { steps } = stickerProblem.createProblem();
-    expect(steps).toHaveLength(4);
+    expect(steps).toHaveLength(5);
+    expect(steps[4].description).toContain('另一个视角');
   });
 
   it('generates different params on repeated calls', () => {
