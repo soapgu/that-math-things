@@ -34,7 +34,7 @@ export default function AppLayout({ children }) {
           mode="horizontal"
           selectedKeys={[location.pathname === '/' ? '/' : '/problems']}
           items={menuItems}
-          onClick={({ key }) => navigate(key)}
+          onClick={({ key, domEvent }) => { domEvent.preventDefault(); navigate(key); }}
           style={{ flex: 1, minWidth: 0 }}
         />
       </Header>

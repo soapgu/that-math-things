@@ -6,6 +6,8 @@ import zhCN from 'antd/locale/zh_CN';
 import App from './App';
 import './index.css';
 
+/* __VERSION__ 1.0.1 */
+
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>

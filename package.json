@@ -1,6 +1,7 @@
 {
   "name": "that-math-things",
   "version": "0.1.0",
+  "homepage": "https://soapgu.github.io/that-math-things",
   "private": true,
   "dependencies": {
     "@ant-design/icons": "^6.3.2",
