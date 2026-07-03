@@ -32,8 +32,8 @@
 | 语言 | JavaScript (ES6+) |
 | UI 组件库 | Ant Design 5 |
 | 路由 | react-router-dom v6 |
-| 动画 | framer-motion + CSS Animations |
-| 图形 | 原生 SVG |
+| 动画引擎 | framer-motion |
+| 图形 | `motion.div` + CSS（非 SVG，用 DOM 元素配合 framer-motion 属性动画实现） |
 
 ---
 
@@ -67,35 +67,33 @@
 开始
   │
   ▼
-自动播放动画演示（可暂停/重播）
+自动播放动画演示
   │
   ▼
-展示解题步骤 1 ────→ 填写中间结果 1
-  │                      ✓ 完成
-  ▼
-展示解题步骤 2 ────→ 填写中间结果 2
-  │                      ✓ 完成
-  ▼
-  ...
-  │
-  ▼
-展示解题步骤 n ────→ 填写最终答案
-                         │
-                    ┌────┴────┐
-                    ▼         ▼
-                  正确 ✅   错误 ❌
-                   完成    → 提示引导 → 重新填写最终答案
-                                    │
-                                    ▼
-                                 正确 ✅ 完成
+进入步骤时间线（所有步骤同时可见）
+  ┌──────────────────────────────────────┐
+  │ ✅ 第 1 步（已完成）  你的答案：13 ✓  │
+  │ ✅ 第 2 步（已完成）  你的答案：5  ✓  │
+  │ ▶ 第 3 步 ← 当前                    │
+  │    ┌─────────────────────┐           │
+  │    │  [输入框]    [确认] │           │
+  │    └─────────────────────┘           │
+  │ ○ 第 4 步（等待）                    │
+  └──────────────────────────────────────┘
+       │ 每步确认正确 → 自动跳到下一步
+       │ 最后一步正确 → 显示完成
+       │ 任何一步错误 → 原地重填
+       ▼
+全部答对 ✅ → 展示所有步骤结果 + 庆祝
 ```
 
 **关键规则：**
-- 动画自动播放，用户可暂停/重播
-- 每一步的中间结果填写完成后才可进入下一步
-- 中间结果填错时即时提示，但不阻塞流程（引导正确值）
-- 最终答案答错时给出引导提示，允许重新填写，直到答对
-- 随时可点击「随机换参」重新生成题目参数
+- 动画自动播放，可跳过
+- 所有步骤同时显示在时间线中，已完成/当前/未到一目了然
+- 每步正确后输入框自动聚焦到下一步
+- 任何一步答错，保留输入框可重填，不阻塞流程
+- 最后一步正确即完成全部，无独立的"最终答案"阶段
+- 随时可点击「重新开始」或「随机换参」
 
 ### 直接答题状态流
 
@@ -120,10 +118,10 @@
 
 | # | 题目 | 核心易错点 | 动画表现 |
 | --- | --- | --- | --- |
-| 1 | **电脑编号**：学校新买一批电脑，从 X 号编到 Y 号（≤100），一共新买了多少台？ | 知道 Y-X 后忘记 +1（端点问题） | 数轴高亮标记 X~Y，圆点逐个闪烁计数 |
-| 2 | **贴纸问题**：乐乐有 A 张，欢欢有 B 张。①欢欢再添几张两人同样多？②乐乐每天送欢欢 1 张，几天后同样多？ | 两问混为一谈，第二问忘记每天差减少 2 张 | 贴纸卡片从乐乐流向欢欢的动画 |
-| 3 | **吃苹果**：妈妈买了 N 个苹果，吃掉一些后剩下的不满 7 个，至少吃了几个？ | "不满 7" 理解为 ≤6，总量减去 6 得"至少" | 苹果逐个减少直到剩余 ≤6 时停止 |
-| 4 | **增减问题**：第一天从篮子里拿掉 A 个苹果，第二天放进去 B 个，现在篮子里多/少几个？ | 方向判断错误（多/少），结果算错 | 篮子中苹果增减的直观动画 |
+| 1 | **电脑编号** | 端点问题（Y-X 后忘记 +1） | Y 个圆点→前 X 个变蓝→Y-X 个变橙→第 X 号绿色弹入 |
+| 2 | **贴纸问题** | 两步混淆 | [待实现] |
+| 3 | **吃苹果** | "不满"理解 | [待实现] |
+| 4 | **增减问题** | 增减方向 | [待实现] |
 
 ---
 
@@ -148,32 +146,31 @@ that-math-things/
 │   ├── index.html
 │   └── favicon.ico
 ├── src/
-│   ├── components/            # 通用组件
-│   │   ├── AppLayout/         # 页面布局 (Header/Sider/Content)
-│   │   ├── MathFormula/       # 公式渲染（一年级暂不需要，预留）
-│   │   ├── ProblemCard/       # 题目卡片（首页/列表使用）
-│   │   └── animations/        # 每道题的 SVG 动画组件
-│   │       ├── ComputerNumber/   # 题1 电脑编号
-│   │       ├── StickerProblem/   # 题2 贴纸问题
-│   │       ├── AppleEaten/       # 题3 吃苹果
-│   │       └── BasketChange/     # 题4 增减问题
-│   ├── pages/                 # 页面
-│   │   ├── Home/              # 首页
-│   │   ├── Problems/          # 题目列表
-│   │   └── ProblemDetail/     # 题目详情（三种模式）
-│   ├── problems/              # 题目数据定义
-│   │   ├── registry.js        # 题目注册表
-│   │   └── data/              # 每题的定义 + 参数生成器
+│   ├── components/                    # 通用组件
+│   │   ├── AppLayout/                 # 页面布局 (Header/Content)
+│   │   ├── ProblemCard/               # 题目卡片（首页/列表使用）
+│   │   └── animations/                # 每道题的可视化动画（motion.div + framer-motion）
+│   │       ├── ComputerNumber/        # 题1 电脑编号
+│   │       ├── StickerProblem/        # 题2 贴纸问题
+│   │       ├── AppleEaten/            # 题3 吃苹果
+│   │       └── BasketChange/          # 题4 增减问题
+│   ├── pages/                         # 页面
+│   │   ├── Home/                      # 首页
+│   │   ├── Problems/                  # 题目列表
+│   │   └── ProblemDetail/             # 题目详情（三种模式）
+│   ├── problems/                      # 题目数据定义
+│   │   ├── registry.js                # 题目注册表
+│   │   └── data/                      # 每题的定义 + 参数生成器
 │   │       ├── computerNumber.js
 │   │       ├── stickerProblem.js
 │   │       ├── appleEaten.js
 │   │       └── basketChange.js
-│   ├── hooks/                 # 自定义 Hooks
-│   │   └── useGuidedSolve.js  # 辅助解题状态机
+│   ├── hooks/                         # 自定义 Hooks
+│   │   └── useGuidedSolve.js          # 辅助解题状态机
 │   ├── utils/
-│   │   └── random.js          # 随机参数生成工具
-│   ├── App.js                 # 路由配置
-│   └── index.js               # 入口
+│   │   └── random.js                  # 随机参数生成工具
+│   ├── App.js                         # 路由配置
+│   └── index.js                       # 入口
 ├── .gitignore
 ├── package.json
 └── README.md
@@ -197,6 +194,9 @@ npm install
 # 启动开发服务器
 npm start
 
+# 运行测试（TDD）
+npm test
+
 # 浏览器打开 http://localhost:3000
 ```
 
@@ -206,31 +206,39 @@ npm start
 
 ```javascript
 // src/problems/data/yourProblem.js
-const createProblem = (getRandomInt) => {
+import { getRandomInt } from '../../utils/random';
+
+const createProblem = () => {
   // 1. 生成随机参数
   const param1 = getRandomInt(1, 10);
   const param2 = getRandomInt(1, 10);
-  
-  // 2. 计算答案
-  const answer = param1 + param2;
-  
-  // 3. 分步引导数据（数组，每步包含 { description, hint, answer }）
+  const finalAnswer = param1 + param2;
+
+  // 2. 分步引导数据
+  //    最后一步的 answer 就是最终答案
   const steps = [
-    { description: '第一步的描述', hint: '提示文字', answer: '中间结果1' },
-    { description: '第二步的描述', hint: '提示文字', answer: '中间结果2' },
+    { description: '第一步的题干', hint: '提示文字', answer: '中间结果1' },
+    { description: '第二步的题干', hint: '提示文字', answer: '中间结果2' },
+    { description: '最终步的题干', hint: '提示文字', answer: finalAnswer },
   ];
-  
-  const finalAnswer = answer;
-  
-  return { params: { param1, param2 }, answer, steps, finalAnswer };
+
+  return {
+    params: { param1, param2 },
+    question: '完整的题目文字，支持 ${param1} 插值',
+    hint: '查看提示模式显示的整体思路',
+    steps,
+    finalAnswer,
+  };
 };
 
-export default {
+const problem = {
   id: 'your-problem',
   title: '题目标题',
   tags: ['知识点标签'],
   createProblem,
 };
+
+export default problem;
 ```
 
 2. 在 `src/problems/registry.js` 中注册：
@@ -244,9 +252,104 @@ const problemRegistry = {
 };
 ```
 
-3. 在 `src/components/animations/` 下创建动画组件。
+3. 在 `src/components/animations/` 下创建动画组件（详见下方「动画组件开发指南」）。
 
-4. 在 `src/pages/ProblemDetail/` 的三模式组件中引用。
+4. 在 `src/pages/ProblemDetail/index.js` 的 `AnimationRenderer` 中添加映射：
+
+```javascript
+function AnimationRenderer({ problemId, params, onComplete }) {
+  switch (problemId) {
+    case 'computer-number':
+      return <ComputerNumberAnimation params={params} onComplete={onComplete} />;
+    case 'your-problem':
+      return <YourProblemAnimation params={params} onComplete={onComplete} />;
+    // ...
+  }
+}
+```
+
+---
+
+### 动画组件开发指南
+
+动画组件的核心原理是 **状态驱动 + 属性动画**：用 `step` 状态推进时间线，通过 framer-motion 的 `motion.div` 在不同步骤间自动补间过渡。
+
+#### 组件接口
+
+每道题的动画组件接收统一的 props：
+
+```javascript
+function YourProblemAnimation({ params, onComplete }) {
+  // params:   { key1, key2, ... }  ← 由 createProblem 返回的随机参数
+  // onComplete: () => void         ← 动画播放完毕回调，调用后进入步骤填写
+}
+```
+
+#### 基本结构
+
+```javascript
+import React, { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
+import { Button } from 'antd';
+
+export default function YourProblemAnimation({ params, onComplete }) {
+  const [step, setStep] = useState(0);
+  const TOTAL_STEPS = 4;
+
+  // 1. 定时器推进 step
+  useEffect(() => {
+    if (step < TOTAL_STEPS) {
+      const delay = step === 0 ? 2400 : 6600;
+      const timer = setTimeout(() => setStep((s) => s + 1), delay);
+      return () => clearTimeout(timer);
+    }
+  }, [step]);
+
+  // 2. 渲染视觉元素
+  return (
+    <div>
+      {elements.map((el) => (
+        <motion.div
+          key={el.id}
+          initial={{ scale: 0, opacity: 0 }}
+          animate={{
+            scale: 1,
+            opacity: 1,
+            backgroundColor: step >= 2 ? '#1677ff' : '#b0b0b0',
+            x: step >= 3 ? 100 : 0,
+          }}
+          transition={{ type: 'spring', stiffness: 350, damping: 14 }}
+        />
+      ))}
+
+      {/* 3. 所有步骤播完显示继续按钮 */}
+      {step >= TOTAL_STEPS && (
+        <Button type="primary" onClick={onComplete}>继续</Button>
+      )}
+    </div>
+  );
+}
+```
+
+#### 常用动画技巧
+
+| 效果 | 实现方式 |
+| --- | --- |
+| **逐步出现** | `delay: (index) * 35ms` |
+| **弹跳进入** | `scale: [0, 1.5, 1]`（关键帧数组） |
+| **颜色跳变** | 改变 `backgroundColor`，framer-motion 自动补间 |
+| **位置移动** | 改变 `x` / `y` 属性 |
+| **大小变化** | 改变 `width` / `height` |
+| **高亮强调** | 组合 `border`、`boxShadow`、`zIndex` 变化 |
+| **闪烁动画** | `animate={{ scale: [1, 1.2, 1] }}` + `transition.repeat` |
+| **布局平滑** | `layout` prop 让布局变化自动过渡 |
+
+#### 重要说明
+
+动画并非使用 `<svg>` 元素绘制，而是用 **`motion.div` + CSS** 模拟：
+- 每个视觉单元是一个 `motion.div`，通过 `borderRadius` 控制形状
+- 布局用 `display: flex` + `flexWrap` 实现排列
+- 所有动画由 framer-motion 的 `animate` prop 驱动
 
 ---
 
