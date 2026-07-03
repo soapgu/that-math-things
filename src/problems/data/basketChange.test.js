@@ -12,29 +12,31 @@ describe('basketChange', () => {
       const { params } = basketChange.createProblem();
       expect(params.takeAway).toBeGreaterThanOrEqual(1);
       expect(params.takeAway).toBeLessThanOrEqual(10);
-      expect(params.putIn).toBeGreaterThanOrEqual(params.takeAway + 2);
-      expect(params.putIn).toBeLessThanOrEqual(params.takeAway + 15);
+      expect(params.putIn).toBeGreaterThanOrEqual(1);
+      expect(params.putIn).toBeLessThanOrEqual(15);
     }
   });
 
-  it('returns single answer', () => {
+  it('returns 2 answers', () => {
     const { answers } = basketChange.createProblem();
-    expect(answers).toHaveLength(1);
+    expect(answers).toHaveLength(2);
     expect(answers[0]).toHaveProperty('answer');
+    expect(answers[1]).toHaveProperty('answer');
   });
 
   it('calculates correct net change', () => {
     for (let i = 0; i < 50; i++) {
       const { params, answers } = basketChange.createProblem();
       const net = params.putIn - params.takeAway;
-      expect(answers[0].answer).toBe(net);
+      expect(answers[1].answer).toBe(Math.abs(net));
     }
   });
 
-  it('always results in positive net (putIn > takeAway)', () => {
+  it('direction answer matches sign of net', () => {
     for (let i = 0; i < 50; i++) {
-      const { answers } = basketChange.createProblem();
-      expect(answers[0].answer).toBeGreaterThan(0);
+      const { params, answers } = basketChange.createProblem();
+      const net = params.putIn - params.takeAway;
+      expect(answers[0].answer).toBe(Math.sign(net));
     }
   });
 

@@ -14,6 +14,7 @@ import useGuidedSolve from '../../hooks/useGuidedSolve';
 import ComputerNumberAnimation from '../../components/animations/ComputerNumber';
 import StickerProblemAnimation from '../../components/animations/StickerProblem';
 import AppleEatenAnimation from '../../components/animations/AppleEaten';
+import BasketChangeAnimation from '../../components/animations/BasketChange';
 
 function DirectAnswer({ problem, problemData, onRegenerate }) {
   const answers = problemData.answers || [];
@@ -177,6 +178,8 @@ function AnimationRenderer({ problemId, params, onComplete }) {
       return <StickerProblemAnimation params={params} onComplete={onComplete} />;
     case 'apple-eaten':
       return <AppleEatenAnimation params={params} onComplete={onComplete} />;
+    case 'basket-change':
+      return <BasketChangeAnimation params={params} onComplete={onComplete} />;
     default:
       return (
         <div style={{ textAlign: 'center', padding: 40 }}>
