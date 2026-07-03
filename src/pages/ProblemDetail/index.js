@@ -23,15 +23,24 @@ function DirectAnswer({ problem, problemData, onRegenerate }) {
   const allCorrect = results.length > 0 && results.every((r) => r === 'correct');
 
   const handleSubmit = (i) => {
-    const num = Number(inputs[i]);
-    const correct = num === answers[i].answer;
-    setResults((prev) => {
-      const next = [...prev];
-      next[i] = correct ? 'correct' : 'wrong';
-      return next;
-    });
-    if (!isMulti) setSubmitted(true);
+    if (isMulti) {
+      const newResults = answers.map((ans, idx) => {
+        const num = Number(inputs[idx]);
+        return num === ans.answer ? 'correct' : 'wrong';
+      });
+      setResults(newResults);
+      setSubmitted(true);
+    } else {
+      const num = Number(inputs[0]);
+      const correct = num === answers[0].answer;
+      setResults([correct ? 'correct' : 'wrong']);
+      setSubmitted(true);
+    }
   };
+
+  const allFilled = isMulti
+    ? inputs.every((v) => v.trim() !== '')
+    : inputs[0].trim() !== '';
 
   const handleRegenerate = () => {
     setInputs(Array(answers.length).fill(''));
@@ -91,8 +100,7 @@ function DirectAnswer({ problem, problemData, onRegenerate }) {
                     next[i] = e.target.value;
                     setInputs(next);
                   }}
-                  onPressEnter={() => handleSubmit(i)}
-                  disabled={done}
+                  disabled={submitted}
                   style={{ width: 120 }}
                   suffix={
                     done ? (
@@ -113,6 +121,9 @@ function DirectAnswer({ problem, problemData, onRegenerate }) {
             );
           })}
           <Space>
+            <Button type="primary" onClick={() => handleSubmit()} disabled={!allFilled || submitted}>
+              提交答案
+            </Button>
             <Button icon={<ReloadOutlined />} onClick={handleRegenerate}>
               随机换参
             </Button>

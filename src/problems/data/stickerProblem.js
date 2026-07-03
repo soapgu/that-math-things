@@ -2,11 +2,13 @@ import { getRandomInt } from '../../utils/random';
 
 const createProblem = () => {
   const a = getRandomInt(12, 30);
-  const b = getRandomInt(2, a - 2);
+  const maxDiff = a - 2;
+  const halfDiff = getRandomInt(1, Math.floor(maxDiff / 2));
+  const diff = halfDiff * 2;
+  const b = a - diff;
 
-  const diff = a - b;
   const question1Answer = diff;
-  const question2Answer = Math.floor(diff / 2);
+  const question2Answer = diff / 2;
 
   const steps = [
     {

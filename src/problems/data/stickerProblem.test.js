@@ -7,13 +7,14 @@ describe('stickerProblem', () => {
     expect(stickerProblem.tags).toEqual(['相差关系', '两步应用题']);
   });
 
-  it('generates valid params', () => {
+  it('generates valid params with even diff', () => {
     for (let i = 0; i < 50; i++) {
       const { params } = stickerProblem.createProblem();
       expect(params.a).toBeGreaterThanOrEqual(12);
       expect(params.a).toBeLessThanOrEqual(30);
       expect(params.b).toBeGreaterThanOrEqual(2);
       expect(params.b).toBeLessThanOrEqual(params.a - 2);
+      expect((params.a - params.b) % 2).toBe(0);
     }
   });
 
@@ -33,7 +34,7 @@ describe('stickerProblem', () => {
       const problem = stickerProblem.createProblem();
       const diff = problem.params.a - problem.params.b;
       expect(problem.answers[0].answer).toBe(diff);
-      expect(problem.answers[1].answer).toBe(Math.floor(diff / 2));
+      expect(problem.answers[1].answer).toBe(diff / 2);
     }
   });
 
