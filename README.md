@@ -53,7 +53,7 @@
 
 | 模式 | 交互流程 |
 | --- | --- |
-| **直接答题** | 显示题目 → 输入答案 → 提交判对错 → 显示结果 |
+| **直接答题** | 显示题目 → 输入答案 → 提交判对错 → 显示结果。支持单答案/多答案、文本输入/选择题（Radio）混合，多答案回车自动跳空或提交。 |
 | **查看提示** | 显示思考指引文字（思路点拨） |
 | **辅助解题** | 见下方详解 |
 
@@ -98,10 +98,16 @@
 ### 直接答题状态流
 
 ```
-显示题目 → 随机参数已生成 → 输入答案 → 提交
+显示题目 → 随机参数已生成 → 填写答案 → 提交
   ├─ 正确 ✅ 显示正确 + 简要解释
   └─ 错误 ❌ 显示正确答案 + 简要解释
 ```
+
+**扩展功能：**
+- **多答案**：支持一道题有多个填空（如增减问题的"填方向 + 填数量"），每空独立判对错
+- **选择题**：答案类型支持 `choice`，渲染为 Ant Design `Radio.Group`，选项可自定义标签和值
+- **回车跳空**：多答案时按 Enter，如有空输入则自动跳到下一个空位，全部填满才提交
+- **自动聚焦**：首次进入或随机换参后，自动聚焦第一个输入框（支持 Text / Radio）
 
 ### 查看提示状态流
 
@@ -214,7 +220,19 @@ const createProblem = () => {
   const param2 = getRandomInt(1, 10);
   const finalAnswer = param1 + param2;
 
-  // 2. 分步引导数据
+  // 2. 直接答题的答案定义
+  //    - 单答案：answers 数组长度 1
+  //    - 多答案：answers 数组长度 > 1，每项独立 label + 判对错
+  //    - 选择题：设置 type: 'choice' + options 数组
+  const answers = [
+    { label: '答案一', answer: finalAnswer },
+    { label: '答案二', answer: 5, type: 'choice', options: [
+      { label: '选项A', value: 5 },
+      { label: '选项B', value: 10 },
+    ]},
+  ];
+
+  // 3. 分步引导数据
   //    最后一步的 answer 就是最终答案
   const steps = [
     { description: '第一步的题干', hint: '提示文字', answer: '中间结果1' },
@@ -226,6 +244,7 @@ const createProblem = () => {
     params: { param1, param2 },
     question: '完整的题目文字，支持 ${param1} 插值',
     hint: '查看提示模式显示的整体思路',
+    answers,
     steps,
     finalAnswer,
   };
