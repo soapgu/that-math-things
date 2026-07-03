@@ -22,6 +22,16 @@ function DirectAnswer({ problem, problemData, onRegenerate }) {
   const [inputs, setInputs] = useState(Array(answers.length).fill(''));
   const [results, setResults] = useState(Array(answers.length).fill(null));
   const [submitted, setSubmitted] = useState(false);
+  const inputRefs = useRef([]);
+
+  if (inputRefs.current.length !== answers.length) {
+    inputRefs.current = Array(answers.length).fill().map((_, i) => inputRefs.current[i] || React.createRef());
+  }
+
+  useEffect(() => {
+    const timer = setTimeout(() => inputRefs.current[0]?.current?.focus(), 100);
+    return () => clearTimeout(timer);
+  }, [problemData]);
 
   const allCorrect = results.length > 0 && results.every((r) => r === 'correct');
 
@@ -64,6 +74,7 @@ function DirectAnswer({ problem, problemData, onRegenerate }) {
         <Space direction="vertical" size="middle" style={{ width: '100%' }}>
           {answers[0].type === 'choice' ? (
             <Radio.Group
+              ref={inputRefs.current[0]}
               value={inputs[0] ? Number(inputs[0]) : undefined}
               onChange={(e) => setInputs([String(e.target.value)])}
               disabled={submitted}
@@ -74,6 +85,7 @@ function DirectAnswer({ problem, problemData, onRegenerate }) {
             </Radio.Group>
           ) : (
             <Input
+              ref={inputRefs.current[0]}
               size="large"
               placeholder="输入你的答案"
               value={inputs[0]}
@@ -111,6 +123,7 @@ function DirectAnswer({ problem, problemData, onRegenerate }) {
                 <Typography.Text style={{ fontSize: 15, minWidth: 160 }}>{ans.label}</Typography.Text>
                 {ans.type === 'choice' ? (
                   <Radio.Group
+                    ref={inputRefs.current[i]}
                     value={inputs[i] ? Number(inputs[i]) : undefined}
                     onChange={(e) => {
                       const next = [...inputs];
@@ -125,6 +138,7 @@ function DirectAnswer({ problem, problemData, onRegenerate }) {
                   </Radio.Group>
                 ) : (
                   <Input
+                    ref={inputRefs.current[i]}
                     size="middle"
                     placeholder="输入答案"
                     value={inputs[i]}
@@ -132,6 +146,14 @@ function DirectAnswer({ problem, problemData, onRegenerate }) {
                       const next = [...inputs];
                       next[i] = e.target.value;
                       setInputs(next);
+                    }}
+                    onPressEnter={() => {
+                      const emptyIdx = inputs.findIndex((v) => v.trim() === '');
+                      if (emptyIdx >= 0) {
+                        inputRefs.current[emptyIdx]?.current?.focus();
+                      } else {
+                        handleSubmit();
+                      }
                     }}
                     disabled={submitted}
                     style={{ width: 120 }}
