@@ -13,6 +13,7 @@ import { getProblem } from '../../problems/registry';
 import useGuidedSolve from '../../hooks/useGuidedSolve';
 import ComputerNumberAnimation from '../../components/animations/ComputerNumber';
 import StickerProblemAnimation from '../../components/animations/StickerProblem';
+import AppleEatenAnimation from '../../components/animations/AppleEaten';
 
 function DirectAnswer({ problem, problemData, onRegenerate }) {
   const answers = problemData.answers || [];
@@ -174,6 +175,8 @@ function AnimationRenderer({ problemId, params, onComplete }) {
       return <ComputerNumberAnimation params={params} onComplete={onComplete} />;
     case 'sticker-problem':
       return <StickerProblemAnimation params={params} onComplete={onComplete} />;
+    case 'apple-eaten':
+      return <AppleEatenAnimation params={params} onComplete={onComplete} />;
     default:
       return (
         <div style={{ textAlign: 'center', padding: 40 }}>
