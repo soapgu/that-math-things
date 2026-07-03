@@ -34,7 +34,7 @@ const createProblem = () => {
     question: `学校新买一批电脑，从 ${x} 号编到 ${y} 号（编号不超过 100），一共新买了多少台电脑？`,
     hint: `想一想：从 1 号编到 ${y} 号是 ${y} 台，那从 ${x} 号编到 ${y} 号呢？不要忘记两头都算哦！`,
     steps,
-    finalAnswer,
+    answers: [{ answer: finalAnswer }],
   };
 };
 

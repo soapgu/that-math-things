@@ -7,7 +7,6 @@ const createProblem = () => {
   const diff = a - b;
   const question1Answer = diff;
   const question2Answer = Math.floor(diff / 2);
-  const finalAnswer = `${question1Answer}, ${question2Answer}`;
 
   const steps = [
     {
@@ -37,16 +36,10 @@ const createProblem = () => {
     question: `乐乐有 ${a} 张贴纸，欢欢有 ${b} 张贴纸。\n① 欢欢再添多少张，两人的贴纸就同样多？\n② 乐乐每天送给欢欢 1 张，多少天后两人的贴纸就同样多？`,
     hint: '先算相差多少张。第一问：差几张补几张。第二问：每天乐乐少1欢欢多1，差距缩小2张。',
     steps,
-    finalAnswer,
-    answer: question1Answer,
-    answer2: question2Answer,
-    checkAnswer: (userAnswer) => {
-      const parts = String(userAnswer).replace(/\s/g, '').split(/[,，、]/);
-      if (parts.length !== 2) return false;
-      const n1 = parseInt(parts[0], 10);
-      const n2 = parseInt(parts[1], 10);
-      return n1 === question1Answer && n2 === question2Answer;
-    },
+    answers: [
+      { label: '① 欢欢再添多少张？', answer: question1Answer },
+      { label: '② 每天送1张，几天后同样多？', answer: question2Answer },
+    ],
   };
 };
 

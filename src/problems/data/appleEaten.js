@@ -24,7 +24,7 @@ const createProblem = () => {
     question: `妈妈买了 ${total} 个苹果，吃掉一些后，剩下的不满 ${threshold} 个，至少吃了多少个？`,
     hint: `「不满 ${threshold} 个」就是比 ${threshold} 少，最多剩 ${maxRemaining} 个。吃掉的 = 总数 - 剩下的。要想「至少」吃了多少，就让剩下的尽可能多。`,
     steps,
-    finalAnswer,
+    answers: [{ answer: finalAnswer }],
   };
 };
 

@@ -19,9 +19,10 @@ describe('appleEaten', () => {
 
   it('calculates answer as total - (threshold - 1)', () => {
     for (let i = 0; i < 50; i++) {
-      const { params, finalAnswer } = appleEaten.createProblem();
+      const { params, answers } = appleEaten.createProblem();
+      expect(answers).toHaveLength(1);
       const expected = params.total - (params.threshold - 1);
-      expect(finalAnswer).toBe(expected);
+      expect(answers[0].answer).toBe(expected);
     }
   });
 
@@ -35,9 +36,9 @@ describe('appleEaten', () => {
     expect(steps[0].answer).toBe(params.threshold - 1);
   });
 
-  it('step 2 answer equals finalAnswer', () => {
-    const { steps, finalAnswer } = appleEaten.createProblem();
-    expect(steps[1].answer).toBe(finalAnswer);
+  it('step 2 answer equals answers[0].answer', () => {
+    const { steps, answers } = appleEaten.createProblem();
+    expect(steps[1].answer).toBe(answers[0].answer);
   });
 
   it('generates different params', () => {

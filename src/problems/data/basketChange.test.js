@@ -17,19 +17,24 @@ describe('basketChange', () => {
     }
   });
 
+  it('returns single answer', () => {
+    const { answers } = basketChange.createProblem();
+    expect(answers).toHaveLength(1);
+    expect(answers[0]).toHaveProperty('answer');
+  });
+
   it('calculates correct net change', () => {
     for (let i = 0; i < 50; i++) {
-      const { params, finalAnswer } = basketChange.createProblem();
+      const { params, answers } = basketChange.createProblem();
       const net = params.putIn - params.takeAway;
-      const expected = `${net > 0 ? '多' : '少'}${Math.abs(net)}`;
-      expect(finalAnswer).toBe(expected);
+      expect(answers[0].answer).toBe(net);
     }
   });
 
-  it('always results in "多" (net positive)', () => {
+  it('always results in positive net (putIn > takeAway)', () => {
     for (let i = 0; i < 50; i++) {
-      const { finalAnswer } = basketChange.createProblem();
-      expect(finalAnswer.startsWith('多')).toBe(true);
+      const { answers } = basketChange.createProblem();
+      expect(answers[0].answer).toBeGreaterThan(0);
     }
   });
 

@@ -17,24 +17,24 @@ describe('stickerProblem', () => {
     }
   });
 
+  it('returns two answers with labels', () => {
+    const { answers } = stickerProblem.createProblem();
+    expect(answers).toHaveLength(2);
+    expect(answers[0]).toHaveProperty('label');
+    expect(answers[0]).toHaveProperty('answer');
+    expect(answers[1]).toHaveProperty('label');
+    expect(answers[1]).toHaveProperty('answer');
+    expect(answers[0].label).toContain('添');
+    expect(answers[1].label).toContain('天');
+  });
+
   it('calculates correct answers', () => {
     for (let i = 0; i < 50; i++) {
       const problem = stickerProblem.createProblem();
       const diff = problem.params.a - problem.params.b;
-      expect(problem.finalAnswer).toBe(`${diff}, ${Math.floor(diff / 2)}`);
+      expect(problem.answers[0].answer).toBe(diff);
+      expect(problem.answers[1].answer).toBe(Math.floor(diff / 2));
     }
-  });
-
-  it('checkAnswer validates two-part answer', () => {
-    const { params, checkAnswer } = stickerProblem.createProblem();
-    const diff = params.a - params.b;
-    const days = Math.floor(diff / 2);
-
-    expect(checkAnswer(`${diff},${days}`)).toBe(true);
-    expect(checkAnswer(`${diff} , ${days}`)).toBe(true);
-    expect(checkAnswer(`${diff}、${days}`)).toBe(true);
-    expect(checkAnswer(`${diff + 1},${days}`)).toBe(false);
-    expect(checkAnswer(`${diff},${days + 1}`)).toBe(false);
   });
 
   it('has 4 steps', () => {

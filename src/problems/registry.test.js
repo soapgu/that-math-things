@@ -44,9 +44,14 @@ describe('problem registry', () => {
       expect(data).toHaveProperty('question');
       expect(data).toHaveProperty('hint');
       expect(data).toHaveProperty('steps');
-      expect(data).toHaveProperty('finalAnswer');
+      expect(data).toHaveProperty('answers');
+      expect(Array.isArray(data.answers)).toBe(true);
+      expect(data.answers.length).toBeGreaterThanOrEqual(1);
+      data.answers.forEach((ans) => {
+        expect(ans).toHaveProperty('answer');
+      });
       expect(Array.isArray(data.steps)).toBe(true);
-      data.steps.forEach((step, i) => {
+      data.steps.forEach((step) => {
         expect(step).toHaveProperty('description', expect.any(String));
         if (step.answer !== undefined) {
           expect(step).toHaveProperty('hint');

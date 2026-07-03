@@ -18,16 +18,17 @@ describe('computerNumber', () => {
   });
 
   it('calculates answer as y - x + 1', () => {
-    const { params, finalAnswer, steps } = computerNumber.createProblem();
-    expect(finalAnswer).toBe(params.y - params.x + 1);
+    const { params, answers, steps } = computerNumber.createProblem();
+    expect(answers).toHaveLength(1);
+    expect(answers[0].answer).toBe(params.y - params.x + 1);
     expect(steps).toHaveLength(4);
   });
 
   it('has step answers that lead to final answer', () => {
-    const { steps, finalAnswer } = computerNumber.createProblem();
+    const { steps, answers } = computerNumber.createProblem();
     expect(steps[0].answer).toBe(steps[1].answer + steps[2].answer);
     expect(steps[3].answer).toBe(steps[2].answer + 1);
-    expect(steps[3].answer).toBe(finalAnswer);
+    expect(steps[3].answer).toBe(answers[0].answer);
   });
 
   it('generates different params on repeated calls', () => {

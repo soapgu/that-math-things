@@ -14,20 +14,29 @@ import useGuidedSolve from '../../hooks/useGuidedSolve';
 import ComputerNumberAnimation from '../../components/animations/ComputerNumber';
 
 function DirectAnswer({ problem, problemData, onRegenerate }) {
-  const [answer, setAnswer] = useState('');
-  const [result, setResult] = useState(null);
+  const answers = problemData.answers || [];
+  const isMulti = answers.length > 1;
+  const [inputs, setInputs] = useState(Array(answers.length).fill(''));
+  const [results, setResults] = useState(Array(answers.length).fill(null));
+  const [submitted, setSubmitted] = useState(false);
 
-  const handleSubmit = () => {
-    const numAnswer = Number(answer);
-    const isCorrect = problemData.checkAnswer
-      ? problemData.checkAnswer(numAnswer)
-      : numAnswer === problemData.finalAnswer;
-    setResult(isCorrect ? 'correct' : 'wrong');
+  const allCorrect = results.length > 0 && results.every((r) => r === 'correct');
+
+  const handleSubmit = (i) => {
+    const num = Number(inputs[i]);
+    const correct = num === answers[i].answer;
+    setResults((prev) => {
+      const next = [...prev];
+      next[i] = correct ? 'correct' : 'wrong';
+      return next;
+    });
+    if (!isMulti) setSubmitted(true);
   };
 
   const handleRegenerate = () => {
-    setAnswer('');
-    setResult(null);
+    setInputs(Array(answers.length).fill(''));
+    setResults(Array(answers.length).fill(null));
+    setSubmitted(false);
     onRegenerate();
   };
 
@@ -39,45 +48,80 @@ function DirectAnswer({ problem, problemData, onRegenerate }) {
         {problemData.question}
       </Typography.Paragraph>
 
-      <Space direction="vertical" size="middle" style={{ width: '100%' }}>
-        <Input
-          size="large"
-          placeholder="输入你的答案"
-          value={answer}
-          onChange={(e) => setAnswer(e.target.value)}
-          onPressEnter={handleSubmit}
-          disabled={result !== null}
-          style={{ maxWidth: 300 }}
-        />
-
-        <Space>
-          <Button type="primary" onClick={handleSubmit} disabled={!answer || result !== null}>
-            提交答案
-          </Button>
-          <Button icon={<ReloadOutlined />} onClick={handleRegenerate}>
-            随机换参
-          </Button>
+      {!isMulti ? (
+        <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+          <Input
+            size="large"
+            placeholder="输入你的答案"
+            value={inputs[0]}
+            onChange={(e) => setInputs([e.target.value])}
+            onPressEnter={() => handleSubmit(0)}
+            disabled={submitted}
+            style={{ maxWidth: 300 }}
+          />
+          <Space>
+            <Button type="primary" onClick={() => handleSubmit(0)} disabled={!inputs[0] || submitted}>
+              提交答案
+            </Button>
+            <Button icon={<ReloadOutlined />} onClick={handleRegenerate}>
+              随机换参
+            </Button>
+          </Space>
+          {results[0] === 'correct' && (
+            <Alert type="success" showIcon icon={<CheckCircleOutlined />} message="答对了！真棒！" description={problem.hint} />
+          )}
+          {results[0] === 'wrong' && (
+            <Alert type="error" showIcon icon={<CloseCircleOutlined />} message="再想想哦" description={`正确答案是：${answers[0].answer}`} />
+          )}
         </Space>
-
-        {result === 'correct' && (
-          <Alert
-            type="success"
-            showIcon
-            icon={<CheckCircleOutlined />}
-            message="答对了！真棒！"
-            description={problem.hint}
-          />
-        )}
-        {result === 'wrong' && (
-          <Alert
-            type="error"
-            showIcon
-            icon={<CloseCircleOutlined />}
-            message="再想想哦"
-            description={`正确答案是：${problemData.finalAnswer}`}
-          />
-        )}
-      </Space>
+      ) : (
+        <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+          {answers.map((ans, i) => {
+            const res = results[i];
+            const done = res !== null;
+            return (
+              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+                <Typography.Text style={{ fontSize: 15, minWidth: 160 }}>{ans.label}</Typography.Text>
+                <Input
+                  size="middle"
+                  placeholder="输入答案"
+                  value={inputs[i]}
+                  onChange={(e) => {
+                    const next = [...inputs];
+                    next[i] = e.target.value;
+                    setInputs(next);
+                  }}
+                  onPressEnter={() => handleSubmit(i)}
+                  disabled={done}
+                  style={{ width: 120 }}
+                  suffix={
+                    done ? (
+                      res === 'correct' ? (
+                        <CheckCircleOutlined style={{ color: '#52c41a' }} />
+                      ) : (
+                        <CloseCircleOutlined style={{ color: '#ff4d4f' }} />
+                      )
+                    ) : null
+                  }
+                />
+                {done && res === 'wrong' && (
+                  <Typography.Text type="danger" style={{ fontSize: 13 }}>
+                    正确答案：{ans.answer}
+                  </Typography.Text>
+                )}
+              </div>
+            );
+          })}
+          <Space>
+            <Button icon={<ReloadOutlined />} onClick={handleRegenerate}>
+              随机换参
+            </Button>
+          </Space>
+          {allCorrect && (
+            <Alert type="success" showIcon icon={<CheckCircleOutlined />} message="全部答对了！真棒！" description={problem.hint} />
+          )}
+        </Space>
+      )}
     </div>
   );
 }
