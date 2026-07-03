@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Button, Typography } from 'antd';
-import { CheckCircleFilled, RightCircleFilled } from '@ant-design/icons';
+import { CheckCircleFilled, RightCircleFilled, RedoOutlined } from '@ant-design/icons';
 
 export default function ComputerNumberAnimation({ params, onComplete }) {
   const { x, y } = params;
@@ -13,10 +13,17 @@ export default function ComputerNumberAnimation({ params, onComplete }) {
   const answer = y - x + 1;
   const useGrid = y > 20;
   const TOTAL_STEPS = 5;
+  const isFinished = step >= TOTAL_STEPS;
+
+  const handleReplay = useCallback(() => {
+    window.speechSynthesis?.cancel();
+    setStep(0);
+  }, []);
 
   useEffect(() => {
     if (step < TOTAL_STEPS) {
-      const delay = step === 0 ? 2400 : 6600;
+      const delays = [400, 6600, 6600,9000, 6600];
+      const delay = delays[step] || 6600;
       const timer = setTimeout(() => setStep((s) => s + 1), delay);
       return () => clearTimeout(timer);
     }
@@ -32,18 +39,16 @@ export default function ComputerNumberAnimation({ params, onComplete }) {
     }
   }, [step, x]);
 
-  const steps = [
+  const steps = useMemo(() => [
     {
       id: 1,
       label: `画 ${y} 个点`,
-      detail: `编号 1 ~ ${y}`,
-      check: step >= 1,
+      detail: `编号 1 到 ${y}`,
     },
     {
       id: 2,
       label: `前 ${x} 个点`,
-      detail: `编号 1 ~ ${x}`,
-      check: step >= 2,
+      detail: `编号 1 到 ${x}`,
       extra: (
         <Button
           shape="round"
@@ -55,9 +60,8 @@ export default function ComputerNumberAnimation({ params, onComplete }) {
     },
     {
       id: 3,
-      label: `剩下 ${remaining} 个`,
-      detail: `编号 ${x + 1} ~ ${y}`,
-      check: step >= 3,
+      label: `${y} 个点去掉前${x}个点，剩下 ${remaining} 个`,
+      detail: `编号 ${x + 1} 到 ${y}`,
       extra: (
         <div style={{ marginTop: 4, display: 'flex', alignItems: 'center', gap: 3, justifyContent: 'center' }}>
           <Button shape="round" style={{ background: '#1677ff', color: '#fff', border: 'none', cursor: 'default', height: 20, fontSize: 10 }}>
@@ -72,7 +76,6 @@ export default function ComputerNumberAnimation({ params, onComplete }) {
       id: 4,
       label: `少了第 ${x} 号`,
       detail: '被减掉了，加回来！',
-      check: step >= 4,
       extra: (
         <motion.span
           initial={{ scale: 0.8 }}
@@ -100,10 +103,28 @@ export default function ComputerNumberAnimation({ params, onComplete }) {
       id: 5,
       label: `${y} − ${x} + 1 = ${answer}`,
       detail: '少1台要加回去！两头都算',
-      check: step >= 5,
       highlight: true,
     },
-  ];
+  ], [x, y, remaining, answer]);
+
+  useEffect(() => {
+    if (step < 1 || step > TOTAL_STEPS) return;
+    if (typeof window === 'undefined' || !window.speechSynthesis) return;
+
+    const s = steps[step - 1];
+    const text = `${s.label}，${s.detail}`;
+
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'zh-CN';
+    utterance.rate = 0.85;
+    utterance.pitch = 1.05;
+    window.speechSynthesis.speak(utterance);
+
+    return () => {
+      window.speechSynthesis.cancel();
+    };
+  }, [step, steps]);
 
   return (
     <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start', justifyContent: 'flex-start' }}>
@@ -253,16 +274,25 @@ export default function ComputerNumberAnimation({ params, onComplete }) {
               );
             })}
 
-            {/* Skip button */}
-            {step < TOTAL_STEPS && (
+            {(step < TOTAL_STEPS || isFinished) && (
+              <Button
+                icon={<RedoOutlined />}
+                style={{ marginTop: 4, fontSize: 12, width: '100%' }}
+                size="small"
+                onClick={handleReplay}
+              >
+                重放动画
+              </Button>
+            )}
+
+            {!isFinished && (
               <Button style={{ marginTop: 4, fontSize: 12, width: '100%' }} size="small" onClick={() => setStep(TOTAL_STEPS)}>
                 跳过动画
               </Button>
             )}
 
-            {/* Continue button */}
-            {step >= TOTAL_STEPS && (
-              <Button type="primary" size="small" onClick={onComplete} style={{ marginTop: 8, width: '100%' }}>
+            {isFinished && (
+              <Button type="primary" size="small" onClick={onComplete} style={{ marginTop: 4, width: '100%' }}>
                 继续
               </Button>
             )}
