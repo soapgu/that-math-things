@@ -36,7 +36,16 @@ const createProblem = () => {
     hint: '拿掉就是减少，放进去就是增加。先算总共少了多少，再算总共多了多少，比一比就知道。',
     steps,
     answers: [
-      { label: '多了还是少了？（多了填 1，少了填 -1，一样填 0）', answer: Math.sign(net) },
+      {
+        label: '比原来多了还是少了？',
+        type: 'choice',
+        options: [
+          { label: '多了', value: 1 },
+          { label: '少了', value: -1 },
+          { label: '一样多', value: 0 },
+        ],
+        answer: Math.sign(net),
+      },
       { label: '差几个？', answer: absNet },
     ],
   };

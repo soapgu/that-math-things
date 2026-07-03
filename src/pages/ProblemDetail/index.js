@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { Typography, Card, Input, Button, Tabs, Space, Tag, Empty, Alert } from 'antd';
+import { Typography, Card, Input, Button, Tabs, Space, Tag, Empty, Alert, Radio } from 'antd';
 import {
   ReloadOutlined,
   CheckCircleOutlined,
@@ -62,15 +62,27 @@ function DirectAnswer({ problem, problemData, onRegenerate }) {
 
       {!isMulti ? (
         <Space direction="vertical" size="middle" style={{ width: '100%' }}>
-          <Input
-            size="large"
-            placeholder="输入你的答案"
-            value={inputs[0]}
-            onChange={(e) => setInputs([e.target.value])}
-            onPressEnter={() => handleSubmit(0)}
-            disabled={submitted}
-            style={{ maxWidth: 300 }}
-          />
+          {answers[0].type === 'choice' ? (
+            <Radio.Group
+              value={inputs[0] ? Number(inputs[0]) : undefined}
+              onChange={(e) => setInputs([String(e.target.value)])}
+              disabled={submitted}
+            >
+              {answers[0].options.map((opt) => (
+                <Radio key={opt.value} value={opt.value}>{opt.label}</Radio>
+              ))}
+            </Radio.Group>
+          ) : (
+            <Input
+              size="large"
+              placeholder="输入你的答案"
+              value={inputs[0]}
+              onChange={(e) => setInputs([e.target.value])}
+              onPressEnter={() => handleSubmit(0)}
+              disabled={submitted}
+              style={{ maxWidth: 300 }}
+            />
+          )}
           <Space>
             <Button type="primary" onClick={() => handleSubmit(0)} disabled={!inputs[0] || submitted}>
               提交答案
@@ -83,7 +95,7 @@ function DirectAnswer({ problem, problemData, onRegenerate }) {
             <Alert type="success" showIcon icon={<CheckCircleOutlined />} message="答对了！真棒！" description={problem.hint} />
           )}
           {results[0] === 'wrong' && (
-            <Alert type="error" showIcon icon={<CloseCircleOutlined />} message="再想想哦" description={`正确答案是：${answers[0].answer}`} />
+            <Alert type="error" showIcon icon={<CloseCircleOutlined />} message="再想想哦" description={`正确答案是：${answers[0].type === 'choice' ? answers[0].options.find(o => o.value === answers[0].answer)?.label : answers[0].answer}`} />
           )}
         </Space>
       ) : (
@@ -91,34 +103,57 @@ function DirectAnswer({ problem, problemData, onRegenerate }) {
           {answers.map((ans, i) => {
             const res = results[i];
             const done = res !== null;
+            const answerLabel = ans.type === 'choice'
+              ? ans.options.find((o) => o.value === ans.answer)?.label
+              : ans.answer;
             return (
               <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
                 <Typography.Text style={{ fontSize: 15, minWidth: 160 }}>{ans.label}</Typography.Text>
-                <Input
-                  size="middle"
-                  placeholder="输入答案"
-                  value={inputs[i]}
-                  onChange={(e) => {
-                    const next = [...inputs];
-                    next[i] = e.target.value;
-                    setInputs(next);
-                  }}
-                  disabled={submitted}
-                  style={{ width: 120 }}
-                  suffix={
-                    done ? (
-                      res === 'correct' ? (
-                        <CheckCircleOutlined style={{ color: '#52c41a' }} />
-                      ) : (
-                        <CloseCircleOutlined style={{ color: '#ff4d4f' }} />
-                      )
-                    ) : null
-                  }
-                />
-                {done && res === 'wrong' && (
-                  <Typography.Text type="danger" style={{ fontSize: 13 }}>
-                    正确答案：{ans.answer}
-                  </Typography.Text>
+                {ans.type === 'choice' ? (
+                  <Radio.Group
+                    value={inputs[i] ? Number(inputs[i]) : undefined}
+                    onChange={(e) => {
+                      const next = [...inputs];
+                      next[i] = String(e.target.value);
+                      setInputs(next);
+                    }}
+                    disabled={submitted}
+                  >
+                    {ans.options.map((opt) => (
+                      <Radio key={opt.value} value={opt.value}>{opt.label}</Radio>
+                    ))}
+                  </Radio.Group>
+                ) : (
+                  <Input
+                    size="middle"
+                    placeholder="输入答案"
+                    value={inputs[i]}
+                    onChange={(e) => {
+                      const next = [...inputs];
+                      next[i] = e.target.value;
+                      setInputs(next);
+                    }}
+                    disabled={submitted}
+                    style={{ width: 120 }}
+                    suffix={
+                      done ? (
+                        res === 'correct' ? (
+                          <CheckCircleOutlined style={{ color: '#52c41a' }} />
+                        ) : (
+                          <CloseCircleOutlined style={{ color: '#ff4d4f' }} />
+                        )
+                      ) : null
+                    }
+                  />
+                )}
+                {done && (
+                  res === 'correct' ? (
+                    <CheckCircleOutlined style={{ color: '#52c41a', fontSize: 16 }} />
+                  ) : (
+                    <Typography.Text type="danger" style={{ fontSize: 13 }}>
+                      正确答案：{answerLabel}
+                    </Typography.Text>
+                  )
                 )}
               </div>
             );
