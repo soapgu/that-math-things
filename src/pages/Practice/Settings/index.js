@@ -1,9 +1,16 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Typography, Card, Slider, InputNumber, Switch, Radio, Button, Space, Divider } from 'antd';
-import { BarChartOutlined, PlayCircleOutlined } from '@ant-design/icons';
+import { Card, Slider, InputNumber, Switch, Radio, Rate, Button, Space, Divider } from 'antd';
+import { BarChartOutlined, PlayCircleOutlined, StarFilled } from '@ant-design/icons';
 
 const STORAGE_KEY = 'practice-settings';
+
+const STAR_PROB_MAP = { 1: 40, 2: 60, 3: 80 };
+
+function probToStars(prob) {
+  const entry = Object.entries(STAR_PROB_MAP).find(([, v]) => v === prob);
+  return entry ? Number(entry[0]) : 1;
+}
 
 function loadDefaults() {
   try {
@@ -12,8 +19,8 @@ function loadDefaults() {
   } catch {}
   return {
     range: 50,
-    addRatio: 60,
-    carryBorrowProb: 30,
+    addRatio: 50,
+    carryBorrowProb: 40,
     assistEnabled: false,
     assistMethod: 'breakTen',
     questionCount: 10,
@@ -36,34 +43,36 @@ export default function PracticeSettings() {
     navigate('/practice/session', { state: { settings } });
   };
 
-  return (
-    <div style={{ maxWidth: 500, margin: '0 auto' }}>
-      <Typography.Title level={3} style={{ textAlign: 'center', marginBottom: 32 }}>
-        加减法训练
-      </Typography.Title>
+  const probStars = probToStars(settings.carryBorrowProb);
 
-      <Card style={{ borderRadius: 12 }}>
-        <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+  return (
+    <div style={{ maxWidth: 480, margin: '0 auto' }}>
+      <Card
+        title={<span style={{ fontSize: 16, fontWeight: 600, userSelect: 'none' }}>计算训练</span>}
+        styles={{ body: { padding: 16 } }}
+      >
+        <Space direction="vertical" size="small" style={{ width: '100%' }}>
           {/* 运算范围 */}
           <div>
-            <Typography.Text strong>运算范围</Typography.Text>
-            <div style={{ marginTop: 4 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ fontWeight: 600, userSelect: 'none' }}>运算范围</span>
               <InputNumber
                 min={10}
                 max={100}
                 value={settings.range}
                 onChange={(v) => update('range', v)}
-                style={{ width: '100%' }}
+                style={{ width: 140 }}
                 addonAfter="以内"
+                size="small"
               />
             </div>
           </div>
 
           {/* 加法比例 */}
           <div>
-            <Typography.Text strong>
+            <div style={{ fontWeight: 600, marginBottom: 2, userSelect: 'none' }}>
               加法比例：{settings.addRatio}%
-            </Typography.Text>
+            </div>
             <Slider
               min={0}
               max={100}
@@ -72,55 +81,55 @@ export default function PracticeSettings() {
               marks={{ 0: '全减', 50: '各半', 100: '全加' }}
               tooltip={{ formatter: (v) => `${v}%` }}
             />
-            <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+            <span style={{ fontSize: 11, color: '#999', userSelect: 'none' }}>
               剩余 {100 - settings.addRatio}% 为减法
-            </Typography.Text>
+            </span>
           </div>
 
           {/* 进位退位概率 */}
           <div>
-            <Typography.Text strong>
-              进位/退位概率：{settings.carryBorrowProb}%
-            </Typography.Text>
-            <Slider
-              min={0}
-              max={100}
-              value={settings.carryBorrowProb}
-              onChange={(v) => update('carryBorrowProb', v)}
-              marks={{ 0: '无', 50: '一半', 100: '全部' }}
-              tooltip={{ formatter: (v) => `${v}%` }}
-            />
+            <div style={{ fontWeight: 600, marginBottom: 2, userSelect: 'none' }}>
+              进位/退位难度
+            </div>
+            <Space>
+              <Rate
+                value={probStars}
+                count={3}
+                character={<StarFilled />}
+                onChange={(v) => update('carryBorrowProb', STAR_PROB_MAP[v])}
+              />
+              <span style={{ userSelect: 'none' }}>{settings.carryBorrowProb}%</span>
+              <span style={{ fontSize: 11, color: '#999', userSelect: 'none' }}>
+                {probStars <= 1 ? '偶尔出现' : probStars === 2 ? '一半题目' : '大部分都有'}
+              </span>
+            </Space>
           </div>
 
-          <Divider style={{ margin: '8px 0' }} />
+          <Divider style={{ margin: '4px 0' }} />
 
           {/* 辅助运算 */}
           <div>
             <Space>
               <Switch
+                size="small"
                 checked={settings.assistEnabled}
                 onChange={(v) => update('assistEnabled', v)}
               />
-              <Typography.Text strong>辅助运算</Typography.Text>
+              <span style={{ fontWeight: 600, userSelect: 'none' }}>辅助运算</span>
+              <span style={{ fontSize: 11, color: '#999', userSelect: 'none' }}>
+                开启后每题展示分步引导
+              </span>
             </Space>
-            <Typography.Text
-              type="secondary"
-              style={{ display: 'block', fontSize: 12, marginTop: 2 }}
-            >
-              开启后每题展示分步引导（破十法/平十法）
-            </Typography.Text>
           </div>
 
           {settings.assistEnabled && (
-            <div style={{ paddingLeft: 52 }}>
-              <Typography.Text strong style={{ display: 'block', marginBottom: 8 }}>
-                计算方法
-              </Typography.Text>
+            <div style={{ paddingLeft: 44 }}>
               <Radio.Group
                 value={settings.assistMethod}
                 onChange={(e) => update('assistMethod', e.target.value)}
+                size="small"
               >
-                <Space direction="vertical">
+                <Space direction="vertical" size={2}>
                   <Radio value="breakTen">破十法（拆大数，减小数）</Radio>
                   <Radio value="flatTen">平十法（拆小数，连减法）</Radio>
                 </Space>
@@ -128,43 +137,36 @@ export default function PracticeSettings() {
             </div>
           )}
 
-          <Divider style={{ margin: '8px 0' }} />
+          <Divider style={{ margin: '4px 0' }} />
 
           {/* 题目数量 */}
           <div>
-            <Typography.Text strong>题目数量</Typography.Text>
-            <div style={{ marginTop: 4 }}>
-              <InputNumber
-                min={5}
-                max={100}
-                value={settings.questionCount}
-                onChange={(v) => update('questionCount', v)}
-                style={{ width: '100%' }}
-                addonAfter="题"
-              />
+            <div style={{ fontWeight: 600, marginBottom: 4, userSelect: 'none' }}>
+              题目数量
             </div>
+            <Radio.Group
+              value={settings.questionCount}
+              onChange={(e) => update('questionCount', e.target.value)}
+              optionType="button"
+              buttonStyle="solid"
+              size="small"
+            >
+              <Radio value={10}>10 题</Radio>
+              <Radio value={20}>20 题</Radio>
+              <Radio value={50}>50 题</Radio>
+            </Radio.Group>
           </div>
         </Space>
       </Card>
 
-      <Space direction="vertical" style={{ width: '100%', marginTop: 24 }} size="middle">
-        <Button
-          type="primary"
-          size="large"
-          icon={<PlayCircleOutlined />}
-          block
-          onClick={handleStart}
-        >
+      <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+        <Button type="primary" icon={<PlayCircleOutlined />} block onClick={handleStart}>
           开始训练
         </Button>
-        <Button
-          icon={<BarChartOutlined />}
-          block
-          onClick={() => navigate('/practice/stats')}
-        >
+        <Button icon={<BarChartOutlined />} block onClick={() => navigate('/practice/stats')}>
           统计数据
         </Button>
-      </Space>
+      </div>
     </div>
   );
 }

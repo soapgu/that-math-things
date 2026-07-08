@@ -14,8 +14,8 @@ const entries = [
   {
     key: 'practice',
     icon: <CalculatorOutlined style={{ fontSize: 48, color: '#52c41a' }} />,
-    title: '加减法训练',
-    desc: '50以内加减法，可调参数、辅助运算、统计错题',
+    title: '计算训练',
+    desc: '50以内计算，可调参数、辅助运算、统计错题',
     path: '/practice',
   },
 ];

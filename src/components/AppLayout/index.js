@@ -18,7 +18,7 @@ export default function AppLayout({ children }) {
   const menuItems = [
     { key: '/', icon: <HomeOutlined />, label: '首页' },
     { key: '/problems', icon: <BookOutlined />, label: '错题列表' },
-    { key: '/practice', icon: <CalculatorOutlined />, label: '加减法训练' },
+    { key: '/practice', icon: <CalculatorOutlined />, label: '计算训练' },
   ];
 
   return (

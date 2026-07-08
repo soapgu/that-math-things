@@ -21,7 +21,7 @@ HashRouter（`index.js`），所有路径相对于 `/#/`：
 | `/` | 首页（v2.0 改成两个入口卡片） |
 | `/problems` | 错题列表 |
 | `/problems/:id` | 题目详情（3 种模式） |
-| `/practice` | v2.0 加减法训练参数调整 |
+| `/practice` | v2.0 计算训练参数调整 |
 | `/practice/session` | v2.0 做题页 |
 
 ## 题目架构
@@ -67,7 +67,7 @@ HashRouter（`index.js`），所有路径相对于 `/#/`：
 
 需修改的文件：
 - `src/App.js` → 新增路由
-- `src/components/AppLayout/index.js` → 导航加「加减法训练」
+- `src/components/AppLayout/index.js` → 导航加「计算训练」
 - `src/pages/Home/index.js` → 改造为入口卡片
 - 新增 `src/pages/Practice/{Settings,Session,Result,Stats}/index.js`
 - 新增 `src/utils/mathGenerator.js`, `src/utils/storage.js`
