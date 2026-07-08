@@ -1,9 +1,15 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Layout, Menu, Typography } from 'antd';
-import { HomeOutlined, BookOutlined } from '@ant-design/icons';
+import { HomeOutlined, BookOutlined, CalculatorOutlined } from '@ant-design/icons';
 
 const { Header, Content } = Layout;
+
+function getSelectedKey(pathname) {
+  if (pathname === '/') return '/';
+  if (pathname.startsWith('/practice')) return '/practice';
+  return '/problems';
+}
 
 export default function AppLayout({ children }) {
   const navigate = useNavigate();
@@ -12,6 +18,7 @@ export default function AppLayout({ children }) {
   const menuItems = [
     { key: '/', icon: <HomeOutlined />, label: '首页' },
     { key: '/problems', icon: <BookOutlined />, label: '错题列表' },
+    { key: '/practice', icon: <CalculatorOutlined />, label: '加减法训练' },
   ];
 
   return (
@@ -32,7 +39,7 @@ export default function AppLayout({ children }) {
         <Menu
           theme="dark"
           mode="horizontal"
-          selectedKeys={[location.pathname === '/' ? '/' : '/problems']}
+          selectedKeys={[getSelectedKey(location.pathname)]}
           items={menuItems}
           onClick={({ key, domEvent }) => { domEvent.preventDefault(); navigate(key); }}
           style={{ flex: 1, minWidth: 0 }}
