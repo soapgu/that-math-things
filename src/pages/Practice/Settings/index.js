@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, Slider, InputNumber, Switch, Radio, Rate, Button, Space, Divider } from 'antd';
+import { Card, Slider, Switch, Radio, Rate, Button, Space, Divider } from 'antd';
 import { BarChartOutlined, PlayCircleOutlined, StarFilled } from '@ant-design/icons';
 
 const STORAGE_KEY = 'practice-settings';
@@ -54,18 +54,21 @@ export default function PracticeSettings() {
         <Space direction="vertical" size="small" style={{ width: '100%' }}>
           {/* 运算范围 */}
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ fontWeight: 600, userSelect: 'none' }}>运算范围</span>
-              <InputNumber
-                min={10}
-                max={100}
-                value={settings.range}
-                onChange={(v) => update('range', v)}
-                style={{ width: 140 }}
-                addonAfter="以内"
-                size="small"
-              />
+            <div style={{ fontWeight: 600, marginBottom: 2, userSelect: 'none' }}>
+              运算范围：{settings.range} 以内
             </div>
+            <Slider
+              min={0}
+              max={100}
+              step={null}
+              value={settings.range}
+              onChange={(v) => v >= 20 && update('range', v)}
+              marks={{ 0: '0', 20: '20', 50: '50', 100: '100' }}
+              styles={{
+                track: { height: 10, borderRadius: 5 },
+                rail: { height: 4, borderRadius: 2 },
+              }}
+            />
           </div>
 
           {/* 加法比例 */}
@@ -80,6 +83,10 @@ export default function PracticeSettings() {
               onChange={(v) => update('addRatio', v)}
               marks={{ 0: '全减', 50: '各半', 100: '全加' }}
               tooltip={{ formatter: (v) => `${v}%` }}
+              styles={{
+                track: { height: 10, borderRadius: 5 },
+                rail: { height: 4, borderRadius: 2 },
+              }}
             />
             <span style={{ fontSize: 11, color: '#999', userSelect: 'none' }}>
               剩余 {100 - settings.addRatio}% 为减法
