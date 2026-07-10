@@ -1,5 +1,7 @@
 import { getRandomInt, shuffleArray } from './random';
 
+export const OP_DISPLAY = { '+': '+', '-': '−', '*': '×', '/': '÷' };
+
 /** 判断加法是否涉及进位（个位相加 ≥ 10） */
 function needsCarry(a, b) {
   return (a % 10) + (b % 10) >= 10;

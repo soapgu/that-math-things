@@ -11,7 +11,7 @@ function isQuotaError(e) {
 /**
  * 将一次练习会话的数据加工为持久化记录，每道题调用 markQuestion 批改
  * @param {{ questions: Array, userAnswers: Array, timeSpent: number, settings: Object }} sessionData
- * @returns {{ id: number, date: string, score: number, total: number, correct: number, wrongCount: number, timeSpent: number, settings: Object, results: Array<{isCorrect:boolean, errors:string[], detail:string|null}> }}
+ * @returns {{ id: number, date: string, score: number, total: number, correct: number, wrongCount: number, timeSpent: number, settings: Object, questions: Array, userAnswers: Array, results: Array<{isCorrect:boolean, errors:string[], detail:string|null}> }}
  */
 function buildRecord({ questions, userAnswers, timeSpent, settings }) {
   const results = questions.map((q, i) => markQuestion(q, userAnswers[i]));
@@ -29,6 +29,8 @@ function buildRecord({ questions, userAnswers, timeSpent, settings }) {
     wrongCount,
     timeSpent,
     settings: { ...settings },
+    questions,
+    userAnswers,
     results,
   };
 }

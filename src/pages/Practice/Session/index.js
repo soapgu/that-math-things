@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Typography, Input, Button, Progress } from 'antd';
 import { ArrowRightOutlined, CheckOutlined } from '@ant-design/icons';
-import { generateQuestions } from '../../../utils/mathGenerator';
+import { generateQuestions, OP_DISPLAY } from '../../../utils/mathGenerator';
 import useTimer from '../../../hooks/useTimer';
 
 const STORAGE_KEY = 'practice-settings';
@@ -118,7 +118,7 @@ export default function PracticeSession() {
         }}
       >
         <span style={{ fontSize: 28, fontWeight: 600, userSelect: 'none' }}>
-          {current.a} {current.op === '+' ? '+' : '−'} {current.b} =
+          {current.a} {OP_DISPLAY[current.op]} {current.b} =
         </span>
         <Input
           ref={inputRef}
