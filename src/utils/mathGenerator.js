@@ -12,47 +12,36 @@ function needsBorrow(a, b) {
 
 /**
  * 生成一道加法题
+ * 无限循环直到找到符合条件的 a、b。range≥10 时四种情况（进位/不进位）
+ * 始终有解（如 a=9,b=1 必进位，a=1,b=1 必不进位），不会死循环。
  * @param {number} range - 运算范围（结果不超过此值）
  * @param {boolean} wantCarry - 是否需要进位
  */
 function generateAddition(range, wantCarry) {
-  // 随机试 200 次，找满足进位/不进位条件的题
-  for (let i = 0; i < 200; i++) {
+  for (;;) {
     const a = getRandomInt(1, range - 1);
     const b = getRandomInt(1, range - a);
     if (needsCarry(a, b) === wantCarry) {
-      return { a, b, op: '+', answer: a + b, hasCarry: true, hasBorrow: false };
+      return { a, b, op: '+', answer: a + b, hasCarry: needsCarry(a, b), hasBorrow: false };
     }
   }
-  // 兜底：直接构造符合条件的数据
-  const a = getRandomInt(1, Math.min(range - 1, 9));
-  const b = wantCarry
-    ? getRandomInt(10 - (a % 10), Math.min(9, range - a))
-    : getRandomInt(1, Math.min(9 - (a % 10), range - a));
-  return { a, b, op: '+', answer: a + b, hasCarry: true, hasBorrow: false };
 }
 
 /**
  * 生成一道减法题
+ * 无限循环直到找到符合条件的 a、b。range≥10 时四种情况（退位/不退位）
+ * 始终有解（如 a=10,b=1 必退位，a=9,b=1 必不退位），不会死循环。
  * @param {number} range - 运算范围（被减数不超过此值）
  * @param {boolean} wantBorrow - 是否需要退位
  */
 function generateSubtraction(range, wantBorrow) {
-  // 随机试 200 次，找满足退位/不退位条件的题
-  for (let i = 0; i < 200; i++) {
+  for (;;) {
     const a = getRandomInt(2, range);
     const b = getRandomInt(1, a - 1);
     if (needsBorrow(a, b) === wantBorrow) {
-      return { a, b, op: '-', answer: a - b, hasCarry: false, hasBorrow: true };
+      return { a, b, op: '-', answer: a - b, hasCarry: false, hasBorrow: needsBorrow(a, b) };
     }
   }
-  // 兜底：直接构造符合条件的数据
-  const a = getRandomInt(11, range);
-  const unitsA = a % 10;
-  const b = wantBorrow
-    ? getRandomInt(unitsA + 1, Math.min(9, a - 1))
-    : getRandomInt(1, unitsA);
-  return { a, b: b || 1, op: '-', answer: a - (b || 1), hasCarry: false, hasBorrow: true };
 }
 
 /**
@@ -84,13 +73,13 @@ export function generateQuestions({ range, addRatio, carryBorrowProb, questionCo
 
     if (isAdd) {
       addRemaining--;
-      // 在还需进位题数中按概率扣减
-      const wantCarry = carryRemaining > 0 && Math.random() < carryRemaining / (addRemaining + subRemaining + 1);
+      // 在还需进位题中按概率扣减，分母为剩余总题数，保证配额恰好用完
+      const wantCarry = carryRemaining > 0 && Math.random() < carryRemaining / (addRemaining + subRemaining);
       if (wantCarry) carryRemaining--;
       questions.push(generateAddition(range, wantCarry));
     } else {
       subRemaining--;
-      const wantBorrow = carryRemaining > 0 && Math.random() < carryRemaining / (addRemaining + subRemaining + 1);
+      const wantBorrow = carryRemaining > 0 && Math.random() < carryRemaining / (addRemaining + subRemaining);
       if (wantBorrow) carryRemaining--;
       questions.push(generateSubtraction(range, wantBorrow));
     }
