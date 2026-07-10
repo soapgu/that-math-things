@@ -45,7 +45,11 @@ export default function PracticeResult() {
   if (!record) return null;
 
   const { score, total, correct, wrongCount, timeSpent, results, questions, userAnswers } = record;
-  const passed = score >= 60;
+  const grade = score >= 100 ? { label: 'A🌟 完美', color: '#faad14' }
+    : score >= 90  ? { label: 'A 优秀',   color: '#52c41a' }
+    : score >= 80  ? { label: 'B 良好',   color: '#1677ff' }
+    : score >= 60  ? { label: 'C 一般',   color: '#999' }
+    :                { label: 'F 不及格', color: '#ff4d4f' };
 
   const errorCount = {};
   results.forEach(r => {
@@ -72,12 +76,12 @@ export default function PracticeResult() {
 
       {/* 得分卡片 */}
       <Card style={{ textAlign: 'center', marginBottom: 24 }}>
-        <div style={{ fontSize: 64, fontWeight: 700, color: passed ? '#52c41a' : '#ff4d4f' }}>
+        <div style={{ fontSize: 64, fontWeight: 700, color: grade.color }}>
           {score}
           <span style={{ fontSize: 24, color: '#999', marginLeft: 4 }}>分</span>
         </div>
-        <div style={{ marginTop: 8, color: passed ? '#52c41a' : '#ff4d4f', fontSize: 16, userSelect: 'none' }}>
-          {passed ? '🎉 及格' : '💪 再接再厉'}
+        <div style={{ marginTop: 8, color: grade.color, fontSize: 16, userSelect: 'none' }}>
+          {grade.label}
         </div>
         <Row gutter={16} style={{ marginTop: 20, textAlign: 'center' }}>
           <Col span={8}>
