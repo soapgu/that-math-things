@@ -131,9 +131,9 @@ CBA     4 次 ← 偏少
 - [Fisher–Yates shuffle - Wikipedia](https://en.wikipedia.org/wiki/Fisher%E2%80%93Yates_shuffle)
 - [The Danger of Naïveté - Coding Horror](https://blog.codinghorror.com/the-danger-of-naivete/)
 - [How to shuffle correctly - Mike Bostock](https://bost.ocks.org/mike/shuffle/)
-- [Array.prototype.sort() 做随机排序的问题](https://www.robweir.com/blog/2010/02/microsoft-random-browser-ballot.html) — 解释了为什么 `arr.sort(() => Math.random() - 0.5)` 也不是等概率
 
 ### 中文
 - [洗牌算法详解 - 掘金](https://juejin.cn/post/7611525240981176354) — 含 Fisher-Yates 正确性证明、Sattolo 算法、蓄水池抽样
 - [Fisher–Yates shuffle 洗牌算法 - HyG](https://gaohaoyang.github.io/2016/10/16/shuffle-algorithm) — 含迭代步骤表与动画演示
 - [洗牌算法 - 小傅哥 bugstack 虫洞栈](https://bugstack.cn/md/algorithm/logic/sets/2023-02-10-fisher-yates.html) — 业务场景驱动（考试题目乱序、答案选项乱序）
+- [Microsoft's Browser Ballot 洗牌问题](https://www.robweir.com/blog/2010/02/microsoft-random-browser-ballot.html) — `arr.sort(() => Math.random() - 0.5)` 导致的概率不均
