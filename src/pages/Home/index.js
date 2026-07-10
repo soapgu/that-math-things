@@ -37,7 +37,7 @@ export default function Home() {
           <Col xs={24} sm={12} md={10} key={entry.key}>
             <Card
               hoverable
-              style={{ borderRadius: 12, padding: '24px 16px' }}
+              style={{ borderRadius: 12, padding: '24px 16px', height: '100%' }}
               onClick={() => navigate(entry.path)}
             >
               <div style={{ marginBottom: 16 }}>{entry.icon}</div>

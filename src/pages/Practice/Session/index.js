@@ -124,7 +124,7 @@ export default function PracticeSession() {
           flexWrap: 'wrap',
         }}
       >
-        <span style={{ fontSize: 28, fontWeight: 600, userSelect: 'none' }}>
+        <span style={{ fontSize: 48, fontWeight: 600, userSelect: 'none' }}>
           {current.a} {OP_DISPLAY[current.op]} {current.b} =
         </span>
         <Input
@@ -135,14 +135,14 @@ export default function PracticeSession() {
           onKeyDown={handleKeyDown}
           placeholder="?"
           autoFocus
-          style={{ width: 100, textAlign: 'center', fontSize: 20 }}
+          style={{ width: 130, textAlign: 'center', fontSize: 40, fontWeight: 600 }}
         />
         <Button
           type="primary"
-          size="large"
           icon={isLast ? <CheckOutlined /> : <ArrowRightOutlined />}
           onClick={handleSubmit}
           disabled={!inputValue.trim()}
+          style={{ height: 48, fontSize: 22 }}
         >
           {isLast ? '完成' : '下一题'}
         </Button>
