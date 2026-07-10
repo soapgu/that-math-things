@@ -121,10 +121,9 @@ export default function PracticeSession() {
           justifyContent: 'center',
           gap: 12,
           margin: '48px 0',
-          flexWrap: 'wrap',
         }}
       >
-        <span style={{ fontSize: 48, fontWeight: 600, userSelect: 'none' }}>
+        <span style={{ fontSize: 48, fontWeight: 600, userSelect: 'none', whiteSpace: 'nowrap' }}>
           {current.a} {OP_DISPLAY[current.op]} {current.b} =
         </span>
         <Input
