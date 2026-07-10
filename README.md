@@ -28,9 +28,9 @@
 
 | 类别 | 选择 |
 | --- | --- |
-| 框架 | Create React App (React 18) |
+| 框架 | Create React App (React 19) |
 | 语言 | JavaScript (ES6+) |
-| UI 组件库 | Ant Design 5 |
+| UI 组件库 | Ant Design 6 |
 | 路由 | react-router-dom v6 |
 | 动画引擎 | framer-motion |
 | 图形 | `motion.div` + CSS（非 SVG，用 DOM 元素配合 framer-motion 属性动画实现） |
@@ -43,9 +43,13 @@
 
 | 路由 | 页面 | 说明 |
 | --- | --- | --- |
-| `/` | 首页 | 错题入口卡片，展示所有题目 |
+| `/` | 首页 | 两个入口卡片：错题列表 / 计算训练 |
 | `/problems` | 题目列表 | 按知识点分类展示 |
 | `/problems/:id` | 题目详情 | 三种互动模式切换 + 随机换参 |
+| `/practice` | 计算训练参数 | 调整运算范围/比例/概率/辅助运算/题数 |
+| `/practice/session` | 计算训练做题 | 计时 + 随机出题 + 提交下一题 |
+| `/practice/result` | 结算页 | 批改得分 + 错误分析 + 逐题详情 |
+| `/practice/stats` | 统计数据 | 历史记录 + 错误分布统计 |
 
 ### 三种互动模式
 
@@ -161,9 +165,14 @@ that-math-things/
 │   │       ├── AppleEaten/            # 题3 吃苹果
 │   │       └── BasketChange/          # 题4 增减问题
 │   ├── pages/                         # 页面
-│   │   ├── Home/                      # 首页
+│   │   ├── Home/                      # 首页（两个入口卡片）
 │   │   ├── Problems/                  # 题目列表
-│   │   └── ProblemDetail/             # 题目详情（三种模式）
+│   │   ├── ProblemDetail/             # 题目详情（三种模式）
+│   │   └── Practice/                  # v2.0 计算训练
+│   │       ├── Settings/              # 参数调整页
+│   │       ├── Session/               # 做题页
+│   │       ├── Result/                # 结算页
+│   │       └── Stats/                 # 统计数据页
 │   ├── problems/                      # 题目数据定义
 │   │   ├── registry.js                # 题目注册表
 │   │   └── data/                      # 每题的定义 + 参数生成器
@@ -172,9 +181,13 @@ that-math-things/
 │   │       ├── appleEaten.js
 │   │       └── basketChange.js
 │   ├── hooks/                         # 自定义 Hooks
-│   │   └── useGuidedSolve.js          # 辅助解题状态机
+│   │   ├── useGuidedSolve.js          # 辅助解题状态机
+│   │   └── useTimer.js                # v2.0 计时器
 │   ├── utils/
-│   │   └── random.js                  # 随机参数生成工具
+│   │   ├── random.js                  # 随机参数生成工具
+│   │   ├── mathGenerator.js           # v2.0 计算题生成器
+│   │   ├── marking.js                 # v2.0 批改引擎
+│   │   └── storage.js                 # v2.0 localStorage 存储
 │   ├── App.js                         # 路由配置
 │   └── index.js                       # 入口
 ├── .gitignore
@@ -523,9 +536,10 @@ src/
 
 - 百分制得分：`正确数 / 总数 × 100`
 - 总用时显示
-- 逐题批改：题目、用户答案、正确答案、对错标记
-- 错误原因分类：进位错误 / 退位错误 / 计算错误
-- 「再来一轮」「返回首页」按钮
+- 错误分析标签：错误类型 × 次数展示
+- 逐题详情：题目、用户答案（划线）、正确答案、对错标记、错误标签 + 点评文案
+- 存储空间不足自动清理最旧 100 条并提示
+- 「再来一次」「统计数据」「返回首页」按钮
 - 自动保存记录到 localStorage
 
 ### 统计数据页
@@ -543,11 +557,12 @@ src/
 {
   records: [
     {
-      id, date, score, total, correct,
-      timeSpent, settings, errors: [
-        { type: '进位错误', count },
-        { type: '退位错误', count },
-        { type: '计算错误', count },
+      id, date, score, total, correct, wrongCount,
+      timeSpent, settings,
+      questions: [ /* 原题数据 */ ],
+      userAnswers: [ /* 用户答案 */ ],
+      results: [
+        { isCorrect, errors: string[], detail: string|null }
       ]
     }
   ]
@@ -556,21 +571,21 @@ src/
 
 ### 分阶段实施
 
-#### Phase 1：基础设施 + 参数调整 + 基础做题
+#### ✅ Phase 1：基础设施 + 参数调整 + 基础做题
 
-| 步骤 | 内容 |
-|---|---|
-| 1a | 路由新增 `/practice` 系列 + 导航栏「计算训练」+ 首页改造为两个入口卡片 |
-| 1b | 参数调整页（范围/比例/概率/数量 + 辅助运算开关 + 破十法/平十法） |
-| 1c | `mathGenerator.js` 题目生成器 + `useTimer.js` 计时器 |
-| 1d | 基础做题页（无辅助运算，提交→直接下一题） |
+| 步骤 | 内容 | 状态 |
+|---|---|---|
+| 1a | 路由新增 `/practice` 系列 + 导航栏「计算训练」+ 首页改造为两个入口卡片 | ✅ |
+| 1b | 参数调整页（范围/比例/概率/数量 + 辅助运算开关 + 破十法/平十法） | ✅ |
+| 1c | `mathGenerator.js` 题目生成器 + `useTimer.js` 计时器 | ✅ |
+| 1d | 基础做题页（无辅助运算，提交→直接下一题） | ✅ |
 
-#### Phase 2：结算 + 错误分析
+#### ✅ Phase 2：结算 + 错误分析
 
-| 步骤 | 内容 |
-|---|---|
-| 2a | `storage.js` 数据存储 |
-| 2b | 结算页（分数/用时/逐题批改/错误原因分类），形成完整训练闭环 |
+| 步骤 | 内容 | 状态 |
+|---|---|---|
+| 2a | `storage.js` 数据存储 + `marking.js` 批改引擎 | ✅ |
+| 2b | 结算页（分数/用时/逐题批改/错误原因分类），形成完整训练闭环 | ✅ |
 
 #### Phase 3：辅助运算 + 破十法/平十法
 
