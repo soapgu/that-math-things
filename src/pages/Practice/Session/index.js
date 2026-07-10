@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Typography, Input, Button, Progress, Space } from 'antd';
+import { Typography, Input, Button, Progress } from 'antd';
 import { ArrowRightOutlined, CheckOutlined } from '@ant-design/icons';
 import { generateQuestions } from '../../../utils/mathGenerator';
 import useTimer from '../../../hooks/useTimer';
@@ -106,24 +106,29 @@ export default function PracticeSession() {
         />
       </div>
 
-      {/* 题目 */}
-      <div style={{ margin: '48px 0' }}>
-        <Typography.Title level={1} style={{ fontSize: 48, margin: 0, letterSpacing: 4 }}>
+      {/* 题目 + 输入区 */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 12,
+          margin: '48px 0',
+          flexWrap: 'wrap',
+        }}
+      >
+        <span style={{ fontSize: 28, fontWeight: 600, userSelect: 'none' }}>
           {current.a} {current.op === '+' ? '+' : '−'} {current.b} =
-        </Typography.Title>
-      </div>
-
-      {/* 输入区 */}
-      <Space.Compact style={{ width: '100%', maxWidth: 280 }}>
+        </span>
         <Input
           ref={inputRef}
           size="large"
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="输入答案"
+          placeholder="?"
           autoFocus
-          style={{ textAlign: 'center', fontSize: 20 }}
+          style={{ width: 100, textAlign: 'center', fontSize: 20 }}
         />
         <Button
           type="primary"
@@ -134,7 +139,7 @@ export default function PracticeSession() {
         >
           {isLast ? '完成' : '下一题'}
         </Button>
-      </Space.Compact>
+      </div>
     </div>
   );
 }
