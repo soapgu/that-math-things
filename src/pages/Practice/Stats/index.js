@@ -43,6 +43,7 @@ function useECharts(ref, option) {
 
 export default function PracticeStats() {
   const [refreshKey, setRefreshKey] = useState(0);
+  const [showAll, setShowAll] = useState(false);
 
   const stats = useMemo(() => getStats(), [refreshKey]);
   const records = useMemo(() => getPracticeRecords(), [refreshKey]);
@@ -53,6 +54,7 @@ export default function PracticeStats() {
   }, []);
 
   const hasData = records.length > 0;
+  const displayRecords = showAll ? records : records.slice(0, 5);
 
   const pieOption = useMemo(() => {
     if (stats.errorDistribution.length === 0) return null;
@@ -62,13 +64,17 @@ export default function PracticeStats() {
         formatter: '{b}: {c} 次 ({d}%)',
       },
       legend: {
-        bottom: 0,
+        orient: 'vertical',
+        right: 10,
+        top: 'center',
+        itemGap: 8,
         textStyle: { fontSize: 12 },
       },
       series: [
         {
           type: 'pie',
-          radius: ['45%', '70%'],
+          center: ['28%', '50%'],
+          radius: ['40%', '60%'],
           avoidLabelOverlap: true,
           itemStyle: {
             borderRadius: 4,
@@ -134,39 +140,39 @@ export default function PracticeStats() {
   useECharts(lineRef, lineOption);
 
   return (
-    <div style={{ maxWidth: 600, margin: '0 auto' }}>
+    <div style={{ maxWidth: 720, margin: '0 auto' }}>
       <Typography.Title level={3} style={{ textAlign: 'center' }}>
         统计数据
       </Typography.Title>
 
-      <Row gutter={[12, 12]} style={{ marginBottom: 24 }}>
-        <Col span={12}>
+      <Row gutter={8} style={{ marginBottom: 16 }}>
+        <Col span={6}>
           <Card size="small" style={{ textAlign: 'center' }}>
-            <Statistic title="练习次数" value={stats.totalPractices} />
+            <Statistic title="练习次数" value={stats.totalPractices} valueStyle={{ fontSize: 20 }} />
           </Card>
         </Col>
-        <Col span={12}>
+        <Col span={6}>
           <Card size="small" style={{ textAlign: 'center' }}>
-            <Statistic title="总题数" value={stats.totalQuestions} />
+            <Statistic title="总题数" value={stats.totalQuestions} valueStyle={{ fontSize: 20 }} />
           </Card>
         </Col>
-        <Col span={12}>
+        <Col span={6}>
           <Card size="small" style={{ textAlign: 'center' }}>
             <Statistic
               title="平均分"
               value={stats.avgScore}
               suffix="分"
-              valueStyle={{ color: scoreColor(stats.avgScore) }}
+              valueStyle={{ fontSize: 20, color: scoreColor(stats.avgScore) }}
             />
           </Card>
         </Col>
-        <Col span={12}>
+        <Col span={6}>
           <Card size="small" style={{ textAlign: 'center' }}>
             <Statistic
               title="最高分"
               value={stats.bestScore}
               suffix="分"
-              valueStyle={{ color: scoreColor(stats.bestScore) }}
+              valueStyle={{ fontSize: 20, color: scoreColor(stats.bestScore) }}
             />
           </Card>
         </Col>
@@ -176,17 +182,22 @@ export default function PracticeStats() {
         <Empty description="暂无练习记录" style={{ margin: '64px 0' }} />
       ) : (
         <>
-          {pieOption && (
-            <Card title="错误分布" size="small" style={{ marginBottom: 24 }}>
-              <div ref={pieRef} style={{ height: 260 }} />
-            </Card>
-          )}
-
-          {lineOption && (
-            <Card title="分数趋势" size="small" style={{ marginBottom: 24 }}>
-              <div ref={lineRef} style={{ height: 220 }} />
-            </Card>
-          )}
+          <Row gutter={12}>
+            <Col span={12}>
+              {pieOption && (
+                <Card title="错误分布" size="small" style={{ marginBottom: 16 }}>
+                  <div ref={pieRef} style={{ height: 200 }} />
+                </Card>
+              )}
+            </Col>
+            <Col span={12}>
+              {lineOption && (
+                <Card title="分数趋势" size="small" style={{ marginBottom: 16 }}>
+                  <div ref={lineRef} style={{ height: 200 }} />
+                </Card>
+              )}
+            </Col>
+          </Row>
 
           <Card
             title="历史记录"
@@ -207,7 +218,7 @@ export default function PracticeStats() {
             }
           >
             <List
-              dataSource={records}
+              dataSource={displayRecords}
               renderItem={(record) => {
                 const errors = (record.results || []).reduce((acc, r) => {
                   if (!r.isCorrect) {
@@ -219,7 +230,7 @@ export default function PracticeStats() {
                 }, []);
 
                 return (
-                  <List.Item style={{ padding: '12px 0' }}>
+                  <List.Item style={{ padding: '8px 0' }}>
                     <div style={{ width: '100%' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <span style={{ fontSize: 13, color: '#999' }}>
@@ -248,6 +259,13 @@ export default function PracticeStats() {
                 );
               }}
             />
+            {records.length > 5 && !showAll && (
+              <div style={{ textAlign: 'center', marginTop: 8 }}>
+                <Button type="link" onClick={() => setShowAll(true)}>
+                  展开全部 ({records.length} 条)
+                </Button>
+              </div>
+            )}
           </Card>
         </>
       )}
