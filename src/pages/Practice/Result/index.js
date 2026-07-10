@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Typography, Button, Tag, List, Row, Col, Card, Statistic, Alert } from 'antd';
 import { CheckCircleOutlined, CloseCircleOutlined, ReloadOutlined, HomeOutlined, BarChartOutlined } from '@ant-design/icons';
@@ -17,8 +17,11 @@ export default function PracticeResult() {
   const location = useLocation();
   const [record, setRecord] = useState(null);
   const [pruned, setPruned] = useState(0);
+  const savedRef = useRef(false);
 
   useEffect(() => {
+    if (savedRef.current) return;
+    savedRef.current = true;
     const state = location.state;
     if (!state?.questions?.length) {
       navigate('/practice', { replace: true });
