@@ -4,14 +4,7 @@ import { Typography, Button, Tag, List, Row, Col, Card, Statistic, Alert } from 
 import { CheckCircleOutlined, CloseCircleOutlined, ReloadOutlined, HomeOutlined, BarChartOutlined } from '@ant-design/icons';
 import { savePracticeRecord } from '../../../utils/storage';
 import { OP_DISPLAY } from '../../../utils/mathGenerator';
-
-const ERROR_COLORS = {
-  '进位错误': 'blue',
-  '凑十法计算错误': 'gold',
-  '借位错误': 'red',
-  '平十/破十法计算错误': 'purple',
-  '计算错误': 'default',
-};
+import { ERROR_CONFIG } from '../../../utils/marking';
 
 function formatDuration(seconds) {
   const m = Math.floor(seconds / 60);
@@ -101,7 +94,7 @@ export default function PracticeResult() {
         <Card title="错误分析" size="small" style={{ marginBottom: 24 }}>
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
             {Object.entries(errorCount).map(([type, count]) => (
-              <Tag key={type} color={ERROR_COLORS[type] || 'default'}>
+              <Tag key={type} color={(ERROR_CONFIG.find(c => c.type === type) || {}).tagColor}>
                 {type} ×{count}
               </Tag>
             ))}
@@ -152,7 +145,7 @@ export default function PracticeResult() {
                   {result.errors.length > 0 && (
                     <div style={{ marginTop: 6, display: 'flex', gap: 4, flexWrap: 'wrap', alignItems: 'center' }}>
                       {result.errors.map(e => (
-                        <Tag key={e} color={ERROR_COLORS[e] || 'default'} style={{ margin: 0 }}>{e}</Tag>
+                        <Tag key={e} color={(ERROR_CONFIG.find(c => c.type === e) || {}).tagColor} style={{ margin: 0 }}>{e}</Tag>
                       ))}
                       {result.detail && (
                         <span style={{ fontSize: 13, color: '#999', lineHeight: '22px', userSelect: 'none' }}>

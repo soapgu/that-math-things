@@ -1,14 +1,18 @@
-const DETAIL_MAP = {
-  '进位错误': '忘记进位',
-  '凑十法计算错误': '个位凑十计算错误',
-  '借位错误': '忘记退位',
-  '平十/破十法计算错误': '个位平十/破十计算错误',
-  '计算错误': '计算结果不正确',
-};
+export const ERROR_CONFIG = [
+  { type: '进位错误',        detail: '忘记进位',                  tagColor: 'blue',    barColor: '#1677ff' },
+  { type: '凑十法计算错误',   detail: '个位凑十计算错误',          tagColor: 'gold',    barColor: '#faad14' },
+  { type: '借位错误',        detail: '忘记退位',                  tagColor: 'red',     barColor: '#ff4d4f' },
+  { type: '平十/破十法计算错误', detail: '个位平十/破十计算错误',  tagColor: 'purple',  barColor: '#722ed1' },
+  { type: '计算错误',        detail: '计算结果不正确',            tagColor: 'default', barColor: '#d9d9d9' },
+];
+
+function config(type) {
+  return ERROR_CONFIG.find(c => c.type === type);
+}
 
 function buildDetail(errors) {
   if (errors.length === 0) return null;
-  return errors.map(e => DETAIL_MAP[e] || e).join('，');
+  return errors.map(e => (config(e) || {}).detail || e).join('，');
 }
 
 /**
