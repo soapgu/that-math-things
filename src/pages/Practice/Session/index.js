@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Typography, Input, Button, Progress } from 'antd';
+import { Typography, Input, Button, Progress, message } from 'antd';
 import { ArrowRightOutlined, CheckOutlined } from '@ant-design/icons';
 import { generateQuestions, OP_DISPLAY } from '../../../utils/mathGenerator';
 import useTimer from '../../../hooks/useTimer';
@@ -56,6 +56,13 @@ export default function PracticeSession() {
   const handleSubmit = useCallback(() => {
     const trimmed = inputValue.trim();
     if (trimmed === '') return;
+
+    if (!/^-?\d+$/.test(trimmed)) {
+      message.warning('请输入数字');
+      setInputValue('');
+      inputRef.current?.focus();
+      return;
+    }
 
     const newAnswers = [...userAnswers, trimmed];
     setUserAnswers(newAnswers);
