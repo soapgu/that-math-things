@@ -81,7 +81,7 @@ export function markQuestion(question, userAnswer) {
     }
 
     if (hasBorrowMistake) errors.push('借位错误');
-    if (hasOnesMistake) errors.push('平十/破十法计算错误');
+    if (hasOnesMistake && question.a !== 10) errors.push('平十/破十法计算错误');
   }
 
   if (errors.length === 0) {

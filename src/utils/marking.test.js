@@ -128,6 +128,34 @@ describe('markQuestion', () => {
     });
   });
 
+  describe('a=10 减法退位降级', () => {
+    const q = { a: 10, b: 2, op: '-', answer: 8, hasCarry: false, hasBorrow: true };
+
+    it('user=3 → 仅个位错 → 计算错误（降级，不退位是10以内基础）', () => {
+      expect(markQuestion(q, 3)).toEqual({
+        isCorrect: false,
+        errors: ['计算错误'],
+        detail: '计算结果不正确',
+      });
+    });
+
+    it('user=13 → 十位多1 + 个位错 → 仅借位错误', () => {
+      expect(markQuestion(q, 13)).toEqual({
+        isCorrect: false,
+        errors: ['借位错误'],
+        detail: '忘记退位',
+      });
+    });
+
+    it('user=17 → 十位多1 + 个位正确 → 仅借位错误', () => {
+      expect(markQuestion(q, 17)).toEqual({
+        isCorrect: false,
+        errors: ['借位错误'],
+        detail: '忘记退位',
+      });
+    });
+  });
+
   describe('多位数减法退位', () => {
     const q = { a: 42, b: 18, op: '-', answer: 24, hasCarry: false, hasBorrow: true };
 
