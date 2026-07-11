@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Typography, Button, Tag, List, Row, Col, Card, Statistic, Popconfirm, Empty } from 'antd';
 import { DeleteOutlined, ReloadOutlined } from '@ant-design/icons';
 import * as echarts from 'echarts';
@@ -42,6 +43,7 @@ function useECharts(ref, option) {
 }
 
 export default function PracticeStats() {
+  const navigate = useNavigate();
   const [refreshKey, setRefreshKey] = useState(0);
   const [showAll, setShowAll] = useState(false);
 
@@ -236,9 +238,14 @@ export default function PracticeStats() {
                         <span style={{ fontSize: 13, color: '#999' }}>
                           {formatDate(record.date)}
                         </span>
-                        <span style={{ fontSize: 16, fontWeight: 600, color: scoreColor(record.score) }}>
-                          {record.score}分
-                        </span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <span style={{ fontSize: 16, fontWeight: 600, color: scoreColor(record.score) }}>
+                            {record.score}分
+                          </span>
+                          <Button size="small" onClick={() => navigate('/practice/result', { state: { record } })}>
+                            详情
+                          </Button>
+                        </div>
                       </div>
                       <div style={{ marginTop: 4, display: 'flex', gap: 12, fontSize: 13, color: '#666' }}>
                         <span>正确 {record.correct}/{record.total}</span>
