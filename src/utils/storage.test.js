@@ -86,7 +86,7 @@ describe('错误分类', () => {
       timeSpent: 30,
       settings: mockSettings,
     });
-    expect(record.results[0].errors).toEqual(['进位错误', '凑十法计算错误']);
+    expect(record.results[0].errors).toEqual(['严重错误', '进位错误', '凑十法计算错误']);
     expect(record.results[1].errors).toEqual(['进位错误', '凑十法计算错误']);
     // 15-8=7, user=0 → 十位正确（0=0），个位错 → 只命中平十/破十法
     expect(record.results[2].errors).toEqual(['平十/破十法计算错误']);

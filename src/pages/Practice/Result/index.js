@@ -139,11 +139,19 @@ export default function PracticeResult() {
                       {result.errors.map(e => (
                         <Tag key={e} color={(ERROR_CONFIG.find(c => c.type === e) || {}).tagColor} style={{ margin: 0 }}>{e}</Tag>
                       ))}
-                      {result.detail && (
-                        <span style={{ fontSize: 13, color: '#999', lineHeight: '22px', userSelect: 'none' }}>
-                          — {result.detail}
-                        </span>
-                      )}
+                      {result.detail && (() => {
+                        const parts = Array.isArray(result.detail) ? result.detail : [{ text: result.detail, bold: false }];
+                        return (
+                          <span style={{ fontSize: 13, color: '#999', lineHeight: '22px', userSelect: 'none' }}>
+                            — {parts.map((p, i) => (
+                              <React.Fragment key={i}>
+                                {i > 0 && '，'}
+                                <span style={p.bold ? { fontWeight: 700, color: '#ff4d4f' } : undefined}>{p.text}</span>
+                              </React.Fragment>
+                            ))}
+                          </span>
+                        );
+                      })()}
                     </div>
                   )}
                 </div>

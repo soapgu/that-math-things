@@ -14,7 +14,7 @@ describe('markQuestion', () => {
       expect(markQuestion(q, 5)).toEqual({
         isCorrect: false,
         errors: ['计算错误'],
-        detail: '计算结果不正确',
+        detail: [{ text: '计算结果不正确', bold: false }],
       });
     });
   });
@@ -26,7 +26,7 @@ describe('markQuestion', () => {
       expect(markQuestion(q, 1)).toEqual({
         isCorrect: false,
         errors: ['进位错误'],
-        detail: '忘记进位',
+        detail: [{ text: '忘记进位', bold: false }],
       });
     });
 
@@ -34,7 +34,7 @@ describe('markQuestion', () => {
       expect(markQuestion(q, 12)).toEqual({
         isCorrect: false,
         errors: ['凑十法计算错误'],
-        detail: '个位凑十计算错误',
+        detail: [{ text: '个位凑十计算错误', bold: false }],
       });
     });
 
@@ -42,44 +42,54 @@ describe('markQuestion', () => {
       expect(markQuestion(q, 3)).toEqual({
         isCorrect: false,
         errors: ['进位错误', '凑十法计算错误'],
-        detail: '忘记进位，个位凑十计算错误',
+        detail: [{ text: '忘记进位', bold: false }, { text: '个位凑十计算错误', bold: false }],
       });
     });
 
-    it('十位差非 1 → 只命中凑十法', () => {
+    it('十位差非 1 → 只命中凑十法 + 所有数位全错', () => {
       expect(markQuestion(q, 20)).toEqual({
         isCorrect: false,
-        errors: ['凑十法计算错误'],
-        detail: '个位凑十计算错误',
+        errors: ['严重错误', '凑十法计算错误'],
+        detail: [
+          { text: '每一位计算结果都不正确', bold: true },
+          { text: '个位凑十计算错误', bold: false },
+        ],
       });
     });
   });
 
   describe('多位数加法进位', () => {
+    const q1 = { a: 23, b: 28, op: '+', answer: 51, hasCarry: true, hasBorrow: false };
+
     it('23+28=51, user=41 → 进位错误', () => {
-      const q = { a: 23, b: 28, op: '+', answer: 51, hasCarry: true, hasBorrow: false };
-      expect(markQuestion(q, 41)).toEqual({
+      expect(markQuestion(q1, 41)).toEqual({
         isCorrect: false,
         errors: ['进位错误'],
-        detail: '忘记进位',
+        detail: [{ text: '忘记进位', bold: false }],
       });
     });
 
-    it('23+28=51, user=42 → 进位+凑十', () => {
-      const q = { a: 23, b: 28, op: '+', answer: 51, hasCarry: true, hasBorrow: false };
-      expect(markQuestion(q, 42)).toEqual({
+    it('23+28=51, user=42 → 进位+凑十 + 所有数位全错', () => {
+      expect(markQuestion(q1, 42)).toEqual({
         isCorrect: false,
-        errors: ['进位错误', '凑十法计算错误'],
-        detail: '忘记进位，个位凑十计算错误',
+        errors: ['严重错误', '进位错误', '凑十法计算错误'],
+        detail: [
+          { text: '每一位计算结果都不正确', bold: true },
+          { text: '忘记进位', bold: false },
+          { text: '个位凑十计算错误', bold: false },
+        ],
       });
     });
 
-    it('50+50=100, user=50 → 进位错误（百位差 1）', () => {
-      const q = { a: 50, b: 50, op: '+', answer: 100, hasCarry: true, hasBorrow: false };
-      expect(markQuestion(q, 50)).toEqual({
+    it('50+50=100, user=50 → 严重错误(直接抄数) + 进位错误', () => {
+      const q2 = { a: 50, b: 50, op: '+', answer: 100, hasCarry: true, hasBorrow: false };
+      expect(markQuestion(q2, 50)).toEqual({
         isCorrect: false,
-        errors: ['进位错误'],
-        detail: '忘记进位',
+        errors: ['严重错误', '进位错误'],
+        detail: [
+          { text: '直接抄了题目中的数字', bold: true },
+          { text: '忘记进位', bold: false },
+        ],
       });
     });
   });
@@ -91,7 +101,7 @@ describe('markQuestion', () => {
       expect(markQuestion(q, 17)).toEqual({
         isCorrect: false,
         errors: ['借位错误'],
-        detail: '忘记退位',
+        detail: [{ text: '忘记退位', bold: false }],
       });
     });
 
@@ -99,7 +109,7 @@ describe('markQuestion', () => {
       expect(markQuestion(q, 4)).toEqual({
         isCorrect: false,
         errors: ['平十/破十法计算错误'],
-        detail: '个位平十/破十计算错误',
+        detail: [{ text: '个位平十/破十计算错误', bold: false }],
       });
     });
 
@@ -107,7 +117,10 @@ describe('markQuestion', () => {
       expect(markQuestion(q, 13)).toEqual({
         isCorrect: false,
         errors: ['借位错误', '平十/破十法计算错误'],
-        detail: '忘记退位，个位平十/破十计算错误',
+        detail: [
+          { text: '忘记退位', bold: false },
+          { text: '个位平十/破十计算错误', bold: false },
+        ],
       });
     });
 
@@ -115,7 +128,7 @@ describe('markQuestion', () => {
       expect(markQuestion(q, 20)).toEqual({
         isCorrect: false,
         errors: ['平十/破十法计算错误'],
-        detail: '个位平十/破十计算错误',
+        detail: [{ text: '个位平十/破十计算错误', bold: false }],
       });
     });
 
@@ -123,7 +136,7 @@ describe('markQuestion', () => {
       expect(markQuestion(q, 27)).toEqual({
         isCorrect: false,
         errors: ['计算错误'],
-        detail: '计算结果不正确',
+        detail: [{ text: '计算结果不正确', bold: false }],
       });
     });
   });
@@ -131,11 +144,11 @@ describe('markQuestion', () => {
   describe('a=10 减法退位降级', () => {
     const q = { a: 10, b: 2, op: '-', answer: 8, hasCarry: false, hasBorrow: true };
 
-    it('user=3 → 仅个位错 → 计算错误（降级，不退位是10以内基础）', () => {
+    it('user=3 → 仅个位错 → 计算错误（降级）', () => {
       expect(markQuestion(q, 3)).toEqual({
         isCorrect: false,
         errors: ['计算错误'],
-        detail: '计算结果不正确',
+        detail: [{ text: '计算结果不正确', bold: false }],
       });
     });
 
@@ -143,7 +156,7 @@ describe('markQuestion', () => {
       expect(markQuestion(q, 13)).toEqual({
         isCorrect: false,
         errors: ['借位错误'],
-        detail: '忘记退位',
+        detail: [{ text: '忘记退位', bold: false }],
       });
     });
 
@@ -151,7 +164,7 @@ describe('markQuestion', () => {
       expect(markQuestion(q, 17)).toEqual({
         isCorrect: false,
         errors: ['借位错误'],
-        detail: '忘记退位',
+        detail: [{ text: '忘记退位', bold: false }],
       });
     });
   });
@@ -163,7 +176,7 @@ describe('markQuestion', () => {
       expect(markQuestion(q, 34)).toEqual({
         isCorrect: false,
         errors: ['借位错误'],
-        detail: '忘记退位',
+        detail: [{ text: '忘记退位', bold: false }],
       });
     });
 
@@ -171,7 +184,7 @@ describe('markQuestion', () => {
       expect(markQuestion(q, 26)).toEqual({
         isCorrect: false,
         errors: ['平十/破十法计算错误'],
-        detail: '个位平十/破十计算错误',
+        detail: [{ text: '个位平十/破十计算错误', bold: false }],
       });
     });
   });
