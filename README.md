@@ -52,6 +52,8 @@
 
 ## 功能概览
 
+![首页](screenshots/home.png)
+
 ```mermaid
 mindmap
   root((那年那数那些事))
