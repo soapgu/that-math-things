@@ -1,13 +1,13 @@
 {
   "files": {
     "main.css": "/that-math-things/static/css/main.598626c5.css",
-    "main.js": "/that-math-things/static/js/main.85723e5d.js",
+    "main.js": "/that-math-things/static/js/main.a9ad328f.js",
     "index.html": "/that-math-things/index.html",
     "main.598626c5.css.map": "/that-math-things/static/css/main.598626c5.css.map",
-    "main.85723e5d.js.map": "/that-math-things/static/js/main.85723e5d.js.map"
+    "main.a9ad328f.js.map": "/that-math-things/static/js/main.a9ad328f.js.map"
   },
   "entrypoints": [
     "static/css/main.598626c5.css",
-    "static/js/main.85723e5d.js"
+    "static/js/main.a9ad328f.js"
   ]
 }
