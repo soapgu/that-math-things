@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { Typography, Input, Button, Progress, message } from 'antd';
 import { ArrowRightOutlined, CheckOutlined } from '@ant-design/icons';
 import { generateQuestions, OP_DISPLAY } from '../../../utils/mathGenerator';
+import { savePracticeRecord } from '../../../utils/storage';
 import useTimer from '../../../hooks/useTimer';
 
 const STORAGE_KEY = 'practice-settings';
@@ -70,13 +71,14 @@ export default function PracticeSession() {
 
     if (currentIndex >= questions.length - 1) {
       timer.stop();
+      const record = savePracticeRecord({
+        questions,
+        userAnswers: newAnswers,
+        timeSpent: timer.seconds,
+        settings,
+      });
       navigate('/practice/result', {
-        state: {
-          questions,
-          userAnswers: newAnswers,
-          timeSpent: timer.seconds,
-          settings,
-        },
+        state: { record },
       });
     } else {
       setCurrentIndex((i) => i + 1);

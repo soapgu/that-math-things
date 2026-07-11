@@ -1,8 +1,7 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Typography, Button, Tag, List, Row, Col, Card, Statistic, Alert } from 'antd';
 import { CheckCircleOutlined, CloseCircleOutlined, ReloadOutlined, HomeOutlined, BarChartOutlined } from '@ant-design/icons';
-import { savePracticeRecord } from '../../../utils/storage';
 import { OP_DISPLAY } from '../../../utils/mathGenerator';
 import { ERROR_CONFIG } from '../../../utils/marking';
 
@@ -17,25 +16,15 @@ export default function PracticeResult() {
   const location = useLocation();
   const [record, setRecord] = useState(null);
   const [pruned, setPruned] = useState(0);
-  const savedRef = useRef(false);
 
   useEffect(() => {
-    if (savedRef.current) return;
-    savedRef.current = true;
-    const state = location.state;
-    if (!state?.questions?.length) {
+    const rec = location.state?.record;
+    if (!rec) {
       navigate('/practice', { replace: true });
       return;
     }
-
-    const saved = savePracticeRecord({
-      questions: state.questions,
-      userAnswers: state.userAnswers,
-      timeSpent: state.timeSpent,
-      settings: state.settings,
-    });
-    setRecord(saved);
-    setPruned(saved._pruned || 0);
+    setRecord(rec);
+    setPruned(rec._pruned || 0);
   }, []);
 
   if (!record) return null;
