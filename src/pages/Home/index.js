@@ -28,7 +28,7 @@ export default function Home() {
       <div style={{ margin: '40px 0 48px' }}>
         <Typography.Title level={2}>那年那数那些事</Typography.Title>
         <Typography.Paragraph style={{ fontSize: 16, color: '#666' }}>
-          一年级数学，边练边学
+          让数学不再可怕，让错题不再反复。
         </Typography.Paragraph>
       </div>
 
