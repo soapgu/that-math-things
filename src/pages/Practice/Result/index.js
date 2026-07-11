@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Typography, Button, Tag, List, Row, Col, Card, Statistic, Alert } from 'antd';
-import { CheckCircleOutlined, CloseCircleOutlined, ReloadOutlined, HomeOutlined, BarChartOutlined } from '@ant-design/icons';
+import { CheckCircleOutlined, CloseCircleOutlined, ReloadOutlined, HomeOutlined, BarChartOutlined, EditOutlined } from '@ant-design/icons';
 import { OP_DISPLAY } from '../../../utils/mathGenerator';
 import { ERROR_CONFIG } from '../../../utils/marking';
 
@@ -166,6 +166,11 @@ export default function PracticeResult() {
         <Button type="primary" icon={<ReloadOutlined />} onClick={() => navigate('/practice')}>
           再来一次
         </Button>
+        {wrongCount > 0 && (
+          <Button icon={<EditOutlined />} onClick={() => navigate('/practice/correction', { state: { record } })}>
+            订正
+          </Button>
+        )}
         <Button icon={<BarChartOutlined />} onClick={() => navigate('/practice/stats')}>
           统计数据
         </Button>

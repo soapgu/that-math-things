@@ -245,6 +245,11 @@ export default function PracticeStats() {
                           <Button size="small" onClick={() => navigate('/practice/result', { state: { record } })}>
                             详情
                           </Button>
+                          {record.wrongCount > 0 && (
+                            <Button size="small" onClick={() => navigate('/practice/correction', { state: { record } })}>
+                              订正
+                            </Button>
+                          )}
                         </div>
                       </div>
                       <div style={{ marginTop: 4, display: 'flex', gap: 12, fontSize: 13, color: '#666' }}>
