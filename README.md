@@ -4,9 +4,13 @@
 
 通过**图形动画 + 分步引导**的方式，把每道错题的思维过程可视化，配合随机换参反复练习，真正搞懂而不是背答案。
 
+👉 **在线体验**：<https://soapgu.github.io/that-math-things>
+
 ---
 
 ## 目录
+
+- [在线地址](#在线地址)
 
 - [技术栈](#技术栈)
 - [功能概览](#功能概览)
@@ -21,6 +25,12 @@
   - [如何新增一道题](#如何新增一道题)
 - [构建部署](#构建部署)
 - [更新步骤](#更新步骤)
+
+---
+
+## 在线地址
+
+**<https://soapgu.github.io/that-math-things>**
 
 ---
 
@@ -391,7 +401,10 @@ export default function YourProblemAnimation({ params, onComplete }) {
 # 构建生产版本
 npm run build
 
-# 产物在 build/ 目录，可直接部署到任何静态服务器
+# 部署到 GitHub Pages
+npm run deploy
+
+# 产物在 build/ 目录，也可手动部署到任何静态服务器
 ```
 
 ---
