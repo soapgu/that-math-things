@@ -718,9 +718,33 @@ session 预期总用时 = Σ 每题预期用时
 - 结合整体表现给出定性评语（优秀/良好/一般/需努力）
 - 评语文案预写规则化模板，后期可迭代
 
+#### 评价数据存储
+
+`storage.js` 的 `buildRecord` 中新增 `evaluation` 字段：
+
+```js
+{
+  id, date, score, ...,    // 原有字段
+  evaluation: {
+    difficulty: 3,          // 1-5★
+    accuracy: 4,            // 1-5★
+    speed: 2,               // 1-5★
+    composite: {
+      totalStars: 3,
+      level: '一般',
+      comment: '...'
+    }
+  }
+}
+```
+
+没有 `evaluation` 字段的旧记录，在 Stats 趋势图中忽略不展示。
+
 #### 展示设计
 
-结算页（Result）在得分卡片下方新增评价卡片：
+##### 结算页（Result）
+
+在得分卡片下方新增评价卡片：
 
 ```
 ┌───────────────────────────────┐
@@ -740,25 +764,40 @@ session 预期总用时 = Σ 每题预期用时
 └───────────────────────────────┘
 ```
 
+##### 统计数据页（Stats）
+
+顶部概览下方新增 ECharts 三线趋势折线图，展示难度/准确/速度指数随练习次数的变化：
+
+- 横轴：练习序号（#1, #2, #3...），按时间正序
+- 三条折线：难度指数（蓝色）、准确指数（绿色）、速度指数（橙色）
+- Y 轴：1-5★
+- Tooltip：hover 显示具体星级
+- 只展示含有 `evaluation` 字段的历史记录（兼容旧数据）
+
+位置在错误分布饼图和现有分数趋势折线图之间。
+
 #### 新增文件
 
 | 文件 | 内容 |
 |---|---|
-| `src/utils/evaluation.js` | `calcQuestionDifficulty` / `calcSessionDifficulty` / `calcAccuracyStars` / `calcSpeedStars` / `calcCompositeEvaluation` / `calcSessionEvaluation` |
+| `src/utils/evaluation.js` | `calcQuestionDifficulty` / `calcSessionDifficulty` / `calcAccuracyStars` / `calcSpeedStars` / `calcCompositeEvaluation` / `calcSessionEvaluation` / `calcHistoricalEvaluation` |
 
 #### 修改文件
 
 | 文件 | 内容 |
 |---|---|
+| `src/utils/storage.js` | `buildRecord` 中调用 `calcSessionEvaluation`，将 `evaluation` 字段存入记录 |
 | `src/pages/Practice/Result/index.js` | 新增评价卡片：三项星级 + ECharts 雷达图 + 综合评语 |
+| `src/pages/Practice/Stats/index.js` | 顶部概览下方新增难度/准确/速度三线趋势折线图 |
 
 #### 分步执行
 
 | 步 | 内容 | 文件 |
 |---|---|---|
-| ① | 新增 `evaluation.js`，实现所有评价算法（难度/准确/速度/综合评语） | `src/utils/evaluation.js` |
+| ① | 新增 `evaluation.js`，实现所有评价算法 | `src/utils/evaluation.js` |
+| ①b | `storage.js` 的 `buildRecord` 中调用 `calcSessionEvaluation`，`evaluation` 字段写入记录 | `src/utils/storage.js` |
 | ② | Result 页新增评价卡片：三项星级 + ECharts 雷达图 + 综合评语 | `src/pages/Practice/Result/index.js` |
-| ③ | Stats 页顶部概览下方新增历史综合评价雷达图（基于所有记录的平均难度/准确/速度） | `src/pages/Practice/Stats/index.js` |
+| ③ | Stats 页顶部概览下方新增难度/准确/速度三线趋势折线图 | `src/pages/Practice/Stats/index.js` |
 | ④ | 执行 `npm test` 确保现有测试通过 | — |
 
 ### v2.3 规划：辅助运算分步引导
