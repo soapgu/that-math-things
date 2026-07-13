@@ -30,16 +30,16 @@ describe('calcQuestionDifficulty', () => {
   it.each([
     // [range, hasCarry, hasBorrow, expected]
     [10, false, false, 1],
-    [20, false, false, 2],
+    [20, false, false, 1],
     [50, false, false, 2],
-    [100, false, false, 3],
+    [100, false, false, 4],
     [10, true, false, 2],
     [10, false, true, 2],
-    [20, true, false, 2],
+    [20, true, false, 3],
     [20, false, true, 3],
-    [50, true, false, 3],
-    [50, false, true, 4],
-    [100, true, false, 4],
+    [50, true, false, 4],
+    [50, false, true, 5],
+    [100, true, false, 5],
     [100, false, true, 5],
   ])('range=%i hasCarry=%s hasBorrow=%s → %i★', (range, hasCarry, hasBorrow, expected) => {
     expect(calcQuestionDifficulty({ range, hasCarry, hasBorrow })).toBe(expected);
@@ -57,19 +57,19 @@ describe('calcSessionDifficulty', () => {
 
   it('单题平均等于该题难度', () => {
     const questions = [q({ hasCarry: true })];
-    expect(calcSessionDifficulty(questions, 20)).toBe(2);
+    expect(calcSessionDifficulty(questions, 20)).toBe(3);
   });
 
   it('多题取平均四舍五入', () => {
-    // 范围20进位：2★；范围20无进退：2★ → 平均 2
+    // 范围20进位：3★；范围20无进退：1★ → (3+1)/2=2 → 2
     const questions = [q({ hasCarry: true }), q()];
     expect(calcSessionDifficulty(questions, 20)).toBe(2);
   });
 
   it('多题平均朝上取整', () => {
-    // 范围100退位：5★；范围100无进退：3★ → 平均 4
+    // 范围100退位：5★；范围100无进退：4★ → (5+4)/2=4.5 → 5
     const questions = [q({ hasBorrow: true }), q()];
-    expect(calcSessionDifficulty(questions, 100)).toBe(4);
+    expect(calcSessionDifficulty(questions, 100)).toBe(5);
   });
 });
 
@@ -104,30 +104,31 @@ describe('calcSpeedStars', () => {
   });
 
   it('速度比 1.5 → 很快 5★', () => {
-    // 1题2★难度，预期 5s，实际 3.3s → ratio ≈ 1.5
-    expect(calcSpeedStars([q()], 20, 3.3)).toBe(5);
+    // 1题2★难度（范围50无进退），预期 5s，实际 3.3s → ratio ≈ 1.5
+    expect(calcSpeedStars([q()], 50, 3.3)).toBe(5);
   });
 
   it('速度比 1.2 → 偏快 4★', () => {
-    expect(calcSpeedStars([q()], 20, 4.1)).toBe(4);
+    expect(calcSpeedStars([q()], 50, 4.1)).toBe(4);
   });
 
   it('速度比 0.9 → 正常 3★', () => {
-    expect(calcSpeedStars([q()], 20, 5.5)).toBe(3);
+    expect(calcSpeedStars([q()], 50, 5.5)).toBe(3);
   });
 
   it('速度比 0.6 → 偏慢 2★', () => {
-    expect(calcSpeedStars([q()], 20, 8.3)).toBe(2);
+    expect(calcSpeedStars([q()], 50, 8.3)).toBe(2);
   });
 
   it('速度比 0.4 → 很慢 1★', () => {
-    expect(calcSpeedStars([q()], 20, 12.5)).toBe(1);
+    // 1题2★难度（范围50无进退），预期 5s，实际 12.5s → ratio = 0.4
+    expect(calcSpeedStars([q()], 50, 12.5)).toBe(1);
   });
 
   it('多道题累计预期用时计算正确', () => {
-    // 2题，各2★，预期各5s，共10s；实际8s → ratio=1.25 → 4★
-    const questions = [q(), q({ hasCarry: true })];
-    expect(calcSpeedStars(questions, 20, 8)).toBe(4);
+    // 2题，各2★（无进退位，范围50），预期各5s，共10s；实际8s → ratio=1.25 → 4★
+    const questions = [q(), q()];
+    expect(calcSpeedStars(questions, 50, 8)).toBe(4);
   });
 });
 

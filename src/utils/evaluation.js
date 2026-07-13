@@ -10,11 +10,12 @@ const SPEED_RATIO_THRESHOLDS = [
   { min: 0, stars: 1 },
 ];
 
-// 运算范围与基准分映射：≤10→1, ≤20→2, ≤50→3, ≤100→5
-const RANGE_SCORE = { 10: 1, 20: 2, 50: 3, 100: 5 };
+// 运算范围与基准分映射：≤10→2, ≤20→3, ≤50→5, ≤100→8
+const RANGE_SCORE = { 10: 2, 20: 3, 50: 5, 100: 8 };
 
-// 进位退位权重：无进位退位 0.4，进位 0.6，退位 0.8
-const CB_WEIGHT = { none: 0.4, carry: 0.6, borrow: 0.8 };
+// 进位退位权重：无进位退位 0.4，进位 0.7，退位 0.9
+const SCALE = 1.2;
+const CB_WEIGHT = { none: 0.4, carry: 0.7, borrow: 0.9 };
 
 // 总评星级 → SSR/SR/R/N
 const GRADE_MAP = { 5: 'SSR', 4: 'SR', 3: 'R' };
@@ -48,19 +49,19 @@ function cbKey(hasCarry, hasBorrow) {
 
 /**
  * 计算单题难度指数（1-5★）。
- * 公式：difficulty = cbWeight × (rangeScore + 2)
+ * 公式：difficulty = round(cbWeight × rangeScore × 1.2)，封顶 5
  *
  * @param {{ range: number, hasCarry: boolean, hasBorrow: boolean }} params
  * @returns {number} 1-5 的整数
  *
  * @example
- * calcQuestionDifficulty({ range: 20, hasCarry: true, hasBorrow: false }) // → 2
- * calcQuestionDifficulty({ range: 100, hasBorrow: true })               // → 5
+ * calcQuestionDifficulty({ range: 20, hasCarry: true, hasBorrow: false }) // → 3
+ * calcQuestionDifficulty({ range: 100, hasBorrow: true })                // → 5
  */
 export function calcQuestionDifficulty({ range, hasCarry, hasBorrow }) {
   const rs = RANGE_SCORE[rangeToKey(range)];
   const w = CB_WEIGHT[cbKey(hasCarry, hasBorrow)];
-  return Math.min(Math.round(w * (rs + 2)), 5);
+  return Math.min(Math.round(w * rs * SCALE), 5);
 }
 
 /**
