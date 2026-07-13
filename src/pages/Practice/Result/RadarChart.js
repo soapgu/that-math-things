@@ -7,9 +7,9 @@ export default function RadarChart({ difficulty, accuracy, speed, delay = 0 }) {
 
   useEffect(() => {
     if (!chartRef.current || initialized.current) return;
-    initialized.current = true;
     const timer = setTimeout(() => {
       try {
+        initialized.current = true;
         const chart = echarts.init(chartRef.current);
         chart.setOption({
           radar: {
@@ -39,12 +39,7 @@ export default function RadarChart({ difficulty, accuracy, speed, delay = 0 }) {
         /* echarts init 失败，静默处理 */
       }
     }, delay);
-    return () => {
-      clearTimeout(timer);
-      if (initialized.current && initialized.current.handleResize) {
-        window.removeEventListener('resize', initialized.current.handleResize);
-      }
-    };
+    return () => clearTimeout(timer);
   }, [difficulty, accuracy, speed, delay]);
 
   return <div ref={chartRef} style={{ width: '100%', height: 240 }} />;
