@@ -22,11 +22,23 @@ const GRADE_STYLE = {
 };
 
 const DIM_COLORS = ['#1677ff', '#52c41a', '#fa8c16'];
+const DIM_EMOJIS = ['🚩', '🎯', '🚀'];
 
-function StarRating({ stars }) {
+function StarRating({ stars, baseDelay = 0 }) {
   return (
     <span style={{ color: '#faad14', fontSize: 20, letterSpacing: 2, lineHeight: 1 }}>
-      {'★'.repeat(stars)}{'☆'.repeat(5 - stars)}
+      {Array.from({ length: stars }, (_, i) => (
+        <motion.span
+          key={i}
+          style={{ display: 'inline-block' }}
+          initial={{ scale: 0, rotate: -30 }}
+          animate={{ scale: 1, rotate: 0 }}
+          transition={{ type: 'spring', stiffness: 350, damping: 8, delay: baseDelay + i * 0.08 }}
+        >
+          ★
+        </motion.span>
+      ))}
+      {'☆'.repeat(5 - stars)}
     </span>
   );
 }
@@ -120,8 +132,11 @@ export default function PracticeResult() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.5 + i * 0.15, duration: 0.35 }}
                   >
-                    <div style={{ color: DIM_COLORS[i], fontSize: 13, marginBottom: 4 }}>{dim.label}</div>
-                    <StarRating stars={dim.stars} />
+                    <div style={{ color: DIM_COLORS[i], fontSize: 13, marginBottom: 4 }}>
+                      <span style={{ fontSize: 20, lineHeight: 1 }}>{DIM_EMOJIS[i]}</span>
+                      <span style={{ marginLeft: 4 }}>{dim.label}</span>
+                    </div>
+                    <StarRating stars={dim.stars} baseDelay={0.55 + i * 0.15} />
                   </motion.div>
                 </Col>
               ))}
@@ -139,8 +154,8 @@ export default function PracticeResult() {
               animate={{ opacity: 1 }}
               transition={{ delay: 0.9, duration: 0.4 }}
             >
-              <div style={{ color: '#666', fontSize: 14, marginTop: 8, lineHeight: 1.6, textAlign: 'left' }}>
-                {evaluation.composite.comment}
+              <div style={{ color: '#333', fontSize: 16, marginTop: 12, lineHeight: 1.8, textAlign: 'center', fontStyle: 'italic', letterSpacing: 0.5 }}>
+                「{evaluation.composite.comment}」
               </div>
             </motion.div>
           </Card>
