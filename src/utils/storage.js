@@ -1,4 +1,5 @@
 import { markQuestion } from './marking';
+import { calcSessionEvaluation } from './evaluation';
 
 const STORAGE_KEY = 'practice-records';
 
@@ -9,9 +10,10 @@ function isQuotaError(e) {
 }
 
 /**
- * 将一次练习会话的数据加工为持久化记录，每道题调用 markQuestion 批改
+ * 将一次练习会话的数据加工为持久化记录，每道题调用 markQuestion 批改，
+ * 然后调用 calcSessionEvaluation 生成综合评价。
  * @param {{ questions: Array, userAnswers: Array, timeSpent: number, settings: Object }} sessionData
- * @returns {{ id: number, date: string, score: number, total: number, correct: number, wrongCount: number, timeSpent: number, settings: Object, questions: Array, userAnswers: Array, results: Array<{isCorrect:boolean, errors:string[], detail:string|null}> }}
+ * @returns {{ id: number, date: string, score: number, total: number, correct: number, wrongCount: number, timeSpent: number, settings: Object, questions: Array, userAnswers: Array, results: Array<{isCorrect:boolean, errors:string[], detail:string|null}>, evaluation: Object }}
  */
 function buildRecord({ questions, userAnswers, timeSpent, settings }) {
   const results = questions.map((q, i) => markQuestion(q, userAnswers[i]));
@@ -19,6 +21,7 @@ function buildRecord({ questions, userAnswers, timeSpent, settings }) {
   const correct = results.filter(r => r.isCorrect).length;
   const score = Math.round((correct / total) * 100);
   const wrongCount = total - correct;
+  const evaluation = calcSessionEvaluation({ questions, settings, score, timeSpent });
 
   return {
     id: Date.now(),
@@ -32,6 +35,7 @@ function buildRecord({ questions, userAnswers, timeSpent, settings }) {
     questions,
     userAnswers,
     results,
+    evaluation,
   };
 }
 
