@@ -135,11 +135,63 @@ export default function PracticeStats() {
     };
   }, [records]);
 
+  const evaluationTrendOption = useMemo(() => {
+    const evalRecords = records.filter(r => r.evaluation);
+    if (evalRecords.length < 2) return null;
+    const data = [...evalRecords].reverse().map((r, i) => ({
+      name: `#${i + 1}`,
+      difficulty: r.evaluation.difficulty,
+      accuracy: r.evaluation.accuracy,
+      speed: r.evaluation.speed,
+      grade: r.evaluation.composite.grade,
+      date: formatDate(r.date),
+    }));
+    return {
+      tooltip: {
+        trigger: 'axis',
+        formatter(params) {
+          const p = params[0];
+          const d = data[p.dataIndex];
+          const lines = params.map(l =>
+            `<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${l.color};margin-right:4px"></span>${l.seriesName}: ${l.value}★`
+          );
+          return `${d.date} (${d.name})<br/>${lines.join('<br/>')}<br/>评级: ${d.grade}`;
+        },
+      },
+      legend: {
+        data: ['难度', '准确', '速度'],
+        top: 0,
+        itemWidth: 10,
+        itemHeight: 10,
+      },
+      xAxis: {
+        type: 'category',
+        data: data.map(d => d.name),
+        axisLabel: { fontSize: 11 },
+      },
+      yAxis: {
+        type: 'value',
+        min: 1,
+        max: 5,
+        interval: 1,
+        splitLine: { lineStyle: { type: 'dashed' } },
+      },
+      grid: { left: 36, right: 16, top: 32, bottom: 24 },
+      series: [
+        { name: '难度', type: 'line', data: data.map(d => d.difficulty), smooth: true, lineStyle: { width: 2, color: '#1677ff' }, symbol: 'circle', symbolSize: 6 },
+        { name: '准确', type: 'line', data: data.map(d => d.accuracy), smooth: true, lineStyle: { width: 2, color: '#52c41a' }, symbol: 'circle', symbolSize: 6 },
+        { name: '速度', type: 'line', data: data.map(d => d.speed), smooth: true, lineStyle: { width: 2, color: '#fa8c16' }, symbol: 'circle', symbolSize: 6 },
+      ],
+    };
+  }, [records]);
+
   const pieRef = useRef(null);
   const lineRef = useRef(null);
+  const evalRef = useRef(null);
 
   useECharts(pieRef, pieOption);
   useECharts(lineRef, lineOption);
+  useECharts(evalRef, evaluationTrendOption);
 
   return (
     <div style={{ maxWidth: 720, margin: '0 auto' }}>
@@ -184,6 +236,12 @@ export default function PracticeStats() {
         <Empty description="暂无练习记录" style={{ margin: '64px 0' }} />
       ) : (
         <>
+          {evaluationTrendOption && (
+            <Card title="综合评价趋势" size="small" style={{ marginBottom: 16 }}>
+              <div ref={evalRef} style={{ height: 220 }} />
+            </Card>
+          )}
+
           <Row gutter={12}>
             <Col span={12}>
               {pieOption && (

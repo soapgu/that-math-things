@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Typography, Button, Tag, List, Row, Col, Card, Statistic, Alert } from 'antd';
 import { CheckCircleOutlined, CloseCircleOutlined, ReloadOutlined, HomeOutlined, BarChartOutlined, EditOutlined } from '@ant-design/icons';
+import RadarChart from './RadarChart';
 import { OP_DISPLAY } from '../../../utils/mathGenerator';
 import { ERROR_CONFIG } from '../../../utils/marking';
 
@@ -9,6 +10,24 @@ function formatDuration(seconds) {
   const m = Math.floor(seconds / 60);
   const s = seconds % 60;
   return m > 0 ? `${m}分${s}秒` : `${s}秒`;
+}
+
+const GRADE_STYLE = {
+  UR: { background: 'linear-gradient(135deg, #ff6b6b, #ffd93d, #6bcb77, #4d96ff)', color: '#fff', textShadow: '0 0 8px rgba(255,215,0,0.6)', boxShadow: '0 0 16px rgba(255,215,0,0.3)' },
+  SSR: { background: 'linear-gradient(135deg, #faad14, #d48806)', color: '#fff', textShadow: '0 0 4px rgba(0,0,0,0.2)' },
+  SR: { background: 'linear-gradient(135deg, #722ed1, #531dab)', color: '#fff' },
+  R: { background: 'linear-gradient(135deg, #1677ff, #0958d9)', color: '#fff' },
+  N: { background: '#d9d9d9', color: '#666' },
+};
+
+const DIM_COLORS = ['#1677ff', '#52c41a', '#fa8c16'];
+
+function StarRating({ stars }) {
+  return (
+    <span style={{ color: '#faad14', fontSize: 20, letterSpacing: 2, lineHeight: 1 }}>
+      {'★'.repeat(stars)}{'☆'.repeat(5 - stars)}
+    </span>
+  );
 }
 
 export default function PracticeResult() {
@@ -29,7 +48,7 @@ export default function PracticeResult() {
 
   if (!record) return null;
 
-  const { score, total, correct, wrongCount, timeSpent, results, questions, userAnswers } = record;
+  const { score, total, correct, wrongCount, timeSpent, results, questions, userAnswers, evaluation } = record;
   const grade = score >= 100 ? { label: 'A🌟 完美', color: '#faad14' }
     : score >= 90  ? { label: 'A 优秀',   color: '#52c41a' }
     : score >= 80  ? { label: 'B 良好',   color: '#1677ff' }
@@ -90,6 +109,49 @@ export default function PracticeResult() {
                 {type} ×{count}
               </Tag>
             ))}
+          </div>
+        </Card>
+      )}
+
+      {/* 综合评价 */}
+      {evaluation && (
+        <Card title="综合评价" size="small" style={{ marginBottom: 24, textAlign: 'center' }}>
+          <div
+            style={{
+              display: 'inline-block',
+              padding: '8px 32px',
+              borderRadius: 8,
+              fontSize: 32,
+              fontWeight: 700,
+              letterSpacing: 4,
+              userSelect: 'none',
+              ...(GRADE_STYLE[evaluation.composite.grade] || GRADE_STYLE.N),
+            }}
+          >
+            {evaluation.composite.grade}
+          </div>
+
+          <Row gutter={16} style={{ marginTop: 20, textAlign: 'center' }}>
+            {[
+              { label: '难度', stars: evaluation.difficulty },
+              { label: '准确', stars: evaluation.accuracy },
+              { label: '速度', stars: evaluation.speed },
+            ].map((dim, i) => (
+              <Col span={8} key={dim.label}>
+                <div style={{ color: DIM_COLORS[i], fontSize: 13, marginBottom: 4 }}>{dim.label}</div>
+                <StarRating stars={dim.stars} />
+              </Col>
+            ))}
+          </Row>
+
+          <RadarChart
+            difficulty={evaluation.difficulty}
+            accuracy={evaluation.accuracy}
+            speed={evaluation.speed}
+          />
+
+          <div style={{ color: '#666', fontSize: 14, marginTop: 8, lineHeight: 1.6, textAlign: 'left' }}>
+            {evaluation.composite.comment}
           </div>
         </Card>
       )}
