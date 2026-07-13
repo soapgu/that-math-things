@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Typography, Button, Tag, List, Row, Col, Card, Statistic, Alert } from 'antd';
 import { CheckCircleOutlined, CloseCircleOutlined, ReloadOutlined, HomeOutlined, BarChartOutlined, EditOutlined } from '@ant-design/icons';
+import { motion } from 'framer-motion';
 import RadarChart from './RadarChart';
 import { OP_DISPLAY } from '../../../utils/mathGenerator';
 import { ERROR_CONFIG } from '../../../utils/marking';
@@ -78,6 +79,74 @@ export default function PracticeResult() {
         练习结果
       </Typography.Title>
 
+      {/* 综合评价 */}
+      {evaluation && (
+        <motion.div
+          initial={{ opacity: 0, y: 40 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: 'easeOut' }}
+        >
+          <Card title="综合评价" size="small" style={{ marginBottom: 24, textAlign: 'center' }}>
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ type: 'spring', stiffness: 200, damping: 12, delay: 0.3 }}
+            >
+              <div
+                style={{
+                  display: 'inline-block',
+                  padding: '8px 32px',
+                  borderRadius: 8,
+                  fontSize: 32,
+                  fontWeight: 700,
+                  letterSpacing: 4,
+                  userSelect: 'none',
+                  ...(GRADE_STYLE[evaluation.composite.grade] || GRADE_STYLE.N),
+                }}
+              >
+                {evaluation.composite.grade}
+              </div>
+            </motion.div>
+
+            <Row gutter={16} style={{ marginTop: 20, textAlign: 'center' }}>
+              {[
+                { label: '难度', stars: evaluation.difficulty },
+                { label: '准确', stars: evaluation.accuracy },
+                { label: '速度', stars: evaluation.speed },
+              ].map((dim, i) => (
+                <Col span={8} key={dim.label}>
+                  <motion.div
+                    initial={{ opacity: 0, y: 15 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.5 + i * 0.15, duration: 0.35 }}
+                  >
+                    <div style={{ color: DIM_COLORS[i], fontSize: 13, marginBottom: 4 }}>{dim.label}</div>
+                    <StarRating stars={dim.stars} />
+                  </motion.div>
+                </Col>
+              ))}
+            </Row>
+
+            <RadarChart
+              difficulty={evaluation.difficulty}
+              accuracy={evaluation.accuracy}
+              speed={evaluation.speed}
+              delay={800}
+            />
+
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.9, duration: 0.4 }}
+            >
+              <div style={{ color: '#666', fontSize: 14, marginTop: 8, lineHeight: 1.6, textAlign: 'left' }}>
+                {evaluation.composite.comment}
+              </div>
+            </motion.div>
+          </Card>
+        </motion.div>
+      )}
+
       {/* 得分卡片 */}
       <Card style={{ textAlign: 'center', marginBottom: 24 }}>
         <div style={{ fontSize: 64, fontWeight: 700, color: grade.color }}>
@@ -109,49 +178,6 @@ export default function PracticeResult() {
                 {type} ×{count}
               </Tag>
             ))}
-          </div>
-        </Card>
-      )}
-
-      {/* 综合评价 */}
-      {evaluation && (
-        <Card title="综合评价" size="small" style={{ marginBottom: 24, textAlign: 'center' }}>
-          <div
-            style={{
-              display: 'inline-block',
-              padding: '8px 32px',
-              borderRadius: 8,
-              fontSize: 32,
-              fontWeight: 700,
-              letterSpacing: 4,
-              userSelect: 'none',
-              ...(GRADE_STYLE[evaluation.composite.grade] || GRADE_STYLE.N),
-            }}
-          >
-            {evaluation.composite.grade}
-          </div>
-
-          <Row gutter={16} style={{ marginTop: 20, textAlign: 'center' }}>
-            {[
-              { label: '难度', stars: evaluation.difficulty },
-              { label: '准确', stars: evaluation.accuracy },
-              { label: '速度', stars: evaluation.speed },
-            ].map((dim, i) => (
-              <Col span={8} key={dim.label}>
-                <div style={{ color: DIM_COLORS[i], fontSize: 13, marginBottom: 4 }}>{dim.label}</div>
-                <StarRating stars={dim.stars} />
-              </Col>
-            ))}
-          </Row>
-
-          <RadarChart
-            difficulty={evaluation.difficulty}
-            accuracy={evaluation.accuracy}
-            speed={evaluation.speed}
-          />
-
-          <div style={{ color: '#666', fontSize: 14, marginTop: 8, lineHeight: 1.6, textAlign: 'left' }}>
-            {evaluation.composite.comment}
           </div>
         </Card>
       )}
