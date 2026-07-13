@@ -20,7 +20,7 @@ const CB_WEIGHT = { none: 0.4, carry: 0.6, borrow: 0.8 };
 const GRADE_MAP = { 5: 'SSR', 4: 'SR', 3: 'R' };
 
 // 准确率封顶：准确指数低时总分上限也低
-const ACCURACY_CAP = { 5: 5, 4: 5, 3: 4, 2: 3, 1: 2 };
+const ACCURACY_CAP = { 5: 5, 4: 4.5, 3: 3.5, 2: 2.5, 1: 1.5 };
 
 /**
  * 将 settings.range 映射到 RANGE_SCORE 的 key。
@@ -87,9 +87,9 @@ export function calcSessionDifficulty(questions, range) {
  * |---|---|
  * | 100 | 5 |
  * | ≥90 | 4 |
- * | ≥75 | 3 |
- * | ≥50 | 2 |
- * | <50 | 1 |
+ * | ≥80 | 3 |
+ * | ≥60 | 2 |
+ * | <60 | 1 |
  *
  * @param {number} score - 0-100 的分数
  * @returns {number} 1-5 的整数
@@ -97,8 +97,8 @@ export function calcSessionDifficulty(questions, range) {
 export function calcAccuracyStars(score) {
   if (score === 100) return 5;
   if (score >= 90) return 4;
-  if (score >= 75) return 3;
-  if (score >= 50) return 2;
+  if (score >= 80) return 3;
+  if (score >= 60) return 2;
   return 1;
 }
 
@@ -144,7 +144,7 @@ export function calcSpeedStars(questions, range, timeSpent) {
 export function calcCompositeEvaluation(difficulty, accuracy, speed) {
   const weighted = accuracy * 0.50 + difficulty * 0.25 + speed * 0.25;
   const cap = ACCURACY_CAP[accuracy] || 5;
-  const totalStars = Math.min(Math.round(weighted), cap);
+  const totalStars = Math.round(Math.min(weighted, cap));
 
   // UR：三项全满
   const isUR = totalStars === 5 && difficulty === 5 && accuracy === 5 && speed === 5;

@@ -83,10 +83,10 @@ describe('calcAccuracyStars', () => {
     [99, 4],
     [90, 4],
     [89, 3],
-    [75, 3],
-    [74, 2],
-    [50, 2],
-    [49, 1],
+    [80, 3],
+    [79, 2],
+    [60, 2],
+    [59, 1],
     [0, 1],
   ])('score=%i → %i★', (score, expected) => {
     expect(calcAccuracyStars(score)).toBe(expected);
@@ -231,7 +231,7 @@ describe('calcSessionEvaluation', () => {
     let result = calcSessionEvaluation(record({ score: 100 }));
     expect(result.accuracy).toBe(5);
 
-    result = calcSessionEvaluation(record({ score: 50 }));
+    result = calcSessionEvaluation(record({ score: 60 }));
     expect(result.accuracy).toBe(2);
   });
 
