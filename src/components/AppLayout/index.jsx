@@ -35,6 +35,9 @@ export default function AppLayout({ children }) {
           style={{ color: '#fff', margin: 0, marginRight: 40, whiteSpace: 'nowrap' }}
         >
           那年那数那些事
+          <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', marginLeft: 6, fontWeight: 400 }}>
+            v{__APP_VERSION__}
+          </span>
         </Typography.Title>
         <Menu
           theme="dark"
