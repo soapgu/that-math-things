@@ -151,7 +151,7 @@ describe('storage 防御', () => {
 describe('容量清理', () => {
   it('QuotaExceededError 时自动清理最旧的 100 条并写入', () => {
     const original = Storage.prototype.setItem;
-    const setItem = jest.spyOn(Storage.prototype, 'setItem');
+    const setItem = vi.spyOn(Storage.prototype, 'setItem');
     let callCount = 0;
     setItem.mockImplementation((key, val) => {
       callCount++;

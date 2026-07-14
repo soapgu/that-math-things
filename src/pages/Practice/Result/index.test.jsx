@@ -3,17 +3,7 @@ import { render } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import PracticeResult from './index';
 
-Object.defineProperty(window, 'matchMedia', {
-  writable: true,
-  value: jest.fn().mockImplementation(query => ({
-    matches: false,
-    media: query,
-    addListener: jest.fn(),
-    removeListener: jest.fn(),
-  })),
-});
-
-jest.mock('./RadarChart', () => () => null);
+vi.mock('./RadarChart', () => ({ default: () => null }));
 
 const baseRecord = {
   id: 1,
@@ -62,17 +52,15 @@ function renderAt(state) {
 }
 
 describe('PracticeResult 评价卡片', () => {
-  // 以下测试依赖 Ant Design 6 组件渲染，JSDOM + React 19 下 AntD 组件内部
-  // 抛出 `addEventListener on undefined`，待 AntD 修复兼容性后启用
-  describe.skip('Ant Design 组件渲染（JSDOM 兼容性问题）', () => {
+  describe('评价卡片渲染', () => {
     it('有 evaluation 时渲染评级标签', () => {
       const { getByText } = renderAt({ record: recordWithEval() });
       expect(getByText('SR')).toBeTruthy();
     });
 
     it('显示评语文案', () => {
-      const { getByText } = renderAt({ record: recordWithEval() });
-      expect(getByText('表现优秀，速度方面还有提升空间。')).toBeTruthy();
+      const { container } = renderAt({ record: recordWithEval() });
+      expect(container.textContent).toContain('表现优秀，速度方面还有提升空间。');
     });
 
     it('无 evaluation（旧数据）不渲染评价卡片', () => {
@@ -81,7 +69,7 @@ describe('PracticeResult 评价卡片', () => {
     });
 
     it('全 5★ → UR 评级', () => {
-      const { getByText } = renderAt({
+      const { container, getByText } = renderAt({
         record: recordWithEval({
           score: 100,
           results: [
@@ -97,7 +85,7 @@ describe('PracticeResult 评价卡片', () => {
         }),
       });
       expect(getByText('UR')).toBeTruthy();
-      expect(getByText('无可挑剔的完美表现！')).toBeTruthy();
+      expect(container.textContent).toContain('无可挑剔的完美表现！');
     });
 
     it('低分 → N 评级', () => {

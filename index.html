@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" href="/that-math-things/favicon.ico" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#000000" />
+    <script>
+      (function() {
+        var p = location.pathname;
+        if (p.slice(-1) === '/' || location.hash || /\.[a-z]+$/i.test(p)) return;
+        location.replace(p + '/' + location.search + location.hash);
+      })();
+    </script>
+    <meta name="description" content="那年那数那些事 - 一年级数学错题交互式学习" />
+    <link rel="apple-touch-icon" href="/that-math-things/logo192.png" />
+    <link rel="manifest" href="/that-math-things/manifest.json" />
+    <title>那年那数那些事</title>
+  </head>
+  <body>
+    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <div id="root"></div>
+    <script type="module" src="/src/index.jsx"></script>
+  </body>
+</html>

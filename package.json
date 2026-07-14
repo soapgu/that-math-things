@@ -1,58 +1,34 @@
 {
   "name": "that-math-things",
-  "version": "1.0.0",
-  "homepage": "https://soapgu.github.io/that-math-things",
+  "version": "2.2.0",
   "private": true,
+  "type": "module",
   "dependencies": {
     "@ant-design/icons": "^6.3.2",
     "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
-    "@testing-library/user-event": "^13.5.0",
     "antd": "^6.5.0",
     "echarts": "^6.1.0",
     "framer-motion": "^12.42.2",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
-    "react-router-dom": "^6.30.4",
-    "react-scripts": "5.0.1",
-    "web-vitals": "^2.1.4"
+    "react-router-dom": "^6.30.4"
   },
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject",
+    "start": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "predeploy": "npm run build",
     "deploy": "gh-pages -d build"
   },
-  "eslintConfig": {
-    "extends": [
-      "react-app",
-      "react-app/jest"
-    ]
-  },
-  "browserslist": {
-    "production": [
-      ">0.2%",
-      "not dead",
-      "not op_mini all"
-    ],
-    "development": [
-      "last 1 chrome version",
-      "last 1 firefox version",
-      "last 1 safari version"
-    ]
-  },
   "devDependencies": {
-    "gh-pages": "^6.3.0"
-  },
-  "jest": {
-    "transformIgnorePatterns": [
-      "node_modules/(?!(antd|@ant-design|@rc-component|rc-|@ant-design/icons|@ant-design/fast-color|@ant-design/colors)/)"
-    ],
-    "moduleNameMapper": {
-      "^@rc-component/([^/]+)/(locale|generate)/.+$": "<rootDir>/src/__mocks__/rcLocale.js"
-    }
+    "@vitejs/plugin-react": "^4.4.2",
+    "gh-pages": "^6.3.0",
+    "jsdom": "^26.1.0",
+    "vite": "^6.3.5",
+    "vitest": "^3.1.3"
   }
 }
