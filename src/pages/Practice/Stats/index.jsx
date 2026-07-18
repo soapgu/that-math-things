@@ -1,8 +1,8 @@
 import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Typography, Button, Tag, List, Row, Col, Card, Statistic, Popconfirm, Empty } from 'antd';
+import { Typography, Button, Tag, Row, Col, Card, Statistic, Popconfirm, Empty } from 'antd';
 import { DeleteOutlined, ReloadOutlined } from '@ant-design/icons';
-import * as echarts from 'echarts';
+import echarts from '../../../utils/echarts';
 import { getStats, getPracticeRecords, clearRecords } from '../../../utils/storage';
 import { ERROR_CONFIG } from '../../../utils/marking';
 
@@ -202,12 +202,12 @@ export default function PracticeStats() {
       <Row gutter={8} style={{ marginBottom: 16 }}>
         <Col span={6}>
           <Card size="small" style={{ textAlign: 'center' }}>
-            <Statistic title="练习次数" value={stats.totalPractices} valueStyle={{ fontSize: 20 }} />
+            <Statistic title="练习次数" value={stats.totalPractices} styles={{ content: { fontSize: 20 } }} />
           </Card>
         </Col>
         <Col span={6}>
           <Card size="small" style={{ textAlign: 'center' }}>
-            <Statistic title="总题数" value={stats.totalQuestions} valueStyle={{ fontSize: 20 }} />
+            <Statistic title="总题数" value={stats.totalQuestions} styles={{ content: { fontSize: 20 } }} />
           </Card>
         </Col>
         <Col span={6}>
@@ -216,7 +216,7 @@ export default function PracticeStats() {
               title="平均分"
               value={stats.avgScore}
               suffix="分"
-              valueStyle={{ fontSize: 20, color: scoreColor(stats.avgScore) }}
+              styles={{ content: { fontSize: 20, color: scoreColor(stats.avgScore) } }}
             />
           </Card>
         </Col>
@@ -226,7 +226,7 @@ export default function PracticeStats() {
               title="最高分"
               value={stats.bestScore}
               suffix="分"
-              valueStyle={{ fontSize: 20, color: scoreColor(stats.bestScore) }}
+              styles={{ content: { fontSize: 20, color: scoreColor(stats.bestScore) } }}
             />
           </Card>
         </Col>
@@ -277,9 +277,8 @@ export default function PracticeStats() {
               </Popconfirm>
             }
           >
-            <List
-              dataSource={displayRecords}
-              renderItem={(record) => {
+            <div role="list">
+              {displayRecords.map((record) => {
                 const errors = (record.results || []).reduce((acc, r) => {
                   if (!r.isCorrect) {
                     r.errors.forEach((e) => {
@@ -290,7 +289,7 @@ export default function PracticeStats() {
                 }, []);
 
                 return (
-                  <List.Item style={{ padding: '8px 0' }}>
+                  <div key={record.id} role="listitem" style={{ padding: '8px 0', borderBottom: '1px solid #f0f0f0' }}>
                     <div style={{ width: '100%' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <span style={{ fontSize: 13, color: '#999' }}>
@@ -325,10 +324,10 @@ export default function PracticeStats() {
                         </div>
                       )}
                     </div>
-                  </List.Item>
+                  </div>
                 );
-              }}
-            />
+              })}
+            </div>
             {records.length > 5 && !showAll && (
               <div style={{ textAlign: 'center', marginTop: 8 }}>
                 <Button type="link" onClick={() => setShowAll(true)}>

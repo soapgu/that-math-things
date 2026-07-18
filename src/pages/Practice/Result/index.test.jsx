@@ -40,7 +40,7 @@ function recordWithEval(overrides = {}) {
 
 function renderAt(state) {
   return render(
-    <MemoryRouter initialEntries={[{ pathname: '/practice/result', state }]}>
+    <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }} initialEntries={[{ pathname: '/practice/result', state }]}>
       <Routes>
         <Route path="/practice/result" element={<PracticeResult />} />
         <Route path="/practice" element={<div />} />

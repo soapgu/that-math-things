@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import * as echarts from 'echarts';
+import echarts from '../../../utils/echarts';
 
 export default function RadarChart({ difficulty, accuracy, speed, delay = 0 }) {
   const chartRef = useRef(null);

@@ -25,7 +25,8 @@
 - [更新步骤](#更新步骤)
 - [项目命名](#项目命名)
 - [功能文档](#功能文档)
-- [v2.3 规划（辅助运算分步引导）](#v23-规划辅助运算分步引导)
+- [v2.3 工程质量优化](#v23-工程质量优化)
+- [v2.4 规划（辅助运算分步引导）](#v24-规划辅助运算分步引导)
 
 ---
 
@@ -39,12 +40,14 @@
 
 | 类别 | 选择 |
 | --- | --- |
-| 框架 | Create React App (React 19) |
+| 框架 | Vite 6 + React 19 |
 | 语言 | JavaScript (ES6+) |
 | UI 组件库 | Ant Design 6 |
 | 路由 | react-router-dom v6 |
 | 动画引擎 | framer-motion |
 | 图形 | `motion.div` + CSS（非 SVG，用 DOM 元素配合 framer-motion 属性动画实现） |
+| 图表 | ECharts 6（按需注册） |
+| 测试 | Vitest 3 + Testing Library |
 
 ---
 
@@ -70,7 +73,12 @@ mindmap
        准确指数
        速度指数
        雷达图
-     🔮 v2.3 辅助运算
+     ✅ v2.3 工程质量优化
+       页面级懒加载
+       ECharts 按需引入
+       依赖弃用 API 清理
+       文档同步
+     🔮 v2.4 辅助运算
        凑十法
        破十法
        平十法
@@ -102,6 +110,7 @@ flowchart LR
 | `/practice/session` | 计算训练做题 | 计时 + 随机出题 + 提交下一题 |
 | `/practice/result` | 结算页 | 批改得分 + 错误分析 + 逐题详情 |
 | `/practice/stats` | 统计数据 | 历史记录 + 错误分布统计 |
+| `/practice/correction` | 订正页 | 对本次错题逐题重做，直到全部答对 |
 
 ### 三种互动模式
 
@@ -201,7 +210,8 @@ that-math-things/
 │   │       ├── Settings/              # 参数调整页
 │   │       ├── Session/               # 做题页
 │   │       ├── Result/                # 结算页
-│   │       └── Stats/                 # 统计数据页
+│   │       ├── Stats/                 # 统计数据页
+│   │       └── Correction/            # 错题订正页
 │   ├── problems/                      # 题目数据定义
 │   │   ├── registry.js                # 题目注册表
 │   │   └── data/                      # 每题的定义 + 参数生成器
@@ -216,9 +226,11 @@ that-math-things/
 │   │   ├── random.js                  # 随机参数生成工具
 │   │   ├── mathGenerator.js           # 计算题生成器
 │   │   ├── marking.js                 # 批改引擎
+│   │   ├── evaluation.js              # 综合评价计算
+│   │   ├── echarts.js                 # ECharts 按需注册
 │   │   └── storage.js                 # localStorage 存储
-│   ├── App.js                         # 路由配置
-│   └── index.js                       # 入口
+│   ├── App.jsx                        # 路由配置 + 页面级懒加载
+│   └── index.jsx                      # 入口
 ├── .gitignore
 ├── package.json
 └── README.md
@@ -230,7 +242,7 @@ that-math-things/
 
 ### 环境准备
 
-- Node.js >= 16
+- Node.js >= 18
 - npm >= 8
 
 ### 启动项目
@@ -245,7 +257,7 @@ npm start
 # 运行测试（TDD）
 npm test
 
-# 浏览器打开 http://localhost:3000
+# 浏览器会自动打开 http://localhost:5173/that-math-things/
 ```
 
 ### 如何新增一道题
@@ -315,7 +327,7 @@ const problemRegistry = {
 
 3. 在 `src/components/animations/` 下创建动画组件（详见下方「动画组件开发指南」）。
 
-4. 在 `src/pages/ProblemDetail/index.js` 的 `AnimationRenderer` 中添加映射：
+4. 在 `src/pages/ProblemDetail/index.jsx` 的 `AnimationRenderer` 中添加映射：
 
 ```javascript
 function AnimationRenderer({ problemId, params, onComplete }) {
@@ -729,7 +741,20 @@ session 预期总用时 = Σ 每题预期用时
 }
 ```
 
-### v2.3 规划：辅助运算分步引导
+### v2.3 工程质量优化
+
+本版本优先偿还工程技术债，为后续辅助运算功能提供更稳定的基础。
+
+| 项目 | 调整内容 |
+|---|---|
+| 首屏性能 | 路由页面改为 `React.lazy` 按页加载，避免一次加载全部业务页面 |
+| 图表体积 | ECharts 改为按需注册折线图、饼图、雷达图及所需组件 |
+| 构建基线 | 独立缓存块告警阈值设为 600 KB；超过当前 Ant Design/ECharts 基线时继续告警 |
+| 路由兼容 | 启用 React Router v7 future flags，提前适配状态更新和相对路径行为 |
+| Ant Design 兼容 | `Statistic.valueStyle` 迁移至 `styles.content`，弃用的 `List` 改为语义化列表结构 |
+| 文档同步 | 更新 Vite、Vitest、`.jsx` 文件、订正路由和当前版本规划 |
+
+### v2.4 规划：辅助运算分步引导
 
 | 步骤 | 内容 |
 |---|---|

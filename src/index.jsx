@@ -14,7 +14,7 @@ root.render(
   <React.StrictMode>
     <ConfigProvider locale={zhCN}>
       <MobileBlocker>
-        <HashRouter>
+        <HashRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
           <App />
         </HashRouter>
       </MobileBlocker>

@@ -10,7 +10,11 @@ export default defineConfig({
   define: {
     __APP_VERSION__: JSON.stringify(pkg.version),
   },
-  build: { outDir: 'build' },
+  build: {
+    outDir: 'build',
+    // Ant Design 基础运行时和按需注册后的 ECharts 各自约 550 kB；二者均为独立缓存块。
+    chunkSizeWarningLimit: 600,
+  },
   server: {
     open: '/that-math-things/',
   },

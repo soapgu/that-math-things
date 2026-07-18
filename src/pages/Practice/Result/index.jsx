@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Typography, Button, Tag, List, Row, Col, Card, Statistic, Alert } from 'antd';
+import { Typography, Button, Tag, Row, Col, Card, Statistic, Alert } from 'antd';
 import { CheckCircleOutlined, CloseCircleOutlined, ReloadOutlined, HomeOutlined, BarChartOutlined, EditOutlined } from '@ant-design/icons';
 import { motion } from 'framer-motion';
 import RadarChart from './RadarChart';
@@ -173,13 +173,13 @@ export default function PracticeResult() {
         </div>
         <Row gutter={16} style={{ marginTop: 20, textAlign: 'center' }}>
           <Col span={8}>
-            <Statistic title="正确" value={correct} suffix={`/ ${total}`} valueStyle={{ color: '#52c41a' }} />
+            <Statistic title="正确" value={correct} suffix={`/ ${total}`} styles={{ content: { color: '#52c41a' } }} />
           </Col>
           <Col span={8}>
-            <Statistic title="错误" value={wrongCount} valueStyle={{ color: '#ff4d4f' }} />
+            <Statistic title="错误" value={wrongCount} styles={{ content: { color: '#ff4d4f' } }} />
           </Col>
           <Col span={8}>
-            <Statistic title="用时" value={formatDuration(timeSpent)} valueStyle={{ fontSize: 16 }} />
+            <Statistic title="用时" value={formatDuration(timeSpent)} styles={{ content: { fontSize: 16 } }} />
           </Col>
         </Row>
       </Card>
@@ -199,15 +199,16 @@ export default function PracticeResult() {
 
       {/* 逐题详情 */}
       <Card title="题目详情" size="small" style={{ marginBottom: 24 }}>
-        <List
-          dataSource={results}
-          renderItem={(result, index) => {
+        <div role="list">
+          {results.map((result, index) => {
             const q = questions[index];
             if (!q) return null;
             const opDisplay = OP_DISPLAY[q.op] || q.op;
 
             return (
-              <List.Item
+              <div
+                key={index}
+                role="listitem"
                 style={{
                   backgroundColor: result.isCorrect ? '#f6ffed' : '#fff2f0',
                   padding: '12px 16px',
@@ -258,10 +259,10 @@ export default function PracticeResult() {
                     </div>
                   )}
                 </div>
-              </List.Item>
+              </div>
             );
-          }}
-        />
+          })}
+        </div>
       </Card>
 
       {/* 操作按钮 */}

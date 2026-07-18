@@ -25,9 +25,10 @@ const mockRecord = {
 
 function renderAt(pathname, state) {
   return render(
-    <MemoryRouter initialEntries={[{ pathname, state }]}>
+    <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }} initialEntries={[{ pathname, state }]}>
       <Routes>
         <Route path="/practice/correction" element={<PracticeCorrection />} />
+        <Route path="/practice" element={<div />} />
       </Routes>
     </MemoryRouter>
   );
