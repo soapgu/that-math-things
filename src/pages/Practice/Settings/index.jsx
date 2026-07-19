@@ -2,8 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, Slider, Switch, Radio, Rate, Button, Space, Divider } from 'antd';
 import { BarChartOutlined, PlayCircleOutlined, StarFilled } from '@ant-design/icons';
-
-const STORAGE_KEY = 'practice-settings';
+import { loadPracticeSettings, savePracticeSettings } from '../../../utils/practiceSettings';
 
 const STAR_PROB_MAP = { 1: 40, 2: 60, 3: 80 };
 
@@ -12,30 +11,14 @@ function probToStars(prob) {
   return entry ? Number(entry[0]) : 1;
 }
 
-function loadDefaults() {
-  try {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) return JSON.parse(saved);
-  } catch {}
-  return {
-    range: 50,
-    addRatio: 50,
-    carryBorrowProb: 40,
-    assistEnabled: false,
-    assistMethod: 'breakTen',
-    questionCount: 10,
-  };
-}
-
 export default function PracticeSettings() {
   const navigate = useNavigate();
-  const [settings, setSettings] = useState(loadDefaults);
+  const [settings, setSettings] = useState(loadPracticeSettings);
 
   const update = (key, value) => {
     setSettings((prev) => {
       const next = { ...prev, [key]: value };
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-      return next;
+      return savePracticeSettings(next);
     });
   };
 
@@ -51,7 +34,7 @@ export default function PracticeSettings() {
         title={<span style={{ fontSize: 16, fontWeight: 600, userSelect: 'none' }}>计算训练</span>}
         styles={{ body: { padding: 16 } }}
       >
-        <Space direction="vertical" size="small" style={{ width: '100%' }}>
+        <Space orientation="vertical" size="small" style={{ width: '100%' }}>
           {/* 运算范围 */}
           <div>
             <div style={{ fontWeight: 600, marginBottom: 2, userSelect: 'none' }}>
@@ -124,25 +107,10 @@ export default function PracticeSettings() {
               />
               <span style={{ fontWeight: 600, userSelect: 'none' }}>辅助运算</span>
               <span style={{ fontSize: 11, color: '#999', userSelect: 'none' }}>
-                开启后每题展示分步引导
+                做题时可主动查看进位、退位提示
               </span>
             </Space>
           </div>
-
-          {settings.assistEnabled && (
-            <div style={{ paddingLeft: 44 }}>
-              <Radio.Group
-                value={settings.assistMethod}
-                onChange={(e) => update('assistMethod', e.target.value)}
-                size="small"
-              >
-                <Space direction="vertical" size={2}>
-                  <Radio value="breakTen">破十法（拆大数，减小数）</Radio>
-                  <Radio value="flatTen">平十法（拆小数，连减法）</Radio>
-                </Space>
-              </Radio.Group>
-            </div>
-          )}
 
           <Divider style={{ margin: '4px 0' }} />
 

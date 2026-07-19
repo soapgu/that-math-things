@@ -3,10 +3,11 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { Typography, Input, Button, Progress, message } from 'antd';
 import { ArrowRightOutlined, CheckOutlined } from '@ant-design/icons';
 import { generateQuestions, OP_DISPLAY } from '../../../utils/mathGenerator';
+import { createAssistance } from '../../../utils/assistGenerator';
+import { loadPracticeSettings, normalizePracticeSettings } from '../../../utils/practiceSettings';
 import { savePracticeRecord } from '../../../utils/storage';
+import MathAssist from '../../../components/practice/MathAssist';
 import useTimer from '../../../hooks/useTimer';
-
-const STORAGE_KEY = 'practice-settings';
 
 export default function PracticeSession() {
   const navigate = useNavigate();
@@ -14,12 +15,8 @@ export default function PracticeSession() {
 
   // 从 location.state 或 localStorage 读取设置
   const settings = useMemo(() => {
-    if (location.state?.settings) return location.state.settings;
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) return JSON.parse(saved);
-    } catch {}
-    return null;
+    if (location.state?.settings) return normalizePracticeSettings(location.state.settings);
+    return loadPracticeSettings({ useDefaults: false });
   }, [location.state]);
 
   const questions = useMemo(() => {
@@ -92,6 +89,8 @@ export default function PracticeSession() {
   if (!settings || questions.length === 0) return null;
 
   const current = questions[currentIndex];
+  const assistance = createAssistance(current, settings);
+  const canShowAssist = settings.assistEnabled && assistance.eligible;
   const isLast = currentIndex >= questions.length - 1;
   const progress = Math.round(((currentIndex) / questions.length) * 100);
 
@@ -122,7 +121,7 @@ export default function PracticeSession() {
           alignItems: 'center',
           justifyContent: 'center',
           gap: 12,
-          margin: '48px 0',
+          margin: '48px 0 16px',
         }}
       >
         <span style={{ fontSize: 48, fontWeight: 600, userSelect: 'none', whiteSpace: 'nowrap' }}>
@@ -148,6 +147,12 @@ export default function PracticeSession() {
           {isLast ? '完成' : '下一题'}
         </Button>
       </div>
+
+      {canShowAssist && (
+        <div style={{ minHeight: 32, marginBottom: 32 }}>
+          <MathAssist key={currentIndex} hint={assistance.hint} />
+        </div>
+      )}
     </div>
   );
 }
