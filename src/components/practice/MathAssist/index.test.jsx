@@ -1,38 +1,58 @@
 import React from 'react';
 import { fireEvent, render } from '@testing-library/react';
 import MathAssist from './index';
+import { createAssistance } from '../../../utils/assistGenerator';
 
-const hint = {
-  message: '个位 7 + 5 超过了 10，记得向十位进 1。',
-  question: '个位 7 加 5 得多少？满十后个位写几，向十位进几？',
-};
+const assistance = createAssistance({ a: 27, b: 5, op: '+', answer: 32 });
 
-describe('MathAssist 第一层提醒', () => {
+describe('MathAssist 两层辅助', () => {
   it('默认只显示低强调入口，不提前泄露提示', () => {
-    const { getByText, queryByText } = render(<MathAssist hint={hint} />);
+    const { getByText, queryByText } = render(<MathAssist assistance={assistance} />);
     expect(getByText('需要提示')).toBeTruthy();
-    expect(queryByText(hint.message)).toBeNull();
+    expect(queryByText(assistance.hint.message)).toBeNull();
   });
 
   it('点击后展示提醒和引导问题', () => {
-    const { getByText } = render(<MathAssist hint={hint} />);
+    const { getByText } = render(<MathAssist assistance={assistance} />);
     fireEvent.click(getByText('需要提示'));
-    expect(getByText(hint.message)).toBeTruthy();
-    expect(getByText(`想一想：${hint.question}`)).toBeTruthy();
+    expect(getByText(assistance.hint.message)).toBeTruthy();
+    expect(getByText(`想一想：${assistance.hint.question}`)).toBeTruthy();
   });
 
-  it('我再想想会收起提示', () => {
-    const { getByText, queryByText } = render(<MathAssist hint={hint} />);
+  it('我再想想会收起提示并回到题目', () => {
+    const onReturnToQuestion = vi.fn();
+    const { getByText, queryByText } = render(
+      <MathAssist assistance={assistance} onReturnToQuestion={onReturnToQuestion} />,
+    );
     fireEvent.click(getByText('需要提示'));
     fireEvent.click(getByText('我再想想'));
-    expect(queryByText(hint.message)).toBeNull();
+    expect(queryByText(assistance.hint.message)).toBeNull();
     expect(getByText('需要提示')).toBeTruthy();
+    expect(onReturnToQuestion).toHaveBeenCalledOnce();
   });
 
-  it('第二层未接入时保留禁用入口', () => {
-    const { getByText } = render(<MathAssist hint={hint} />);
+  it('从第一层进入进位演示，跳过后收起并通知题目恢复焦点', () => {
+    const onReturnToQuestion = vi.fn();
+    const { getByText, queryByText } = render(
+      <MathAssist assistance={assistance} onReturnToQuestion={onReturnToQuestion} />,
+    );
     fireEvent.click(getByText('需要提示'));
-    expect(getByText('看看计算方法').closest('button')).toBeDisabled();
-    expect(getByText('分步演示将在下一阶段提供')).toBeTruthy();
+    fireEvent.click(getByText('看看计算方法'));
+    expect(getByText('进位计算演示')).toBeTruthy();
+    expect(getByText(assistance.steps[0].text)).toBeTruthy();
+
+    fireEvent.click(getByText('跳过演示'));
+    expect(queryByText('进位计算演示')).toBeNull();
+    expect(getByText('需要提示')).toBeTruthy();
+    expect(onReturnToQuestion).toHaveBeenCalledOnce();
+  });
+
+  it('退位题进入退位演示', () => {
+    const borrow = createAssistance({ a: 43, b: 18, op: '-', answer: 25 });
+    const { getByText } = render(<MathAssist assistance={borrow} />);
+    fireEvent.click(getByText('需要提示'));
+    fireEvent.click(getByText('看看计算方法'));
+    expect(getByText('退位计算演示')).toBeTruthy();
+    expect(getByText(borrow.steps[0].text)).toBeTruthy();
   });
 });

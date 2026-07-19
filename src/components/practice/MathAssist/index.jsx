@@ -1,27 +1,55 @@
 import React, { useState } from 'react';
 import { BulbOutlined } from '@ant-design/icons';
 import { Button, Card, Space, Typography } from 'antd';
+import { ASSIST_METHODS } from '../../../utils/assistGenerator';
+import CarryAnimation from './CarryAnimation';
+import BorrowAnimation from './BorrowAnimation';
 
 /**
- * 第一层辅助：默认只显示低强调入口，点击后才展示关键提醒。
- * onRequestMethod 在 Phase 3/4 接入完整演示前为空，因此第二层入口暂时禁用。
+ * 两层辅助交互：低强调入口 → 文字提醒 → 数位方法演示。
+ * 状态保存在当前题组件内；Session 通过 key 切题时会自然销毁并重置。
  */
-export default function MathAssist({ hint, onRequestMethod }) {
-  const [expanded, setExpanded] = useState(false);
+export default function MathAssist({ assistance, onReturnToQuestion }) {
+  const [phase, setPhase] = useState('collapsed');
+  const hint = assistance?.hint;
 
   if (!hint) return null;
 
-  if (!expanded) {
+  const returnToQuestion = () => {
+    setPhase('collapsed');
+    onReturnToQuestion?.();
+  };
+
+  if (phase === 'collapsed') {
     return (
       <Button
         type="text"
         size="small"
         icon={<BulbOutlined />}
-        onClick={() => setExpanded(true)}
+        onClick={() => setPhase('hint')}
         style={{ color: '#8c8c8c' }}
       >
         需要提示
       </Button>
+    );
+  }
+
+  if (phase === 'method') {
+    const Animation = assistance.method === ASSIST_METHODS.PLACE_VALUE_CARRY
+      ? CarryAnimation
+      : assistance.method === ASSIST_METHODS.PLACE_VALUE_BORROW
+        ? BorrowAnimation
+        : null;
+
+    if (!Animation) return null;
+    return (
+      <Card
+        size="small"
+        styles={{ body: { padding: '14px 16px' } }}
+        style={{ maxWidth: 560, margin: '0 auto', textAlign: 'left', background: '#f6ffed' }}
+      >
+        <Animation assistance={assistance} onComplete={returnToQuestion} />
+      </Card>
     );
   }
 
@@ -37,20 +65,13 @@ export default function MathAssist({ hint, onRequestMethod }) {
         <Typography.Text strong>想一想：{hint.question}</Typography.Text>
       </div>
       <Space size="small" style={{ marginTop: 10, width: '100%', justifyContent: 'flex-end' }}>
-        <Button type="text" size="small" onClick={() => setExpanded(false)}>
+        <Button type="text" size="small" onClick={returnToQuestion}>
           我再想想
         </Button>
-        <Button size="small" disabled={!onRequestMethod} onClick={onRequestMethod}>
+        <Button size="small" onClick={() => setPhase('method')}>
           看看计算方法
         </Button>
       </Space>
-      {!onRequestMethod && (
-        <div style={{ textAlign: 'right', marginTop: 2 }}>
-          <Typography.Text type="secondary" style={{ fontSize: 11 }}>
-            分步演示将在下一阶段提供
-          </Typography.Text>
-        </div>
-      )}
     </Card>
   );
 }

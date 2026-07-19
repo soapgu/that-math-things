@@ -30,6 +30,14 @@ export default function PracticeSession() {
   const [started, setStarted] = useState(false);
   const inputRef = useRef(null);
   const timer = useTimer();
+  const current = questions[currentIndex];
+
+  // 辅助模型只取决于当前题和训练设置。练习计时器每秒更新、输入答案等渲染
+  // 都不应重复创建 steps 对象，否则会造成动画子组件无效更新。
+  const assistance = useMemo(
+    () => (current ? createAssistance(current, settings) : null),
+    [current, settings],
+  );
 
   // 无设置时退回参数页
   useEffect(() => {
@@ -88,8 +96,6 @@ export default function PracticeSession() {
 
   if (!settings || questions.length === 0) return null;
 
-  const current = questions[currentIndex];
-  const assistance = createAssistance(current, settings);
   const canShowAssist = settings.assistEnabled && assistance.eligible;
   const isLast = currentIndex >= questions.length - 1;
   const progress = Math.round(((currentIndex) / questions.length) * 100);
@@ -150,7 +156,11 @@ export default function PracticeSession() {
 
       {canShowAssist && (
         <div style={{ minHeight: 32, marginBottom: 32 }}>
-          <MathAssist key={currentIndex} hint={assistance.hint} />
+          <MathAssist
+            key={currentIndex}
+            assistance={assistance}
+            onReturnToQuestion={() => inputRef.current?.focus()}
+          />
         </div>
       )}
     </div>

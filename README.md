@@ -961,8 +961,10 @@ src/
 │           ├── TenBundle.jsx
 │           ├── PlaceValueBoard.jsx
 │           ├── PlaceValueBoard.test.jsx
+│           ├── AssistAnimationPlayer.jsx
 │           ├── CarryAnimation.jsx
-│           └── BorrowAnimation.jsx
+│           ├── BorrowAnimation.jsx
+│           └── Animations.test.jsx
 ├── utils/
 │   ├── assistGenerator.js
 │   ├── assistGenerator.test.js
@@ -981,9 +983,10 @@ src/
 模块职责：
 
 - `assistGenerator.js`：判断辅助资格，计算个位、十位中间值并生成步骤数据。
-- `MathAssist`：当前管理未展开和第一层提醒；Phase 4 接入第二层演示状态。
+- `MathAssist`：管理未展开、第一层提醒和第二层方法演示状态。
 - `PlaceValueBoard`：复用十位/个位表格、成捆小棒、单根小棒及数位转换能力。
-- 进位、退位动画：只消费步骤数据并负责展示，不重复计算公式。
+- `AssistAnimationPlayer`：统一步骤定时、进度、跳过、重播及减少动态效果适配。
+- 进位、退位动画：只消费步骤数据并映射数位表状态，不重复计算公式。
 - `PracticeSession`：当前提供入口并在切题时重置状态；Phase 5 再接入辅助使用记录，不承载具体算法。
 
 #### v2.4 实现拆分
@@ -1006,7 +1009,7 @@ src/
 - 实现进位、退位第一层提醒和“看看计算方法”入口。
 - 切题时重置辅助状态并恢复输入框焦点。
 - 新增 `practiceSettings.js`，读取旧设置时自动移除 `assistMethod`。
-- “看看计算方法”当前为禁用占位入口，待 Phase 4 接入完整动画。
+- “看看计算方法”入口已在 Phase 4 接入完整动画。
 - 已覆盖设置迁移、提示展开/收起、开关关闭、普通题隐藏和切题重置测试。
 
 ##### ✅ Phase 3：数位演示基础组件（已完成）
@@ -1020,7 +1023,7 @@ src/
 - 支持通过 `tensCount`、`onesCount`、划去数量、当前高亮列和 `exchange` 组合静态动画帧。
 - 组件提供数位摘要、划去状态和转换提示的可访问语义。
 
-##### 🔜 Phase 4：进位、退位动画与第二层交互
+##### ✅ Phase 4：进位、退位动画与第二层交互（已完成）
 
 - **进位动画**：消费 `align → addOnes → carry → addTens → combine`。
 - **退位动画**：消费 `regroup → subtractOnes → subtractTens → combine`。
@@ -1029,6 +1032,7 @@ src/
 - 支持跳过动画、完成后回到原题并重新聚焦答案输入框。
 - 切题时销毁动画状态，尊重系统的减少动态效果设置。
 - 额外覆盖 `9+1`、`18+2`、`36+27`、`15-8`、`10-3`、`100-18`。
+- 使用共用播放器统一手动下一步、自动推进、步骤进度、跳过、重播和完成返回行为。
 
 ##### 🔜 Phase 5：使用记录与结算摘要
 
@@ -1043,13 +1047,11 @@ src/
 
 ##### 🔜 Phase 6：集成验证与体验优化
 
-- 补充退位题的 Session 集成测试。
-- 覆盖第二层播放、跳过、完成和焦点恢复流程。
 - 覆盖辅助使用记录从 Session 到 Result 的闭环。
 - 验证刷新、历史记录、订正和旧 localStorage 数据兼容性。
 - 验证 `assistEnabled=false` 时原有做题流程完全不受影响。
 - 在不同题量、运算范围和桌面尺寸下检查布局与动画表现。
-- 验证减少动态效果设置和键盘可访问性。
+- 继续验证减少动态效果设置、键盘可访问性和移动端布局。
 
 #### v2.4 验收标准
 
