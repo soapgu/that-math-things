@@ -279,9 +279,9 @@ export default function PracticeStats() {
           >
             <div role="list">
               {displayRecords.map((record) => {
-                const errors = (record.results || []).reduce((acc, r) => {
-                  if (!r.isCorrect) {
-                    r.errors.forEach((e) => {
+                const errors = record.items.reduce((acc, { result }) => {
+                  if (result && !result.isCorrect) {
+                    (result.errors || []).forEach((e) => {
                       if (!acc.includes(e)) acc.push(e);
                     });
                   }

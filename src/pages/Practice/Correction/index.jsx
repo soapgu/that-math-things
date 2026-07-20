@@ -4,18 +4,22 @@ import { Typography, Button, Input, Tag, Progress, message } from 'antd';
 import { CheckOutlined, ReloadOutlined, HomeOutlined, BarChartOutlined } from '@ant-design/icons';
 import { markQuestion, ERROR_CONFIG } from '../../../utils/marking';
 import { OP_DISPLAY } from '../../../utils/mathGenerator';
+import { normalizePracticeRecord } from '../../../utils/storage';
 
 export default function PracticeCorrection() {
   const navigate = useNavigate();
   const location = useLocation();
-  const record = location.state?.record;
+  const record = useMemo(
+    () => normalizePracticeRecord(location.state?.record),
+    [location.state?.record],
+  );
   const inputRef = useRef(null);
 
   const wrongItems = useMemo(() => {
     if (!record) return [];
-    return record.questions
-      .map((q, i) => ({ ...q, userAnswer: record.userAnswers[i], result: record.results[i] }))
-      .filter(item => !item.result.isCorrect);
+    return record.items
+      .filter(({ result }) => result && !result.isCorrect)
+      .map(({ question, userAnswer, result }) => ({ ...question, userAnswer, result }));
   }, [record]);
 
   const [currentIdx, setCurrentIdx] = useState(0);

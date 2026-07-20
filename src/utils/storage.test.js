@@ -1,4 +1,10 @@
-import { savePracticeRecord, getPracticeRecords, getStats, clearRecords } from './storage';
+import {
+  savePracticeRecord,
+  getPracticeRecords,
+  getStats,
+  clearRecords,
+  normalizePracticeRecord,
+} from './storage';
 
 const mockQuestions = [
   { a: 5, b: 3, op: '+', answer: 8, hasCarry: false, hasBorrow: false },
@@ -26,7 +32,11 @@ describe('savePracticeRecord / getPracticeRecords', () => {
     expect(record.total).toBe(4);
     expect(record.correct).toBe(4);
     expect(record.wrongCount).toBe(0);
-    expect(record.results.every(r => r.isCorrect)).toBe(true);
+    expect(record.schemaVersion).toBe(2);
+    expect(record.items.every(({ result }) => result.isCorrect)).toBe(true);
+    expect(record).not.toHaveProperty('questions');
+    expect(record).not.toHaveProperty('userAnswers');
+    expect(record).not.toHaveProperty('results');
     expect(record.timeSpent).toBe(30);
     expect(record.settings).toEqual(mockSettings);
     expect(record.id).toBeDefined();
@@ -56,7 +66,7 @@ describe('错误分类', () => {
       timeSpent: 30,
       settings: mockSettings,
     });
-    expect(record.results[1].errors).toContain('进位错误');
+    expect(record.items[1].result.errors).toContain('进位错误');
   });
 
   it('借位错误单题', () => {
@@ -66,7 +76,7 @@ describe('错误分类', () => {
       timeSpent: 30,
       settings: mockSettings,
     });
-    expect(record.results[2].errors).toContain('借位错误');
+    expect(record.items[2].result.errors).toContain('借位错误');
   });
 
   it('计算错误单题（无进位退位答错）', () => {
@@ -76,7 +86,7 @@ describe('错误分类', () => {
       timeSpent: 30,
       settings: mockSettings,
     });
-    expect(record.results[0].errors).toEqual(['计算错误']);
+    expect(record.items[0].result.errors).toEqual(['计算错误']);
   });
 
   it('一题可命中多个分类', () => {
@@ -86,11 +96,134 @@ describe('错误分类', () => {
       timeSpent: 30,
       settings: mockSettings,
     });
-    expect(record.results[0].errors).toEqual(['严重错误', '进位错误', '凑十法计算错误']);
-    expect(record.results[1].errors).toEqual(['进位错误', '凑十法计算错误']);
+    expect(record.items[0].result.errors).toEqual(['严重错误', '进位错误', '凑十法计算错误']);
+    expect(record.items[1].result.errors).toEqual(['进位错误', '凑十法计算错误']);
     // 15-8=7, user=0 → 十位正确（0=0），个位错 → 只命中平十/破十法
-    expect(record.results[2].errors).toEqual(['平十/破十法计算错误']);
+    expect(record.items[2].result.errors).toEqual(['平十/破十法计算错误']);
     expect(record.wrongCount).toBe(3);
+  });
+});
+
+describe('schema v2 与旧记录兼容', () => {
+  it('按题聚合答案、结果和辅助使用记录', () => {
+    const assistUsage = [
+      null,
+      {
+        eligible: true,
+        kind: 'carry',
+        used: false, // 存储层必须根据 level 修正这个不一致值。
+        level: 2,
+        method: 'placeValueCarry',
+        strategy: 'breakTen', // 进位不能携带退位策略。
+      },
+      {
+        eligible: true,
+        kind: 'borrow',
+        used: true,
+        level: 1,
+        method: 'placeValueBorrow', // 第一层不能提前记录完整方法。
+        strategy: 'bridgeTen',
+      },
+      {
+        eligible: false,
+        kind: 'carry',
+        used: true,
+        level: 2,
+        method: 'placeValueCarry',
+        strategy: null,
+      },
+    ];
+
+    const record = savePracticeRecord({
+      questions: mockQuestions,
+      userAnswers: ['8', '11', '7', '7'],
+      assistUsage,
+      timeSpent: 30,
+      settings: mockSettings,
+    });
+
+    expect(record.items[0]).toMatchObject({
+      index: 0,
+      question: mockQuestions[0],
+      userAnswer: '8',
+      assistUsage: null,
+    });
+    expect(record.items[1].assistUsage).toEqual({
+      eligible: true,
+      kind: 'carry',
+      used: true,
+      level: 2,
+      method: 'placeValueCarry',
+      strategy: null,
+    });
+    expect(record.items[2].assistUsage).toMatchObject({
+      used: true,
+      level: 1,
+      method: null,
+      strategy: null,
+    });
+    expect(record.items[3].assistUsage).toEqual({
+      eligible: false,
+      kind: null,
+      used: false,
+      level: 0,
+      method: null,
+      strategy: null,
+    });
+  });
+
+  it('读取 v1 并列数组时转换为 items，辅助使用情况保持未知', () => {
+    const legacy = {
+      id: 1,
+      date: '2026-01-01T00:00:00.000Z',
+      total: 1,
+      score: 100,
+      correct: 1,
+      wrongCount: 0,
+      questions: [mockQuestions[0]],
+      userAnswers: ['8'],
+      results: [{ isCorrect: true, errors: [], detail: null }],
+      settings: mockSettings,
+    };
+    localStorage.setItem('practice-records', JSON.stringify([legacy]));
+
+    const [record] = getPracticeRecords();
+    expect(record.schemaVersion).toBe(2);
+    expect(record.items).toEqual([{
+      index: 0,
+      question: mockQuestions[0],
+      userAnswer: '8',
+      result: legacy.results[0],
+      assistUsage: null,
+    }]);
+    expect(record).not.toHaveProperty('questions');
+    expect(record).not.toHaveProperty('userAnswers');
+    expect(record).not.toHaveProperty('results');
+  });
+
+  it('schema v2 保存后可无损读取', () => {
+    const usage = {
+      eligible: true,
+      kind: 'borrow',
+      used: true,
+      level: 2,
+      method: 'placeValueBorrow',
+      strategy: 'bridgeTen',
+    };
+    const saved = savePracticeRecord({
+      questions: [mockQuestions[2]],
+      userAnswers: ['7'],
+      assistUsage: [usage],
+      timeSpent: 10,
+      settings: mockSettings,
+    });
+
+    expect(getPracticeRecords()[0]).toEqual(saved);
+  });
+
+  it('公开规范化函数拒绝无效记录', () => {
+    expect(normalizePracticeRecord(null)).toBeNull();
+    expect(normalizePracticeRecord([])).toBeNull();
   });
 });
 

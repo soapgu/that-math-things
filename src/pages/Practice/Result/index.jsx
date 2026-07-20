@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 import RadarChart from './RadarChart';
 import { OP_DISPLAY } from '../../../utils/mathGenerator';
 import { ERROR_CONFIG } from '../../../utils/marking';
+import { normalizePracticeRecord } from '../../../utils/storage';
 
 function formatDuration(seconds) {
   const m = Math.floor(seconds / 60);
@@ -55,13 +56,13 @@ export default function PracticeResult() {
       navigate('/practice', { replace: true });
       return;
     }
-    setRecord(rec);
+    setRecord(normalizePracticeRecord(rec));
     setPruned(rec._pruned || 0);
   }, []);
 
   if (!record) return null;
 
-  const { score, total, correct, wrongCount, timeSpent, results, questions, userAnswers, evaluation } = record;
+  const { score, total, correct, wrongCount, timeSpent, items, evaluation } = record;
   const grade = score >= 100 ? { label: 'A🌟 完美', color: '#faad14' }
     : score >= 90  ? { label: 'A 优秀',   color: '#52c41a' }
     : score >= 80  ? { label: 'B 良好',   color: '#1677ff' }
@@ -69,7 +70,7 @@ export default function PracticeResult() {
     :                { label: 'F 不及格', color: '#ff4d4f' };
 
   const errorCount = {};
-  results.forEach(r => {
+  items.forEach(({ result: r }) => {
     if (!r.isCorrect) {
       r.errors.forEach(e => { errorCount[e] = (errorCount[e] || 0) + 1; });
     }
@@ -200,8 +201,7 @@ export default function PracticeResult() {
       {/* 逐题详情 */}
       <Card title="题目详情" size="small" style={{ marginBottom: 24 }}>
         <div role="list">
-          {results.map((result, index) => {
-            const q = questions[index];
+          {items.map(({ question: q, userAnswer, result }, index) => {
             if (!q) return null;
             const opDisplay = OP_DISPLAY[q.op] || q.op;
 
@@ -231,7 +231,7 @@ export default function PracticeResult() {
                     ) : (
                       <span style={{ fontSize: 16 }}>
                         <span style={{ textDecoration: 'line-through', color: '#ff4d4f', marginRight: 8 }}>
-                          {userAnswers[index]}
+                          {userAnswer}
                         </span>
                         <span style={{ color: '#52c41a', fontWeight: 600 }}>{q.answer}</span>
                       </span>

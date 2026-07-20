@@ -1168,7 +1168,7 @@ src/
 
 ##### 🔜 Phase 5：使用记录与结算摘要
 
-###### Phase 5.1：会话内辅助采集
+###### ✅ Phase 5.1：会话内辅助采集（已完成）
 
 - 为每道题初始化辅助状态：资格、类型、最高层级、完整演示方法和退位个位策略。
 - 点击“需要提示”将最高层级提升到 `level: 1`；点击“看看计算方法”提升到 `level: 2`。
@@ -1176,7 +1176,7 @@ src/
 - `level: 2` 进位记录 `placeValueCarry`；退位记录 `placeValueBorrow` 以及实际使用的 `breakTen | bridgeTen`。
 - 切题和完成训练时固化当前题状态；未使用但符合资格的题明确记录 `eligible: true, level: 0`。
 
-###### Phase 5.2：存储结构升级与兼容
+###### ✅ Phase 5.2：存储结构升级与兼容（已完成）
 
 - 新记录写入 `schemaVersion: 2`，使用 `items[]` 聚合 `question / userAnswer / result / assistUsage`。
 - `storage.js` 在一个位置完成记录构建和结构规范化，页面不直接拼接持久化对象。
