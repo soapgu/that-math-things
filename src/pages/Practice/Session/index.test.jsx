@@ -105,6 +105,26 @@ describe('PracticeSession 两层辅助', () => {
     expect(getByText('需要提示')).toBeTruthy();
   });
 
+  it('同题进入第二层后再次展开提醒，提交时仍保留最高层级', () => {
+    mocks.questions = [carryQuestion];
+    const { getByText, getByPlaceholderText } = renderSession({ questionCount: 1 });
+
+    fireEvent.click(getByText('需要提示'));
+    fireEvent.click(getByText('看看计算方法'));
+    fireEvent.click(getByText('跳过演示'));
+    fireEvent.click(getByText('需要提示'));
+    fireEvent.click(getByText('我再想想'));
+    fireEvent.change(getByPlaceholderText('?'), { target: { value: '32' } });
+    fireEvent.click(getByText('完成'));
+
+    expect(savePracticeRecord.mock.calls[0][0].assistUsage[0]).toMatchObject({
+      used: true,
+      level: 2,
+      method: 'placeValueCarry',
+      strategy: null,
+    });
+  });
+
   it('退位题进入退位方法演示', () => {
     mocks.questions = [borrowQuestion, borrowQuestion];
     const { getByText } = renderSession();
@@ -146,11 +166,14 @@ describe('PracticeSession 两层辅助', () => {
     }));
   });
 
-  it('完整退位演示记录方法和设置中实际选择的平十法', () => {
+  it.each([
+    { borrowOnesMethod: 'breakTen', label: '破十法' },
+    { borrowOnesMethod: 'bridgeTen', label: '平十法' },
+  ])('完整退位演示记录设置中实际选择的$label', ({ borrowOnesMethod }) => {
     mocks.questions = [borrowQuestion];
     const { getByText, getByPlaceholderText } = renderSession({
       questionCount: 1,
-      borrowOnesMethod: 'bridgeTen',
+      borrowOnesMethod,
     });
 
     fireEvent.click(getByText('需要提示'));
@@ -164,7 +187,7 @@ describe('PracticeSession 两层辅助', () => {
       used: true,
       level: 2,
       method: 'placeValueBorrow',
-      strategy: 'bridgeTen',
+      strategy: borrowOnesMethod,
     }]);
   });
 

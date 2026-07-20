@@ -225,6 +225,35 @@ describe('schema v2 与旧记录兼容', () => {
     expect(normalizePracticeRecord(null)).toBeNull();
     expect(normalizePracticeRecord([])).toBeNull();
   });
+
+  it('缺失或损坏的辅助字段统一降为未知，不误算为独立完成或查看方法', () => {
+    const record = normalizePracticeRecord({
+      schemaVersion: 2,
+      items: [
+        { question: mockQuestions[0], assistUsage: undefined },
+        { question: mockQuestions[1], assistUsage: 'bad data' },
+        { question: mockQuestions[1], assistUsage: { eligible: true, kind: 'carry', level: 9 } },
+        {
+          question: mockQuestions[2],
+          assistUsage: {
+            eligible: true,
+            kind: 'borrow',
+            used: true,
+            level: 2,
+            method: 'placeValueBorrow',
+            strategy: 'unknown',
+          },
+        },
+      ],
+    });
+
+    expect(record.items.map(({ assistUsage }) => assistUsage)).toEqual([
+      null,
+      null,
+      null,
+      null,
+    ]);
+  });
 });
 
 describe('getStats', () => {

@@ -19,6 +19,8 @@ function isQuotaError(e) {
 function normalizeAssistUsage(usage) {
   if (!usage || typeof usage !== 'object' || Array.isArray(usage)) return null;
 
+  // eligible 本身缺失或类型错误，说明这不是一条可信的采集记录。
+  if (typeof usage.eligible !== 'boolean') return null;
   const eligible = usage.eligible === true;
   if (!eligible) {
     return {
@@ -31,19 +33,21 @@ function normalizeAssistUsage(usage) {
     };
   }
 
-  const kind = ASSIST_KINDS.has(usage.kind) ? usage.kind : null;
-  const level = [0, 1, 2].includes(usage.level) ? usage.level : 0;
+  if (!ASSIST_KINDS.has(usage.kind) || ![0, 1, 2].includes(usage.level)) return null;
+  const kind = usage.kind;
+  const level = usage.level;
   const expectedMethod = kind === 'carry' ? 'placeValueCarry'
     : kind === 'borrow' ? 'placeValueBorrow'
       : null;
-  const method = level === 2
-    && ASSIST_METHODS.has(usage.method)
-    && usage.method === expectedMethod
-    ? usage.method
-    : null;
-  const strategy = method === 'placeValueBorrow' && BORROW_STRATEGIES.has(usage.strategy)
-    ? usage.strategy
-    : null;
+  // 第二层的方法是统计含义的一部分，缺失或与题型冲突时整条记录视为未知，
+  // 防止损坏数据被结算页误算成“查看方法”。
+  if (level === 2 && (!ASSIST_METHODS.has(usage.method) || usage.method !== expectedMethod)) {
+    return null;
+  }
+  if (level === 2 && kind === 'borrow' && !BORROW_STRATEGIES.has(usage.strategy)) return null;
+
+  const method = level === 2 ? usage.method : null;
+  const strategy = method === 'placeValueBorrow' ? usage.strategy : null;
 
   return {
     eligible: true,
