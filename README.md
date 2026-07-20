@@ -716,9 +716,9 @@ session 预期总用时 = Σ 每题预期用时
 
 ### 数据存储
 
-使用 localStorage，保存逻辑：Session 中实时写入，Result 页纯展示。
+使用 localStorage，保存逻辑：Session 完成训练时写入，Result 页纯展示。
 
-每条记录结构：
+当前（v2.2～v2.3）每条记录使用并列数组，通过相同下标关联：
 
 ```js
 {
@@ -741,6 +741,8 @@ session 预期总用时 = Σ 每题预期用时
   }
 }
 ```
+
+v2.4 Phase 5 将升级为 `schemaVersion: 2` 和按题聚合的 `items[]`，不再新增依赖下标对应的第四个并列数组。完整目标结构见“v2.4 → 辅助使用记录”。
 
 ### v2.3 工程质量优化
 
@@ -951,19 +953,117 @@ createAssistance(question, settings)
 
 #### 辅助使用记录
 
-每道题记录用户使用到的辅助层级，为后续分析“是否逐渐脱离辅助”保留数据：
+每道题的题目、答案、批改结果和辅助使用情况必须聚合在同一个对象中，避免 `questions[i] / userAnswers[i] / results[i] / assistUsage[i]` 依赖下标隐式关联。localStorage 的 `practice-records` 仍保存按时间倒序排列的练习记录数组，单场练习目标结构如下：
 
 ```js
-assistUsage: [
-  { used: true, level: 2, method: 'placeValueCarry' },
-  { used: true, level: 1, method: 'placeValueBorrow' },
-  { used: false, level: 0, method: null }
-]
+{
+  schemaVersion: 2,
+  id: 1784505600000,
+  date: '2026-07-20T10:00:00.000Z',
+  timeSpent: 86,
+  score: 67,
+  total: 3,
+  correct: 2,
+  wrongCount: 1,
+  settings: {
+    range: 50,
+    addRatio: 50,
+    carryBorrowProb: 40,
+    assistEnabled: true,
+    borrowOnesMethod: 'bridgeTen',
+    questionCount: 3
+  },
+  items: [
+    {
+      index: 0,
+      question: {
+        a: 19, b: 24, op: '+', answer: 43,
+        hasCarry: true, hasBorrow: false
+      },
+      userAnswer: '43',
+      result: { isCorrect: true, errors: [], detail: null },
+      assistUsage: {
+        eligible: true,
+        kind: 'carry',
+        used: true,
+        level: 2,
+        method: 'placeValueCarry',
+        strategy: null
+      }
+    },
+    {
+      index: 1,
+      question: {
+        a: 32, b: 24, op: '-', answer: 8,
+        hasCarry: false, hasBorrow: true
+      },
+      userAnswer: '6',
+      result: {
+        isCorrect: false,
+        errors: ['借位错误', '平十/破十法计算错误'],
+        detail: '个位计算错误'
+      },
+      assistUsage: {
+        eligible: true,
+        kind: 'borrow',
+        used: true,
+        level: 1,
+        method: null,
+        strategy: null
+      }
+    },
+    {
+      index: 2,
+      question: {
+        a: 18, b: 2, op: '+', answer: 20,
+        hasCarry: true, hasBorrow: false
+      },
+      userAnswer: '20',
+      result: { isCorrect: true, errors: [], detail: null },
+      assistUsage: {
+        eligible: true,
+        kind: 'carry',
+        used: false,
+        level: 0,
+        method: null,
+        strategy: null
+      }
+    }
+  ],
+  evaluation: {
+    difficulty: 3,
+    accuracy: 4,
+    speed: 3,
+    composite: {
+      totalStars: 4,
+      grade: 'SR',
+      comment: '表现不错，继续保持。'
+    }
+  }
+}
 ```
 
-- `level: 0`：未使用辅助。
-- `level: 1`：只查看进位或退位提醒。
-- `level: 2`：查看完整方法演示。
+- `eligible`：题目是否真实发生进位或退位。只有 `eligible: true` 才进入辅助依赖分析。
+- `kind`：题目可使用的辅助类型，取 `carry | borrow | null`，不代表用户看过完整演示。
+- `used`：等价于 `level > 0`，保留为查询便利字段，保存时必须与 `level` 保持一致。
+- `level: 0`：明确记录为未使用辅助。
+- `level: 1`：只查看进位或退位提醒，`method` 和 `strategy` 均为 `null`。
+- `level: 2`：查看完整方法演示；`method` 记录 `placeValueCarry | placeValueBorrow`。
+- `strategy`：仅在查看退位完整演示时记录 `breakTen | bridgeTen`，其他情况为 `null`。
+
+旧记录没有辅助使用数据时，读取层统一转换为按题聚合的结构，但使用 `assistUsage: null` 表示“历史版本未记录”，不能转换成 `level: 0`。例如：
+
+```js
+{
+  index: 0,
+  question: oldRecord.questions[0],
+  userAnswer: oldRecord.userAnswers[0],
+  result: oldRecord.results[0],
+  assistUsage: null
+}
+```
+
+后续分析只统计 `assistUsage?.eligible === true` 的题目，以此计算独立完成率、只看提醒率和完整演示率；`assistUsage === null` 的旧数据不参与辅助依赖分析。
 
 v2.4 暂不做复杂的辅助依赖统计，结算页只轻量展示“独立完成 / 查看提醒 / 查看方法”的题数。使用辅助不直接扣分，避免孩子为了得分拒绝求助。旧记录没有 `assistUsage` 时必须继续正常展示。
 
@@ -988,13 +1088,18 @@ src/
 │   ├── assistGenerator.js
 │   ├── assistGenerator.test.js
 │   ├── practiceSettings.js
-│   └── practiceSettings.test.js
+│   ├── practiceSettings.test.js
+│   ├── storage.js
+│   └── storage.test.js
 └── pages/
     └── Practice/
         ├── Settings/
         │   ├── index.jsx
         │   └── index.test.jsx
-        └── Session/
+        ├── Session/
+        │   ├── index.jsx
+        │   └── index.test.jsx
+        └── Result/
             ├── index.jsx
             └── index.test.jsx
 ```
@@ -1007,6 +1112,8 @@ src/
 - `AssistAnimationPlayer`：统一三档步骤定时、前后切换、进度、跳过、重播及减少动态效果适配。
 - 进位、退位动画：只消费步骤数据并映射数位表状态，保留两个操作数及进退位来源，不重复计算公式。
 - `PracticeSession`：当前提供入口并在切题时重置状态；Phase 5 再接入辅助使用记录，不承载具体算法。
+- `storage.js`：Phase 5 统一构建、规范化和兼容读取 schema v1/v2 练习记录。
+- `PracticeResult`：Phase 5 只消费规范化后的 `items[]`，展示轻量辅助使用摘要。
 
 #### v2.4 实现拆分
 
@@ -1061,20 +1168,40 @@ src/
 
 ##### 🔜 Phase 5：使用记录与结算摘要
 
-- 点击“需要提示”记为 `level: 1`，点击“看看计算方法”提升为 `level: 2`，未点击为 `level: 0`。
-- 同一道题多次展开取最高层级；收起提示不清除记录。
-- 切题或完成训练时保存本题最高辅助层级和使用方法。
-- 将 `assistUsage` 随练习记录保存，兼容旧的 localStorage 数据。
-- 结算页增加独立完成、查看提醒、查看方法的简单摘要。
-- 不改变现有分数、错误分类和综合评价公式。
-- 旧记录没有 `assistUsage` 时按“未记录”处理，不误判为未使用辅助。
-- 订正页暂不记录辅助使用情况。
+###### Phase 5.1：会话内辅助采集
+
+- 为每道题初始化辅助状态：资格、类型、最高层级、完整演示方法和退位个位策略。
+- 点击“需要提示”将最高层级提升到 `level: 1`；点击“看看计算方法”提升到 `level: 2`。
+- 同一道题多次展开只保留最高层级；收起、上一步、重播和跳过均不降低已经记录的层级。
+- `level: 2` 进位记录 `placeValueCarry`；退位记录 `placeValueBorrow` 以及实际使用的 `breakTen | bridgeTen`。
+- 切题和完成训练时固化当前题状态；未使用但符合资格的题明确记录 `eligible: true, level: 0`。
+
+###### Phase 5.2：存储结构升级与兼容
+
+- 新记录写入 `schemaVersion: 2`，使用 `items[]` 聚合 `question / userAnswer / result / assistUsage`。
+- `storage.js` 在一个位置完成记录构建和结构规范化，页面不直接拼接持久化对象。
+- 读取旧的并列数组记录时转换为 `items[]`，但每题设置 `assistUsage: null`。
+- 旧记录不得误判为独立完成；保存新记录时校验 `used === (level > 0)`。
+- Result、Correction、Stats 统一通过兼容读取层消费记录，避免各页面分别判断版本。
+
+###### Phase 5.3：结算摘要
+
+- 结算页增加独立完成、只看提醒、查看方法三个题数，仅统计 `eligible: true` 且有记录的题目。
+- 普通题和 `assistUsage: null` 的旧题不进入辅助摘要分母。
+- 不改变现有分数、错误分类、星级和综合评价公式，使用辅助不直接扣分。
+- 订正页暂不采集新的辅助使用记录。
+
+###### Phase 5.4：测试与验收
+
+- 覆盖同题多次展开取最高层级、切题固化、最后一题保存及辅助关闭流程。
+- 覆盖进位第二层、退位破十法第二层、退位平十法第二层的方法和策略记录。
+- 覆盖 schema v1 旧记录转换、schema v2 往返保存以及缺失/损坏辅助字段的容错。
+- 覆盖 Session → Storage → Result 的完整数据闭环和摘要口径。
 
 ##### 🔜 Phase 6：集成验证与体验优化
 
-- 覆盖辅助使用记录从 Session 到 Result 的闭环。
-- 验证刷新、历史记录、订正和旧 localStorage 数据兼容性。
 - 验证 `assistEnabled=false` 时原有做题流程完全不受影响。
+- 在真实浏览器中复核刷新、历史记录和订正流程；数据结构自动化兼容测试归入 Phase 5.4。
 - 在不同题量、运算范围和桌面尺寸下检查布局与动画表现。
 - 继续验证减少动态效果设置、键盘可访问性和移动端布局。
 
@@ -1092,5 +1219,8 @@ src/
 - 动画结束后仍由孩子自己填写并提交答案。
 - 切换题目后辅助状态完全重置。
 - 使用辅助不改变题目、计时、批改、错误分析和综合评价结果。
-- 新记录可以保存辅助使用情况，旧记录仍能正常展示。
+- 新记录使用 `schemaVersion: 2` 和按题聚合的 `items[]` 保存辅助使用情况。
+- 符合辅助资格但未使用的题记录 `eligible: true, level: 0`；普通题不进入辅助摘要。
+- 旧记录转换后使用 `assistUsage: null`，仍能正常展示且不误算为独立完成。
+- `level: 1` 不记录完整演示方法；`level: 2` 正确记录进退位方法及破十法/平十法策略。
 - 拆分算法、边界条件和主要交互均有自动化测试。
