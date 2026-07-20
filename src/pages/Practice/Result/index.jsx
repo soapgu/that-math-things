@@ -7,6 +7,7 @@ import RadarChart from './RadarChart';
 import { OP_DISPLAY } from '../../../utils/mathGenerator';
 import { ERROR_CONFIG } from '../../../utils/marking';
 import { normalizePracticeRecord } from '../../../utils/storage';
+import { summarizeAssistUsage } from '../../../utils/assistUsage';
 
 function formatDuration(seconds) {
   const m = Math.floor(seconds / 60);
@@ -63,6 +64,7 @@ export default function PracticeResult() {
   if (!record) return null;
 
   const { score, total, correct, wrongCount, timeSpent, items, evaluation } = record;
+  const assistSummary = summarizeAssistUsage(items);
   const grade = score >= 100 ? { label: 'A🌟 完美', color: '#faad14' }
     : score >= 90  ? { label: 'A 优秀',   color: '#52c41a' }
     : score >= 80  ? { label: 'B 良好',   color: '#1677ff' }
@@ -184,6 +186,41 @@ export default function PracticeResult() {
           </Col>
         </Row>
       </Card>
+
+      {/* 只描述本场的辅助使用情况，不参与得分和综合评价。 */}
+      {assistSummary.eligible > 0 && (
+        <Card title="辅助使用情况" size="small" style={{ marginBottom: 24 }}>
+          <Row gutter={12} style={{ textAlign: 'center' }}>
+            <Col span={8}>
+              <Statistic
+                title="独立完成"
+                value={assistSummary.independent}
+                suffix="题"
+                styles={{ content: { color: '#52c41a', fontSize: 24 } }}
+              />
+            </Col>
+            <Col span={8}>
+              <Statistic
+                title="只看提醒"
+                value={assistSummary.reminder}
+                suffix="题"
+                styles={{ content: { color: '#fa8c16', fontSize: 24 } }}
+              />
+            </Col>
+            <Col span={8}>
+              <Statistic
+                title="查看方法"
+                value={assistSummary.method}
+                suffix="题"
+                styles={{ content: { color: '#1677ff', fontSize: 24 } }}
+              />
+            </Col>
+          </Row>
+          <div style={{ marginTop: 10, textAlign: 'center', color: '#999', fontSize: 13 }}>
+            本次共有 {assistSummary.eligible} 道进位或退位题
+          </div>
+        </Card>
+      )}
 
       {/* 错误分布 */}
       {Object.keys(errorCount).length > 0 && (

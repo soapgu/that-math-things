@@ -48,3 +48,27 @@ export function promoteAssistUsage(current, requestedLevel, assistance) {
     strategy,
   };
 }
+
+/**
+ * 汇总一场练习中有采集记录且符合辅助条件的题目。
+ * 普通题（eligible=false）、旧记录（assistUsage=null）和无效层级均不进入分母。
+ */
+export function summarizeAssistUsage(items = []) {
+  const summary = {
+    eligible: 0,
+    independent: 0,
+    reminder: 0,
+    method: 0,
+  };
+
+  items.forEach(({ assistUsage } = {}) => {
+    if (assistUsage?.eligible !== true || ![0, 1, 2].includes(assistUsage.level)) return;
+
+    summary.eligible += 1;
+    if (assistUsage.level === 0) summary.independent += 1;
+    if (assistUsage.level === 1) summary.reminder += 1;
+    if (assistUsage.level === 2) summary.method += 1;
+  });
+
+  return summary;
+}

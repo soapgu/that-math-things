@@ -1,6 +1,6 @@
 import { createAssistance } from './assistGenerator';
 import { BORROW_ONES_METHODS } from './practiceSettings';
-import { createAssistUsage, promoteAssistUsage } from './assistUsage';
+import { createAssistUsage, promoteAssistUsage, summarizeAssistUsage } from './assistUsage';
 
 describe('会话内辅助使用状态', () => {
   it('分别初始化不可辅助题和未使用的进位题', () => {
@@ -62,6 +62,39 @@ describe('会话内辅助使用状态', () => {
       level: 2,
       method: 'placeValueBorrow',
       strategy: borrowOnesMethod,
+    });
+  });
+});
+
+describe('辅助使用摘要', () => {
+  it('只统计有记录且符合辅助条件的题目', () => {
+    const items = [
+      { assistUsage: { eligible: true, level: 0 } },
+      { assistUsage: { eligible: true, level: 1 } },
+      { assistUsage: { eligible: true, level: 2 } },
+      { assistUsage: { eligible: false, level: 0 } },
+      { assistUsage: null },
+      {},
+    ];
+
+    expect(summarizeAssistUsage(items)).toEqual({
+      eligible: 3,
+      independent: 1,
+      reminder: 1,
+      method: 1,
+    });
+  });
+
+  it('旧记录、普通题和无效数据不会制造摘要分母', () => {
+    expect(summarizeAssistUsage([
+      { assistUsage: null },
+      { assistUsage: { eligible: false, level: 0 } },
+      { assistUsage: { eligible: true, level: 3 } },
+    ])).toEqual({
+      eligible: 0,
+      independent: 0,
+      reminder: 0,
+      method: 0,
     });
   });
 });

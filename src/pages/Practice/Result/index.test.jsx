@@ -113,3 +113,51 @@ describe('PracticeResult 评价卡片', () => {
     expect(() => unmount()).not.toThrow();
   });
 });
+
+describe('PracticeResult 辅助使用摘要', () => {
+  const usage = (level) => ({
+    eligible: true,
+    kind: level === 2 ? 'borrow' : 'carry',
+    used: level > 0,
+    level,
+    method: level === 2 ? 'placeValueBorrow' : null,
+    strategy: level === 2 ? 'bridgeTen' : null,
+  });
+
+  function recordWithAssistSummary() {
+    const questions = [
+      ...baseRecord.questions,
+      { a: 15, b: 8, op: '-', answer: 7, hasCarry: false, hasBorrow: true },
+      { a: 6, b: 2, op: '+', answer: 8, hasCarry: false, hasBorrow: false },
+    ];
+    return {
+      ...baseRecord,
+      schemaVersion: 2,
+      total: 4,
+      correct: 4,
+      items: questions.map((question, index) => ({
+        index,
+        question,
+        userAnswer: String(question.answer),
+        result: { isCorrect: true, errors: [], detail: null },
+        assistUsage: index < 3
+          ? usage(index)
+          : { eligible: false, kind: null, used: false, level: 0, method: null, strategy: null },
+      })),
+    };
+  }
+
+  it('分别展示独立完成、只看提醒和查看方法题数', () => {
+    const { getByText } = renderAt({ record: recordWithAssistSummary() });
+
+    expect(getByText('独立完成').closest('.ant-statistic').textContent).toContain('1题');
+    expect(getByText('只看提醒').closest('.ant-statistic').textContent).toContain('1题');
+    expect(getByText('查看方法').closest('.ant-statistic').textContent).toContain('1题');
+    expect(getByText('本次共有 3 道进位或退位题')).toBeTruthy();
+  });
+
+  it('旧记录没有辅助采集数据时不展示摘要', () => {
+    const { queryByText } = renderAt({ record: baseRecord });
+    expect(queryByText('辅助使用情况')).toBeNull();
+  });
+});
