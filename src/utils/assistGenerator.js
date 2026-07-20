@@ -1,3 +1,5 @@
+import { BORROW_ONES_METHODS } from './practiceSettings';
+
 // 教学方法标识只描述“采用哪套数位步骤”，不代表 UI 组件名称。
 // 后续动画根据 method 选择进位或退位演示，不需要再次分析题目。
 const METHODS = {
@@ -162,7 +164,7 @@ function createCarryAssistance({ a, b, answer }) {
  * @param {{a:number,b:number,answer:number}} question
  * @returns {Object} 可供两层提醒和动画直接消费的模型
  */
-function createBorrowAssistance({ a, b, answer }) {
+function createBorrowAssistance({ a, b, answer }, settings) {
   // minuend = 被减数，subtrahend = 减数；这里只先取双方个位。
   const minuendOnes = a % 10;
   const subtrahendOnes = b % 10;
@@ -188,11 +190,32 @@ function createBorrowAssistance({ a, b, answer }) {
   const remainingTensCount = remainingTensValue / 10;
   const subtrahendTensCount = subtrahendTensValue / 10;
   const tensResultCount = tensResultValue / 10;
+  const onesMethod = settings.borrowOnesMethod === BORROW_ONES_METHODS.BRIDGE_TEN
+    ? BORROW_ONES_METHODS.BRIDGE_TEN
+    : BORROW_ONES_METHODS.BREAK_TEN;
+  // 顶层仍是同一个“个位相减”步骤，只把内部演示所需的拆分数据交给动画。
+  const onesStrategy = onesMethod === BORROW_ONES_METHODS.BRIDGE_TEN
+    ? {
+      type: BORROW_ONES_METHODS.BRIDGE_TEN,
+      subtractToTen: minuendOnes,
+      remainingSubtract: subtrahendOnes - minuendOnes,
+      skipToTen: minuendOnes === 0,
+      result: onesResult,
+    }
+    : {
+      type: BORROW_ONES_METHODS.BREAK_TEN,
+      subtractFromTen: subtrahendOnes,
+      tenRemainder: 10 - subtrahendOnes,
+      addBack: minuendOnes,
+      skipAddBack: minuendOnes === 0,
+      result: onesResult,
+    };
 
   return {
     eligible: true,
     kind: 'borrow',
     method: METHODS.PLACE_VALUE_BORROW,
+    onesMethod,
     hint: {
       message: `个位的 ${minuendOnes} 不够减 ${subtrahendOnes}，需要从十位退 1。`,
       question: '退下来的 1 个十可以换成多少个一？',
@@ -227,6 +250,7 @@ function createBorrowAssistance({ a, b, answer }) {
         type: 'subtractOnes',
         text: `${borrowedOnes} 个一减 ${subtrahendOnes} 个一是 ${onesResult} 个一`,
         expression: `${borrowedOnes} - ${subtrahendOnes} = ${onesResult}`,
+        strategy: onesStrategy,
       },
       {
         // 再处理十位区域，避免孩子只算个位而漏算减数十位。
@@ -247,7 +271,7 @@ function createBorrowAssistance({ a, b, answer }) {
 /**
  * 根据一道计算题和训练设置生成辅助计算模型。
  * 该函数是纯计算逻辑，不读取状态，也不包含 UI 或动画实现。
- * settings 参数为后续扩展保留；Phase 1 中加减法均严格使用教材图示的数位步骤。
+ * settings 只选择退位后个位的破十法或平十法；加法及顶层数位步骤不受影响。
  *
  * @param {Object} question 题目对象：{ a, b, op, answer, ... }
  * @param {Object} settings 训练设置，Phase 1 暂不参与算法分支
@@ -257,9 +281,9 @@ export function createAssistance(question, settings = {}) {
   // 先阻断坏数据，后续两个生成器即可假设 a、b、answer 都是可信整数。
   if (!isValidQuestion(question)) return ineligible('invalid-question');
 
-  // 加法使用数位进位；减法使用数位退位，两者都不再切换心算方法。
+  // 加法固定使用数位进位；减法固定使用数位退位，只有退位后的个位内部策略可选。
   if (question.op === '+') return createCarryAssistance(question);
-  return createBorrowAssistance(question);
+  return createBorrowAssistance(question, settings);
 }
 
 // 对外只暴露稳定的字符串常量，调用方不需要知道内部生成函数。

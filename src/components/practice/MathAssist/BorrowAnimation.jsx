@@ -1,5 +1,6 @@
 import React from 'react';
 import AssistAnimationPlayer from './AssistAnimationPlayer';
+import { BORROW_ONES_METHODS } from '../../../utils/practiceSettings';
 
 const ids = (prefix, count) => Array.from({ length: count }, (_, index) => `${prefix}-${index}`);
 const group = (id, count, extra = {}) => ({ id, count, ...extra });
@@ -22,6 +23,7 @@ export default function BorrowAnimation({ assistance, onComplete }) {
   const remainingBorrowedIds = borrowedOneIds.slice(0, 10 - values.subtrahendOnes);
   const resultOneIds = [...originalOneIds, ...remainingBorrowedIds];
   const resultTenIds = originalTenIds.slice(0, resultTensCount);
+  const onesStrategy = assistance.steps.find((step) => step.type === 'subtractOnes').strategy;
 
   const remainingTens = () => nonEmpty(
     group('remaining-tens', remainingTensCount, { unitIds: originalTenIds }),
@@ -80,7 +82,7 @@ export default function BorrowAnimation({ assistance, onComplete }) {
     },
   ];
 
-  const subtractOnesProcess = [
+  const breakTenProcess = [
     {
       id: 'minuend',
       label: String(values.first),
@@ -119,6 +121,112 @@ export default function BorrowAnimation({ assistance, onComplete }) {
       onesStatus: '个位已减',
     },
   ];
+
+  const bridgeFirstPartIds = subtrahendOneIds.slice(0, onesStrategy.subtractToTen || 0);
+  const bridgeRemainingIds = subtrahendOneIds.slice(onesStrategy.subtractToTen || 0);
+  const bridgeToTenProcess = [
+    {
+      id: 'minuend',
+      label: String(values.first),
+      tens: remainingTens(),
+      ones: nonEmpty(
+        group('original-ones', values.minuendOnes, {
+          unitIds: originalOneIds,
+          crossedCount: values.minuendOnes,
+          highlighted: true,
+        }),
+        group('borrowed-ones', 10, {
+          unitIds: borrowedOneIds,
+          columns: 10,
+          source: 'borrowed',
+        }),
+      ),
+    },
+    {
+      id: 'subtrahend',
+      label: `−${values.second}`,
+      tens: subtrahendTens(),
+      ones: nonEmpty(
+        group('subtract-to-ten', bridgeFirstPartIds.length, {
+          unitIds: bridgeFirstPartIds,
+          crossedCount: bridgeFirstPartIds.length,
+          highlighted: true,
+        }),
+        group('remaining-subtract', bridgeRemainingIds.length, { unitIds: bridgeRemainingIds }),
+      ),
+    },
+  ];
+  const bridgeRemainingProcess = [
+    {
+      id: 'minuend',
+      label: String(values.first),
+      tens: remainingTens(),
+      ones: nonEmpty(group('borrowed-ones', 10, {
+        unitIds: borrowedOneIds,
+        columns: 10,
+        crossedCount: onesStrategy.remainingSubtract,
+        source: 'borrowed',
+        highlighted: true,
+      })),
+    },
+    {
+      id: 'subtrahend',
+      label: `−${values.second}`,
+      tens: subtrahendTens(),
+      ones: nonEmpty(group('remaining-subtract', bridgeRemainingIds.length, {
+        unitIds: bridgeRemainingIds,
+        highlighted: true,
+      })),
+    },
+  ];
+
+  const breakTenPhases = [
+    {
+      rows: breakTenProcess,
+      highlight: 'ones',
+      caption: `破十法：先算 10 − ${values.subtrahendOnes} = ${onesStrategy.tenRemainder}`,
+    },
+    {
+      rows: onesCompletedRows,
+      highlight: 'ones',
+      caption: onesStrategy.skipAddBack
+        ? `原个位是 0，省略加回，个位结果是 ${values.onesResult}`
+        : `再加回原来的 ${values.minuendOnes} 个一，得到 ${values.onesResult}`,
+    },
+  ];
+  const bridgeTenPhases = onesStrategy.skipToTen
+    ? [
+      {
+        rows: breakTenProcess,
+        highlight: 'ones',
+        caption: `平十法：现在已经是 10，省略“先减到 10”，直接算 10 − ${values.subtrahendOnes}`,
+      },
+      {
+        rows: onesCompletedRows,
+        highlight: 'ones',
+        caption: `个位计算完成，剩下 ${values.onesResult} 个一`,
+      },
+    ]
+    : [
+      {
+        rows: bridgeToTenProcess,
+        highlight: 'ones',
+        caption: `平十法：先减 ${onesStrategy.subtractToTen} 个一，${values.borrowedOnes} − ${onesStrategy.subtractToTen} = 10`,
+      },
+      {
+        rows: bridgeRemainingProcess,
+        highlight: 'ones',
+        caption: `再减剩下的 ${onesStrategy.remainingSubtract} 个一，10 − ${onesStrategy.remainingSubtract} = ${values.onesResult}`,
+      },
+      {
+        rows: onesCompletedRows,
+        highlight: 'ones',
+        caption: `个位计算完成，剩下 ${values.onesResult} 个一`,
+      },
+    ];
+  const subtractOnesPhases = onesStrategy.type === BORROW_ONES_METHODS.BRIDGE_TEN
+    ? bridgeTenPhases
+    : breakTenPhases;
 
   const subtractTensProcess = [
     {
@@ -176,19 +284,8 @@ export default function BorrowAnimation({ assistance, onComplete }) {
       ],
     },
     {
-      phaseDuration: 1600,
-      phases: [
-        {
-          rows: subtractOnesProcess,
-          highlight: 'ones',
-          caption: `从 ${values.borrowedOnes} 个一中划去 ${values.subtrahendOnes} 个一`,
-        },
-        {
-          rows: onesCompletedRows,
-          highlight: 'ones',
-          caption: `个位计算完成，剩下 ${values.onesResult} 个一`,
-        },
-      ],
+      phaseDuration: 1400,
+      phases: subtractOnesPhases,
     },
     {
       phaseDuration: 1600,

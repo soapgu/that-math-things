@@ -2,7 +2,11 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, Slider, Switch, Radio, Rate, Button, Space, Divider } from 'antd';
 import { BarChartOutlined, PlayCircleOutlined, StarFilled } from '@ant-design/icons';
-import { loadPracticeSettings, savePracticeSettings } from '../../../utils/practiceSettings';
+import {
+  BORROW_ONES_METHODS,
+  loadPracticeSettings,
+  savePracticeSettings,
+} from '../../../utils/practiceSettings';
 
 const STAR_PROB_MAP = { 1: 40, 2: 60, 3: 80 };
 
@@ -93,6 +97,31 @@ export default function PracticeSettings() {
                 {probStars <= 1 ? '偶尔出现' : probStars === 2 ? '一半题目' : '大部分都有'}
               </span>
             </Space>
+            <div style={{ margin: '10px 0 0 28px' }}>
+              <div style={{ marginBottom: 6, fontSize: 12, fontWeight: 600, color: settings.assistEnabled ? '#595959' : '#bfbfbf' }}>
+                退位个位算法
+              </div>
+              <Radio.Group
+                value={settings.borrowOnesMethod}
+                disabled={!settings.assistEnabled}
+                onChange={(e) => update('borrowOnesMethod', e.target.value)}
+              >
+                <Space orientation="vertical" size={6}>
+                  <Radio value={BORROW_ONES_METHODS.BREAK_TEN}>
+                    <span style={{ fontWeight: 600 }}>破十法</span>
+                    <span style={{ marginLeft: 8, fontSize: 11, color: '#999' }}>
+                      12−4：先算 10−4，再加回 2
+                    </span>
+                  </Radio>
+                  <Radio value={BORROW_ONES_METHODS.BRIDGE_TEN}>
+                    <span style={{ fontWeight: 600 }}>平十法</span>
+                    <span style={{ marginLeft: 8, fontSize: 11, color: '#999' }}>
+                      12−4：先减 2 得到 10，再减 2
+                    </span>
+                  </Radio>
+                </Space>
+              </Radio.Group>
+            </div>
           </div>
 
           <Divider style={{ margin: '4px 0' }} />

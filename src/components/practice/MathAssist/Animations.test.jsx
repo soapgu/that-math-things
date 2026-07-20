@@ -4,6 +4,7 @@ import { createAssistance } from '../../../utils/assistGenerator';
 import CarryAnimation from './CarryAnimation';
 import BorrowAnimation from './BorrowAnimation';
 import { PLAYBACK_SPEEDS, STEP_DURATION } from './AssistAnimationPlayer';
+import { BORROW_ONES_METHODS } from '../../../utils/practiceSettings';
 
 const unitsIn = (container, groupId) => (
   container.querySelectorAll(`[data-group="${groupId}"] [data-testid]`)
@@ -117,6 +118,32 @@ describe('进位、退位分步动画', () => {
     expect(view.getByText('十位已减')).toBeTruthy();
   });
 
+  it('32 - 24 选择平十法时先减 2 到 10，再减剩余 2', () => {
+    const assistance = createAssistance(
+      { a: 32, b: 24, op: '-', answer: 8 },
+      { borrowOnesMethod: BORROW_ONES_METHODS.BRIDGE_TEN },
+    );
+    const view = render(<BorrowAnimation assistance={assistance} onComplete={vi.fn()} />);
+    act(() => vi.advanceTimersByTime(1400));
+    fireEvent.click(view.getByText('下一步'));
+
+    expect(view.getByText(/平十法：先减 2 个一/)).toBeTruthy();
+    expect([...unitsIn(view.container, 'original-ones')]
+      .filter((node) => node.firstChild.dataset.state === 'crossed')).toHaveLength(2);
+    expect(unitsIn(view.container, 'subtract-to-ten')).toHaveLength(2);
+    expect(unitsIn(view.container, 'remaining-subtract')).toHaveLength(2);
+
+    act(() => vi.advanceTimersByTime(1400));
+    expect(view.getByText(/再减剩下的 2 个一/)).toBeTruthy();
+    expect(unitsIn(view.container, 'original-ones')).toHaveLength(0);
+    expect([...unitsIn(view.container, 'borrowed-ones')]
+      .filter((node) => node.firstChild.dataset.state === 'crossed')).toHaveLength(2);
+
+    act(() => vi.advanceTimersByTime(1400));
+    expect(unitsIn(view.container, 'ones-result')).toHaveLength(8);
+    expect(view.getByText('个位已减')).toBeTruthy();
+  });
+
   it.each([
     [15, 8, 7],
     [10, 3, 7],
@@ -135,6 +162,16 @@ describe('进位、退位分步动画', () => {
     fireEvent.click(view.getByText('下一步'));
     fireEvent.click(view.getByText('下一步'));
     expect(view.getByText('十位没有需要再减的十，保持 0')).toBeTruthy();
+  });
+
+  it('10 - 3 选择平十法时说明已是整十并省略第一段', () => {
+    const assistance = createAssistance(
+      { a: 10, b: 3, op: '-', answer: 7 },
+      { borrowOnesMethod: BORROW_ONES_METHODS.BRIDGE_TEN },
+    );
+    const view = render(<BorrowAnimation assistance={assistance} onComplete={vi.fn()} />);
+    fireEvent.click(view.getByText('下一步'));
+    expect(view.getByText(/现在已经是 10，省略“先减到 10”/)).toBeTruthy();
   });
 
   it('支持上一步、下一步、跳过和重新播放', () => {
