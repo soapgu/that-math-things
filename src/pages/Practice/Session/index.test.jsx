@@ -2,6 +2,7 @@ import React from 'react';
 import { fireEvent, render } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import PracticeSession from './index';
+import { savePracticeRecord } from '../../../utils/storage';
 
 const mocks = vi.hoisted(() => ({
   questions: [],
@@ -44,6 +45,7 @@ function renderSession(overrides = {}) {
       <Routes>
         <Route path="/practice/session" element={<PracticeSession />} />
         <Route path="/practice" element={<div>设置页</div>} />
+        <Route path="/practice/result" element={<div>结算页</div>} />
       </Routes>
     </MemoryRouter>
   );
@@ -53,6 +55,8 @@ beforeEach(() => {
   mocks.questions = [carryQuestion, carryQuestion];
   mocks.timer.start.mockClear();
   mocks.timer.stop.mockClear();
+  savePracticeRecord.mockReset();
+  savePracticeRecord.mockImplementation((data) => data);
 });
 
 describe('PracticeSession 两层辅助', () => {
@@ -108,5 +112,75 @@ describe('PracticeSession 两层辅助', () => {
     fireEvent.click(getByText('看看计算方法'));
     expect(getByText('退位计算演示')).toBeTruthy();
     expect(getByText('把 43 看作 3 个十和 13 个一')).toBeTruthy();
+  });
+
+  it('切题后保留第一题提醒层级，完成时同时记录第二题未使用', () => {
+    const { getByText, getByPlaceholderText } = renderSession();
+    const input = getByPlaceholderText('?');
+
+    fireEvent.click(getByText('需要提示'));
+    fireEvent.change(input, { target: { value: '32' } });
+    fireEvent.click(getByText('下一题'));
+    fireEvent.change(input, { target: { value: '32' } });
+    fireEvent.click(getByText('完成'));
+
+    expect(savePracticeRecord).toHaveBeenCalledWith(expect.objectContaining({
+      assistUsage: [
+        {
+          eligible: true,
+          kind: 'carry',
+          used: true,
+          level: 1,
+          method: null,
+          strategy: null,
+        },
+        {
+          eligible: true,
+          kind: 'carry',
+          used: false,
+          level: 0,
+          method: null,
+          strategy: null,
+        },
+      ],
+    }));
+  });
+
+  it('完整退位演示记录方法和设置中实际选择的平十法', () => {
+    mocks.questions = [borrowQuestion];
+    const { getByText, getByPlaceholderText } = renderSession({
+      questionCount: 1,
+      borrowOnesMethod: 'bridgeTen',
+    });
+
+    fireEvent.click(getByText('需要提示'));
+    fireEvent.click(getByText('看看计算方法'));
+    fireEvent.change(getByPlaceholderText('?'), { target: { value: '25' } });
+    fireEvent.click(getByText('完成'));
+
+    expect(savePracticeRecord.mock.calls[0][0].assistUsage).toEqual([{
+      eligible: true,
+      kind: 'borrow',
+      used: true,
+      level: 2,
+      method: 'placeValueBorrow',
+      strategy: 'bridgeTen',
+    }]);
+  });
+
+  it('关闭辅助时仍区分符合资格的独立完成题和普通题', () => {
+    mocks.questions = [carryQuestion, plainQuestion];
+    const { getByText, getByPlaceholderText } = renderSession({ assistEnabled: false });
+    const input = getByPlaceholderText('?');
+
+    fireEvent.change(input, { target: { value: '32' } });
+    fireEvent.click(getByText('下一题'));
+    fireEvent.change(input, { target: { value: '17' } });
+    fireEvent.click(getByText('完成'));
+
+    expect(savePracticeRecord.mock.calls[0][0].assistUsage).toEqual([
+      expect.objectContaining({ eligible: true, used: false, level: 0 }),
+      expect.objectContaining({ eligible: false, used: false, level: 0 }),
+    ]);
   });
 });

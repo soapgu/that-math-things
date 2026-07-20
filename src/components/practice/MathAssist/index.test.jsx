@@ -13,9 +13,13 @@ describe('MathAssist 两层辅助', () => {
   });
 
   it('点击后展示提醒和引导问题', () => {
-    const { getByText } = render(<MathAssist assistance={assistance} />);
+    const onLevelChange = vi.fn();
+    const { getByText } = render(
+      <MathAssist assistance={assistance} onLevelChange={onLevelChange} />,
+    );
     fireEvent.click(getByText('需要提示'));
     expect(getByText(assistance.hint.message)).toBeTruthy();
+    expect(onLevelChange).toHaveBeenCalledWith(1);
     expect(getByText(`想一想：${assistance.hint.question}`)).toBeTruthy();
   });
 
@@ -33,11 +37,17 @@ describe('MathAssist 两层辅助', () => {
 
   it('从第一层进入进位演示，跳过后收起并通知题目恢复焦点', () => {
     const onReturnToQuestion = vi.fn();
+    const onLevelChange = vi.fn();
     const { getByText, queryByText } = render(
-      <MathAssist assistance={assistance} onReturnToQuestion={onReturnToQuestion} />,
+      <MathAssist
+        assistance={assistance}
+        onReturnToQuestion={onReturnToQuestion}
+        onLevelChange={onLevelChange}
+      />,
     );
     fireEvent.click(getByText('需要提示'));
     fireEvent.click(getByText('看看计算方法'));
+    expect(onLevelChange.mock.calls).toEqual([[1], [2]]);
     expect(getByText('进位计算演示')).toBeTruthy();
     expect(getByText(assistance.steps[0].text)).toBeTruthy();
 

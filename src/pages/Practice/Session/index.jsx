@@ -4,6 +4,7 @@ import { Typography, Input, Button, Progress, message } from 'antd';
 import { ArrowRightOutlined, CheckOutlined } from '@ant-design/icons';
 import { generateQuestions, OP_DISPLAY } from '../../../utils/mathGenerator';
 import { createAssistance } from '../../../utils/assistGenerator';
+import { createAssistUsage, promoteAssistUsage } from '../../../utils/assistUsage';
 import { loadPracticeSettings, normalizePracticeSettings } from '../../../utils/practiceSettings';
 import { savePracticeRecord } from '../../../utils/storage';
 import MathAssist from '../../../components/practice/MathAssist';
@@ -32,12 +33,22 @@ export default function PracticeSession() {
   const timer = useTimer();
   const current = questions[currentIndex];
 
-  // 辅助模型只取决于当前题和训练设置。练习计时器每秒更新、输入答案等渲染
-  // 都不应重复创建 steps 对象，否则会造成动画子组件无效更新。
-  const assistance = useMemo(
-    () => (current ? createAssistance(current, settings) : null),
-    [current, settings],
-  );
+  // 将每道题的辅助内容和使用情况放在同一个 entry 中，避免两组数组依靠下标关联。
+  // 单场练习的题目和设置不会变化，因此只初始化一次；ref 也不会因计时器刷新触发渲染。
+  const questionAssistsRef = useRef(null);
+  if (questionAssistsRef.current === null) {
+    questionAssistsRef.current = questions.map((question) => {
+      const model = createAssistance(question, settings);
+      return { model, usage: createAssistUsage(model) };
+    });
+  }
+
+  const currentAssist = questionAssistsRef.current[currentIndex];
+  const assistance = currentAssist?.model ?? null;
+
+  const handleAssistLevelChange = useCallback((level) => {
+    currentAssist.usage = promoteAssistUsage(currentAssist.usage, level, currentAssist.model);
+  }, [currentAssist]);
 
   // 无设置时退回参数页
   useEffect(() => {
@@ -79,6 +90,9 @@ export default function PracticeSession() {
       const record = savePracticeRecord({
         questions,
         userAnswers: newAnswers,
+        // Phase 5.1 在会话结束时把逐题快照交给存储边界；Phase 5.2 再负责将其写入
+        // schemaVersion: 2 的 items[]，此处不直接拼接持久化记录。
+        assistUsage: questionAssistsRef.current.map(({ usage }) => ({ ...usage })),
         timeSpent: timer.seconds,
         settings,
       });
@@ -159,6 +173,7 @@ export default function PracticeSession() {
           <MathAssist
             key={currentIndex}
             assistance={assistance}
+            onLevelChange={handleAssistLevelChange}
             onReturnToQuestion={() => inputRef.current?.focus()}
           />
         </div>
