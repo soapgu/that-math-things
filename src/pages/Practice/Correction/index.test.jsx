@@ -1,5 +1,5 @@
 import React from 'react';
-import { render } from '@testing-library/react';
+import { act, fireEvent, render } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import PracticeCorrection from './index';
 
@@ -57,4 +57,17 @@ test('无需订正时显示提示', () => {
 test('无 record 时不崩溃', () => {
   const { unmount } = renderAt('/practice/correction', {});
   expect(() => unmount()).not.toThrow();
+});
+
+test('订正输入框支持 Enter 提交并在正确后完成订正', () => {
+  vi.useFakeTimers();
+  const { getByPlaceholderText, getByText } = renderAt('/practice/correction', { record: mockRecord });
+  const input = getByPlaceholderText('?');
+
+  fireEvent.change(input, { target: { value: '11' } });
+  fireEvent.keyDown(input, { key: 'Enter' });
+
+  act(() => vi.advanceTimersByTime(600));
+  expect(getByText('🎉 全部订正完成！')).toBeTruthy();
+  vi.useRealTimers();
 });

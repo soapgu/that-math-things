@@ -52,6 +52,7 @@ function renderSession(overrides = {}) {
 }
 
 beforeEach(() => {
+  localStorage.clear();
   mocks.questions = [carryQuestion, carryQuestion];
   mocks.timer.start.mockClear();
   mocks.timer.stop.mockClear();
@@ -99,7 +100,7 @@ describe('PracticeSession 两层辅助', () => {
     fireEvent.click(getByText('看看计算方法'));
     expect(getByText('进位计算演示')).toBeTruthy();
 
-    input.blur();
+    fireEvent.blur(input);
     fireEvent.click(getByText('跳过演示'));
     expect(input).toHaveFocus();
     expect(getByText('需要提示')).toBeTruthy();
@@ -205,5 +206,37 @@ describe('PracticeSession 两层辅助', () => {
       expect.objectContaining({ eligible: true, used: false, level: 0 }),
       expect.objectContaining({ eligible: false, used: false, level: 0 }),
     ]);
+  });
+
+  it('页面刷新丢失路由 state 后从本地设置恢复训练', () => {
+    localStorage.setItem('practice-settings', JSON.stringify({
+      ...settings,
+      assistEnabled: false,
+    }));
+
+    const { getByText, queryByText } = render(
+      <MemoryRouter
+        future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+        initialEntries={['/practice/session']}
+      >
+        <Routes>
+          <Route path="/practice/session" element={<PracticeSession />} />
+          <Route path="/practice" element={<div>设置页</div>} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(getByText('27 + 5 =')).toBeTruthy();
+    expect(queryByText('需要提示')).toBeNull();
+  });
+
+  it('答案输入框支持 Enter 键提交并切换题目', () => {
+    const { getByText, getByPlaceholderText } = renderSession();
+    const input = getByPlaceholderText('?');
+
+    fireEvent.change(input, { target: { value: '32' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+
+    expect(getByText('第 2/2 题')).toBeTruthy();
   });
 });
