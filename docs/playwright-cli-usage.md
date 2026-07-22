@@ -1,6 +1,6 @@
-# Playwright 与 playwright-cli 在 OpenCode/Codex 中的使用
+# Playwright 与 playwright-cli 在 OpenCode 中的使用
 
-> 以 `那年那数那些事` 项目中 Phase 7 真实浏览器验收为例，介绍 Playwright、playwright-cli 及 OpenCode/Codex 技能的安装、使用和实际场景。
+> 以 `那年那数那些事` 项目中 Phase 7 真实浏览器验收为例，介绍 Playwright、playwright-cli 及 OpenCode 技能的安装、使用和实际场景。
 
 ---
 
@@ -252,6 +252,33 @@ playwright-cli -s=mysession close
 # 查看所有会话
 playwright-cli list
 ```
+
+---
+
+## playwright-cli vs @playwright/mcp
+
+`@playwright/mcp` 是微软官方提供的另一个浏览器自动化方案，与 playwright-cli 互补而非替代。
+
+| 维度 | playwright-cli + SKILL | @playwright/mcp |
+|:---|:---|:---|
+| **工作机制** | CLI 命令通过 Bash 工具调用，快照解析为文本 | MCP 服务器注册为 OpenCode 内置工具，提供结构化工具接口 |
+| **Token 效率** | **更高** —— 避免加载大工具 Schema 和完整的无障碍树到上下文 | 每次调用都加载工具定义和页面结构，消耗更多 Token |
+| **适用场景** | 高吞吐编码代理，需在浏览器自动化和大代码库间平衡上下文 | 探索式自动化、自愈测试、长周期自主工作流 |
+| **状态管理** | 命名会话（`-s=mysession`），每次调用独立 | MCP 进程持续运行，状态持久化 |
+| **安装** | `npm install -g @playwright/cli` | `npx @playwright/mcp@latest`（无安装，按需启动） |
+| **OpenCode 配置** | SKILL.md + `opencode.json` 权限控制 | `opencode.json` 中 `mcp` 字段配置 |
+
+### 官方建议
+
+摘自 `@playwright/mcp` README：
+
+> **CLI**：现代编码代理更倾向 CLI + SKILL 方式，因为 CLI 调用 Token 效率更高，避免将大工具 Schema 和冗长的无障碍树加载到模型上下文中。这使得 CLI + SKILL 更适合在有限上下文窗口中平衡浏览器自动化与大代码库、测试和推理的高吞吐编码代理。
+>
+> **MCP**：适合需要持久状态、丰富内省能力和迭代式页面结构推理的专用代理循环，如探索式自动化、自愈测试或长周期自主工作流，其中维护连续浏览器上下文的收益超过 Token 成本。
+
+### 本项目的选择
+
+Phase 7 覆盖 12 个浏览器验收场景、多次页面跳转和状态检查。用 CLI + SKILL 每次只传必要的命令和结果，Token 开销更低。如果是需要持续保持页面状态的自愈测试场景，MCP 会更合适。
 
 ---
 
