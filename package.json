@@ -22,9 +22,13 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "predeploy": "npm run build",
-    "deploy": "gh-pages -d build"
+    "deploy": "gh-pages -d build",
+    "test:e2e": "playwright test --config tests/e2e/playwright.config.js",
+    "test:e2e:headed": "HEADED=1 playwright test --config tests/e2e/playwright.config.js",
+    "test:e2e:report": "open tests/e2e/e2e-report/index.html"
   },
   "devDependencies": {
+    "@playwright/test": "^1.62.0",
     "@vitejs/plugin-react": "^4.4.2",
     "gh-pages": "^6.3.0",
     "jsdom": "^26.1.0",

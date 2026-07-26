@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { readFileSync } from 'fs';
+import { configDefaults } from 'vitest/config';
 
 const pkg = JSON.parse(readFileSync('./package.json', 'utf-8'));
 
@@ -22,6 +23,7 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom',
     setupFiles: './src/setup-vitest.js',
+    exclude: [...configDefaults.exclude, 'tests/e2e/**'],
     transformIgnorePatterns: [
       'node_modules/(?!(antd|@ant-design|@rc-component|rc-|@ant-design/icons|@ant-design/fast-color|@ant-design/colors)/)',
     ],

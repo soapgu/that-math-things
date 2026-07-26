@@ -27,6 +27,7 @@
 - [功能文档](#功能文档)
 - [v2.3 工程质量优化](#v23-工程质量优化)
 - [v2.4 辅助运算分步引导](#v24-辅助运算分步引导)
+- [Phase 8：真实浏览器验收升级版](#-phase-8真实浏览器验收与体验收尾升级版)
 
 ---
 
@@ -48,6 +49,7 @@
 | 图形 | `motion.div` + CSS（非 SVG，用 DOM 元素配合 framer-motion 属性动画实现） |
 | 图表 | ECharts 6（按需注册） |
 | 测试 | Vitest 3 + Testing Library |
+| E2E 测试 | Playwright |
 
 ---
 
@@ -1213,6 +1215,41 @@ src/
 - 767px 移动端拦截、768px 恢复、1024px 和 1440px 布局均正常，无横向溢出。
 - 快 5 秒/中 10 秒/慢 20 秒三档自动播放、上一步/下一步、跳过和重播操作均可正常使用。
 - 完成验收后无 P1/P2 缺陷，所有自动化测试与生产构建通过。
+
+##### ✅ Phase 8：真实浏览器验收与体验收尾升级版（正在建设中）
+
+Phase 8 在 Phase 7 验收条件基础上，将人工浏览器操作替换为 Playwright 自动化 E2E 测试，覆盖设置页交互、关闭辅助做题、刷新恢复、两层辅助（进位/退位/破十法/平十法）、播放控制、结算订正闭环、响应式矩阵、可访问性和控制台检查。
+
+**配置与运行：**
+
+```bash
+npm start                              # 先启动 Vite 开发服务
+npm run test:e2e                       # 无头模式运行全部 E2E 测试
+npm run test:e2e:headed                # 有头模式（便于调试）
+npm run test:e2e:report                # 查看 HTML 报告
+```
+
+配置文件：`tests/e2e/playwright.config.js`，`vite.config.js` 已通过 `exclude: ['tests/e2e/**']` 隔离 Playwright 测试。
+
+**测试文件清单：**
+
+| 文件 | 覆盖场景 | 对应 Phase 7 章节 |
+|---|---|---|
+| `tests/e2e/minimal.spec.js` | 首页打开 → 进入设置页（最小可用验证） | — |
+| `tests/e2e/settings.spec.js` | 设置页控件交互、题数单选、辅助开关、破十法/平十法切换、刷新持久化 | 4.1 |
+| `tests/e2e/practice-basic.spec.js` | 关闭辅助做题、Enter 提交、切题焦点、刷新恢复 | 4.2, 4.3 |
+| `tests/e2e/assist-hint.spec.js` | 第一层提醒展开/收起、普通题无入口 | 4.4 |
+| `tests/e2e/assist-animations.spec.js` | 进位加法完整演示、退位减法破十法/平十法、边界题（18+2、10-3）、三档速度、上一步/下一步/跳过/重播 | 4.5, 4.6, 4.7, 4.8, 4.9 |
+| `tests/e2e/full-flow.spec.js` | 完整结算、历史记录查看、错题订正闭环 | 4.10 |
+| `tests/e2e/ui-quality.spec.js` | 响应式矩阵（767/768/1024/1440）、减少动态效果、键盘 Tab/Enter、控制台 error/warning 检查 | 5, 6, 7 |
+
+**完成标准：**
+
+- 所有 spec 在无头 chromium 中全部通过（workers: 1 串行）。
+- 每个 spec 结束时控制台无未捕获 error，新增 warning 已说明原因。
+- 全量 Vitest 测试和生产构建在 E2E 执行前后均保持通过。
+- 响应式矩阵覆盖从宽屏 → 767px → 768px → 1024px → 1440px 且不刷新恢复。
+- 验证完成后的截图和 trace 保留在 `tests/e2e/test-results/`，HTML 报告在 `tests/e2e/e2e-report/`。
 
 #### v2.4 验收标准
 
