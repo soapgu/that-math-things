@@ -480,7 +480,7 @@ src/
 - 快 5 秒/中 10 秒/慢 20 秒三档自动播放、上一步/下一步、跳过和重播操作均可正常使用。
 - 完成验收后无 P1/P2 缺陷，所有自动化测试与生产构建通过。
 
-#### ✅ Phase 8：真实浏览器验收与体验收尾升级版（进行中）
+#### ✅ Phase 8：真实浏览器验收与体验收尾升级版（已完成）
 
 Phase 8 在 Phase 7 验收条件基础上，将人工浏览器操作替换为 Playwright 自动化 E2E 测试，覆盖设置页交互、关闭辅助做题、刷新恢复、两层辅助（进位/退位/破十法/平十法）、播放控制、结算订正闭环、响应式矩阵、可访问性和控制台检查。
 
@@ -509,7 +509,7 @@ npm run test:e2e:report                # 查看 HTML 报告
 | `tests/e2e/responsive.spec.js` | 响应式矩阵（767/768/1024/1440） | 5 |
 | `tests/e2e/a11y-console.spec.js` | 减少动态效果、键盘 Tab/Enter、控制台 error/warning 检查 | 6, 7 |
 
-> 当前进度：minimal / settings / practice-basic / assist-hint / assist-carry / assist-borrow / full-flow 已落地（43 用例通过）；responsive / a11y-console 待补。
+> 当前进度：全部 8 个 spec 已落地（60 用例通过）。Phase 8 E2E 完成。
 
 **完成标准：**
 

@@ -254,8 +254,8 @@ test.describe.serial('4.10 完整结算 → 历史记录 → 错题订正闭环'
     await page.screenshot({ path: testInfo.outputPath('full-flow-05-stats-before-correction.png') });
 
     await stats.clickLatestRecordCorrection();
-    await page.waitForFunction(() => window.location.hash.includes('/practice/correction'),
-      { timeout: 10000 });
+    await page.waitForURL('**/#/practice/correction', { timeout: 10000 });
+    await page.waitForTimeout(500);
     await correction.waitForReady();
 
     // 验证进入了正常订正状态（非「无需订正」）
