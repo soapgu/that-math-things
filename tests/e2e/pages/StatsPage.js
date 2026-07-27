@@ -56,13 +56,12 @@ export class StatsPage {
   }
 
   async clickLatestRecordCorrection() {
-    // 「订正」按钮只在有错的记录里出现；找到第一个可见的
-    const btn = this.page.getByRole('button', { name: '订正' }).first();
+    const btn = this.page.getByRole('button', { name: /订/ }).first();
     await btn.click();
   }
 
   async clickRecordDetailByIndex(i) {
-    const btns = this.page.getByRole('button', { name: '详情' });
+    const btns = this.page.getByRole('button', { name: /详/ });
     await btns.nth(i).click();
   }
 

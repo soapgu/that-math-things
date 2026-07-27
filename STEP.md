@@ -509,7 +509,7 @@ npm run test:e2e:report                # 查看 HTML 报告
 | `tests/e2e/responsive.spec.js` | 响应式矩阵（767/768/1024/1440） | 5 |
 | `tests/e2e/a11y-console.spec.js` | 减少动态效果、键盘 Tab/Enter、控制台 error/warning 检查 | 6, 7 |
 
-> 当前进度：minimal / settings / practice-basic / assist-hint / assist-carry / assist-borrow 已落地（38 用例通过）；full-flow / responsive / a11y-console 待补。
+> 当前进度：minimal / settings / practice-basic / assist-hint / assist-carry / assist-borrow / full-flow 已落地（43 用例通过）；responsive / a11y-console 待补。
 
 **完成标准：**
 
