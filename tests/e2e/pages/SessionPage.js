@@ -113,7 +113,16 @@ export class SessionPage {
   }
 
   async isInputFocused() {
-    return this.page.locator('input[type="text"]').first().isFocused();
+    // Playwright Locator 没有 isFocused()，用 evaluate 与 activeElement 对比
+    return this.page.locator('input[type="text"]').first()
+      .evaluate((el) => el === document.activeElement);
+  }
+
+  /**
+   * 等待输入框获得焦点（Session useEffect 用 setTimeout(50ms) 触发，故需要 auto-retry）。
+   */
+  async expectInputFocused() {
+    await expect(this.page.locator('input[type="text"]').first()).toBeFocused();
   }
 
   async getInputValue() {
@@ -136,10 +145,11 @@ export class SessionPage {
   }
 
   async getProgressPercent() {
-    const bg = this.page.locator('.ant-progress .ant-progress-bg').first();
-    const style = await bg.getAttribute('style');
-    const m = style?.match(/width:\s*(\d+(?:\.\d+)?)%/);
-    return m ? parseFloat(m[1]) : 0;
+    // Ant 6 Progress 主体有 role="progressbar" + aria-valuenow；比子元素选择器更稳
+    const bar = this.page.getByRole('progressbar').first();
+    if (!(await bar.count())) return 0;
+    const v = await bar.getAttribute('aria-valuenow');
+    return v ? parseFloat(v) : 0;
   }
 
   async isNoHorizontalScroll() {

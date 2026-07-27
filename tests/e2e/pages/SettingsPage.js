@@ -16,7 +16,9 @@ export class SettingsPage {
   }
 
   async selectQuestionCount(count) {
-    await this.page.getByRole('radio', { name: `${count} 题`, exact: true }).click();
+    // Ant Radio.Button 的可见可点击元素是 label.ant-radio-button-wrapper，
+    // getByRole('radio') 解析到内部隐藏 input，点击会失败
+    await this.page.locator('.ant-radio-button-wrapper', { hasText: `${count} 题` }).click();
   }
 
   async getSelectedQuestionCount() {
@@ -38,23 +40,19 @@ export class SettingsPage {
   }
 
   async selectBorrowOnesMethod(method) {
-    switch (method) {
-      case 'breakTen':
-        await this.page.getByRole('radio', { name: /破十法/ }).click();
-        break;
-      case 'bridgeTen':
-        await this.page.getByRole('radio', { name: /平十法/ }).click();
-        break;
-      default:
-        throw new Error(`未知 borrow method: ${method}`);
-    }
+    // 普通 Ant Radio 的可见可点击元素是 label.ant-radio-wrapper
+    const label = method === 'breakTen' ? '破十法' : method === 'bridgeTen' ? '平十法' : null;
+    if (!label) throw new Error(`未知 borrow method: ${method}`);
+    await this.page.locator('.ant-radio-wrapper', { hasText: label }).click();
   }
 
   async expectBorrowMethodDisabled() {
-    const radios = this.page.getByRole('radio', { name: /破十法|平十法/ });
-    const count = await radios.count();
-    for (let i = 0; i < count; i++) {
-      await expect(radios.nth(i)).toBeDisabled();
+    // 两个 wrapper 文本不同，分别在 hasText 上过滤；input 上 toBeDisabled 由 disabled 属性推断
+    const labels = ['破十法', '平十法'];
+    for (const label of labels) {
+      const wrapper = this.page.locator('.ant-radio-wrapper', { hasText: label }).first();
+      const input = wrapper.locator('input[type="radio"]');
+      await expect(input).toBeDisabled();
     }
   }
 

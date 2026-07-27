@@ -84,9 +84,11 @@ export class AssistPlayerPage {
   }
 
   async getProgressPercent() {
-    const bg = this.page.locator('.ant-progress .ant-progress-bg').first();
-    const style = await bg.getAttribute('style');
-    return parseFloat(style?.match(/width:\s*(\d+(?:\.\d+)?)%/)?.[1] || '0', 10);
+    // AssistAnimationPlayer 的 Progress 也在 section 内；用 aria-valuenow 稳健跨 Ant 版本
+    const bar = this.page.getByRole('progressbar').first();
+    if (!(await bar.count())) return 0;
+    const v = await bar.getAttribute('aria-valuenow');
+    return v ? parseFloat(v) : 0;
   }
 
   // —— 控制按钮（AssistAnimationPlayer 中按钮均为 plain Button 无图标）
