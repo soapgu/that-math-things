@@ -120,7 +120,7 @@ test.describe.serial('4.5 进位方法演示 + 4.8 速度与控制（carry）', 
     expect(pct).toBeLessThanOrEqual(20);
   });
 
-  test('03 - 逐步「下一步」验证各步内容', async () => {
+  test('03 - 逐步「下一步」验证各步内容', async ({}, testInfo) => {
     // ---- align → addOnes (step 2) ----
     await player.clickNextStep();
     await expect(page.getByText(/先算个位：/).first()).toBeVisible({ timeout: 5000 });
@@ -140,6 +140,7 @@ test.describe.serial('4.5 进位方法演示 + 4.8 速度与控制（carry）', 
     ).toBeVisible({ timeout: 3000 });
     // data-source="carry" 元素存在（带橙色虚线边框的进位十位单元）
     await expect(page.locator('[data-source="carry"]').first()).toBeVisible({ timeout: 3000 });
+    await page.screenshot({ path: testInfo.outputPath('assist-carry-03-carry-step.png') });
     {
       const { idx } = await player.getStepInfo();
       expect(idx).toBe(3);

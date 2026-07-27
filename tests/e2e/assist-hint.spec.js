@@ -84,7 +84,7 @@ test.describe.serial('4.4 第一层提醒', () => {
     // simpleCheckedEarly 可能是 false（第一题即 eligible），后续 test 04 补齐断言
   });
 
-  test('02 - 点击「需要提示」展示关键提醒，不泄露答案、不渲染步骤', async () => {
+  test('02 - 点击「需要提示」展示关键提醒，不泄露答案、不渲染步骤', async ({}, testInfo) => {
     expect(eligibleQ).not.toBeNull();
     const idMarker = finder.isCarry(eligibleQ)
       ? '超过了 10，记得向十位进 1'
@@ -94,6 +94,7 @@ test.describe.serial('4.4 第一层提醒', () => {
 
     await expect(page.getByText(idMarker).first()).toBeVisible();
     await expect(page.getByText(/想一想：/).first()).toBeVisible();
+    await page.screenshot({ path: testInfo.outputPath('assist-hint-02-hint-card.png') });
 
     // 反向校验：第二层 AssistPlayer 未渲染
     await expect(page.getByRole('button', { name: '上一步' })).toBeHidden();
