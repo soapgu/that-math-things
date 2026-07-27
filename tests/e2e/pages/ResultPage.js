@@ -13,27 +13,41 @@ import { expect } from '@playwright/test';
  *   - 按钮区：再来一次 / 订正(有错才显示) / 统计数据 / 返回首页
  */
 export class ResultPage {
+  /**
+   * @param {import('@playwright/test').Page} page Playwright 页面。
+   */
   constructor(page) {
     this.page = page;
   }
 
+  /**
+   * 等待结算页渲染完成。
+   * @returns {Promise<void>}
+   */
   async waitForReady() {
     await this.page.getByRole('heading', { name: '练习结果' })
       .waitFor({ state: 'visible', timeout: 10000 });
   }
 
+  /**
+   * @returns {Promise<string>}
+   */
   async _contentText() {
     return this.page.locator('.ant-layout-content').textContent();
   }
 
+  /**
+   * 获取得分数字。
+   * @returns {Promise<number>}
+   */
   async getScore() {
     const t = await this._contentText();
     return parseInt(t.match(/(\d+)\s*分/)?.[1] || '0', 10);
   }
 
   /**
-   * 通过 Ant Statistic 的 title 定位 value，更稳定。
-   * 返回 { correct, wrong, total }。
+   * 获取正确/错误题数。
+   * @returns {Promise<{correct: number, wrong: number}>}
    */
   async getCorrectWrong() {
     const getByTitle = async (title) => {
@@ -48,6 +62,10 @@ export class ResultPage {
     return { correct, wrong };
   }
 
+  /**
+   * 获取用时文本。
+   * @returns {Promise<string>}
+   */
   async getTimeSpentText() {
     const wrapper = this.page.locator('.ant-statistic', { hasText: '用时' }).first();
     const value = wrapper.locator('.ant-statistic-content-value').first();
@@ -55,8 +73,9 @@ export class ResultPage {
   }
 
   /**
-   * 辅助摘要 { independent, reminder, method }。
-   * 如果页面未展示卡片（本轮无 eligible 题），返回 null。
+   * 获取辅助使用摘要（独立完成/只看提醒/查看方法各几题）。
+   * 本轮无 eligible 题时返回 null。
+   * @returns {Promise<null|{independent: number, reminder: number, method: number}>}
    */
   async getAssistCounts() {
     const card = this.page.locator('.ant-card', { hasText: '辅助使用情况' }).first();
@@ -75,7 +94,9 @@ export class ResultPage {
   }
 
   /**
-   * 断言本轮题目精要字符串出现在错题详情里。形如 "19 + 24" 或 "32 − 24"。
+   * 断言错题详情中包含指定题目。
+   * @param {string} questionDisplay 题目精要字符串（如 "19 + 24"）。
+   * @returns {Promise<void>}
    */
   async expectErrorDetail(questionDisplay) {
     const t = await this._contentText();
@@ -85,7 +106,8 @@ export class ResultPage {
   }
 
   /**
-   * 等级（综合评价）：UR / SSR / SR / R / N。
+   * 获取综合评价等级（UR / SSR / SR / R / N）。
+   * @returns {Promise<string|null>}
    */
   async getCompositeGrade() {
     const t = await this._contentText();
@@ -93,12 +115,32 @@ export class ResultPage {
     return m?.[1] || null;
   }
 
-  // —— 兼容旧 minimal 调用
+  /** @returns {Promise<string>} */
   async getAssistSummary() { return await this._contentText(); }
 
-  // —— 跳转按钮（均带 Ant 图标，a11y 名形如 "reload 再来一次"，故用子串匹配）
+  // —— 跳转按钮
+
+  /**
+   * 点击「再来一次」按钮。
+   * @returns {Promise<void>}
+   */
   async clickPracticeAgain() { await this.page.getByRole('button', { name: '再来一次' }).click(); }
+
+  /**
+   * 点击「订正」按钮。
+   * @returns {Promise<void>}
+   */
   async clickToCorrection()  { await this.page.getByRole('button', { name: '订正' }).click(); }
+
+  /**
+   * 点击「统计数据」按钮。
+   * @returns {Promise<void>}
+   */
   async clickToStats()       { await this.page.getByRole('button', { name: '统计数据' }).click(); }
+
+  /**
+   * 点击「返回首页」按钮。
+   * @returns {Promise<void>}
+   */
   async clickHome()          { await this.page.getByRole('button', { name: '返回首页' }).click(); }
 }

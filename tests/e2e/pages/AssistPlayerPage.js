@@ -17,17 +17,30 @@ import { expect } from '@playwright/test';
 export const SPEED_LABELS = { fast: '快 5秒', medium: '中 10秒', slow: '慢 20秒' };
 
 export class AssistPlayerPage {
+  /**
+   * @param {import('@playwright/test').Page} page Playwright 页面。
+   */
   constructor(page) {
     this.page = page;
   }
 
-  // —— 容器定位（保留 kind 参数，值 'carry' | 'borrow'）
+  // —— 容器定位
 
+  /**
+   * 获取演示 section 的 Locator。
+   * @param {'carry' | 'borrow'} kind 进位或退位。
+   * @returns {import('@playwright/test').Locator}
+   */
   sectionLocator(kind) {
     const label = kind === 'carry' ? '进位计算演示' : '退位计算演示';
     return this.page.locator(`section[aria-label="${label}"]`);
   }
 
+  /**
+   * 等待演示 section 渲染完成。
+   * @param {'carry' | 'borrow'} kind 进位或退位。
+   * @returns {Promise<void>}
+   */
   async waitForReady(kind) {
     const section = this.sectionLocator(kind);
     await section.waitFor({ state: 'visible', timeout: 10000 });
@@ -35,12 +48,18 @@ export class AssistPlayerPage {
 
   // —— 速度档
 
+  /**
+   * 选择自动播放速度。
+   * @param {'fast' | 'medium' | 'slow'} speed 快/中/慢。
+   * @returns {Promise<void>}
+   */
   async setSpeed(speed) {
     await this.page.getByText(SPEED_LABELS[speed], { exact: true }).click();
   }
 
   /**
-   * 返回当前选中的速度档文案。例如 "快 5秒"。
+   * 获取当前选中的速度档文案（如 "快 5秒"）。
+   * @returns {Promise<string>}
    */
   async getCurrentSpeedLabel() {
     const selected = this.page.locator('.ant-segmented-item-selected').first();
@@ -48,7 +67,9 @@ export class AssistPlayerPage {
   }
 
   /**
-   * 期望当前选中的速度档精确匹配指定 speed。
+   * 断言当前速度档匹配预期值。
+   * @param {'fast' | 'medium' | 'slow'} speed 预期速度档。
+   * @returns {Promise<void>}
    */
   async expectSpeed(speed) {
     const want = SPEED_LABELS[speed];
@@ -61,7 +82,8 @@ export class AssistPlayerPage {
   // —— 步骤与表达式
 
   /**
-   * 解析 Progress 的 aria-label：形如 "第 1 步，共 5 步"，返回 { idx, total }。
+   * 解析 Progress aria-label，返回当前步骤序号与总数。
+   * @returns {Promise<{idx: number, total: number}>}
    */
   async getStepInfo() {
     const progress = this.page.locator('.ant-progress[aria-label]').first();
@@ -72,48 +94,93 @@ export class AssistPlayerPage {
   }
 
   /**
-   * 读取 aria-live=polite 容器中当前步骤的展示文本。
+   * 读取 aria-live 容器中当前步骤的展示文本。
+   * @returns {Promise<string>}
    */
   async getStepText() {
     const live = this.page.locator('[aria-live="polite"]').first();
     return (await live.textContent())?.trim() || '';
   }
 
+  /**
+   * 断言指定算式表达式在 code 标签中可见。
+   * @param {string} expr 算式表达式。
+   * @returns {Promise<void>}
+   */
   async expectExpression(expr) {
     await expect(this.page.locator('code').filter({ hasText: expr }).first()).toBeVisible();
   }
 
+  /**
+   * 获取 Progress 百分比数值。
+   * @returns {Promise<number>}
+   */
   async getProgressPercent() {
-    // AssistAnimationPlayer 的 Progress 也在 section 内；用 aria-valuenow 稳健跨 Ant 版本
     const bar = this.page.getByRole('progressbar').first();
     if (!(await bar.count())) return 0;
     const v = await bar.getAttribute('aria-valuenow');
     return v ? parseFloat(v) : 0;
   }
 
-  // —— 控制按钮（AssistAnimationPlayer 中按钮均为 plain Button 无图标）
+  // —— 控制按钮
 
+  /**
+   * 点击「上一步」。
+   * @returns {Promise<void>}
+   */
   async clickPrevStep()   { await this.page.getByRole('button', { name: '上一步' }).click(); }
+
+  /**
+   * 点击「下一步」。
+   * @returns {Promise<void>}
+   */
   async clickNextStep()   { await this.page.getByRole('button', { name: '下一步' }).click(); }
+
+  /**
+   * 点击「跳过演示」。
+   * @returns {Promise<void>}
+   */
   async clickSkip()       { await this.page.getByRole('button', { name: '跳过演示' }).click(); }
+
+  /**
+   * 点击「重新播放」。
+   * @returns {Promise<void>}
+   */
   async clickReplay()     { await this.page.getByRole('button', { name: '重新播放' }).click(); }
+
+  /**
+   * 点击「回到题目」。
+   * @returns {Promise<void>}
+   */
   async clickReturnToQ()  { await this.page.getByRole('button', { name: '回到题目' }).click(); }
 
+  /**
+   * 首步时「上一步」是否 disabled。
+   * @returns {Promise<boolean>}
+   */
   async isFirstStepPrevDisabled() {
     return await this.page.getByRole('button', { name: '上一步' }).first().isDisabled();
   }
 
+  /**
+   * 「下一步」按钮是否可见。
+   * @returns {Promise<boolean>}
+   */
   async isNextStepVisible() {
     return await this.page.getByRole('button', { name: '下一步' }).first().isVisible().catch(() => false);
   }
 
+  /**
+   * 「回到题目」按钮是否可见。
+   * @returns {Promise<boolean>}
+   */
   async isReturnButtonVisible() {
     return await this.page.getByRole('button', { name: '回到题目' }).first().isVisible().catch(() => false);
   }
 
   /**
-   * 手动操作当前步骤：等自动进入下一步或点「下一步」一次。
-   * 用于「打断计时器」验证：点击后应清除定时器，不立即再跳。
+   * 手动触发「下一步」（用于打断自动播放计时器）。
+   * @returns {Promise<void>}
    */
   async manualNext() {
     await this.clickNextStep();
