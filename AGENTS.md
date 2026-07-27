@@ -62,12 +62,4 @@ HashRouter（`index.jsx`），所有路径相对于 `/#/`：
 
 ## 版本计划
 
-v2.0-v2.2 已完成计算训练、结算订正、统计和综合评价；v2.3 为工程质量优化，v2.4 规划辅助运算（凑十法/破十法/平十法分步引导）。
-
-需修改的文件：
-- `src/App.jsx` → 路由配置和页面级懒加载
-- `src/components/AppLayout/index.jsx` → 全局导航
-- `src/pages/Home/index.jsx` → 入口卡片
-- `src/pages/Practice/*/index.jsx` → 计算训练各页面
-- 新增 `src/utils/mathGenerator.js`, `src/utils/storage.js`
-- 新增 `src/hooks/useTimer.js`
+v2.0–v2.4 已完成。阶段性实施记录与验收标准见 [STEP.md](./STEP.md)；Phase 8 E2E 实施计划见 [docs/phase8-e2e-implementation-plan.md](./docs/phase8-e2e-implementation-plan.md)。
