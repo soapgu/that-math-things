@@ -144,7 +144,10 @@ export default function PracticeSession() {
           margin: '48px 0 16px',
         }}
       >
-        <span style={{ fontSize: 48, fontWeight: 600, userSelect: 'none', whiteSpace: 'nowrap' }}>
+        <span
+          data-testid="question-prompt"
+          style={{ fontSize: 48, fontWeight: 600, userSelect: 'none', whiteSpace: 'nowrap' }}
+        >
           {current.a} {OP_DISPLAY[current.op]} {current.b} =
         </span>
         <Input

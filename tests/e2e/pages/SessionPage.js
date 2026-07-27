@@ -1,75 +1,151 @@
+import { expect } from '@playwright/test';
+
+/**
+ * Session 做题页 Page Object。
+ *
+ * 关键 UI 文案：
+ *   下一题 / 完成：外层 Button（最后一题文案变「完成」）
+ *   需要提示：第一层入口
+ *   我再想想：第一层收起
+ *   看看计算方法：进入第二层
+ *   跳过演示 / 上一步 / 下一步 / 重新播放 / 回到题目：AssistAnimationPlayer
+ *
+ * 速度档 Segmented：快 5秒 / 中 10秒 / 慢 20秒，value 为 fast/medium/slow。
+ */
 export class SessionPage {
   constructor(page) {
-    this.page = page
+    this.page = page;
   }
 
   async waitForReady() {
-    await this.page.locator('.ant-layout-content').waitFor({ state: 'visible', timeout: 10000 })
+    // 答题输入框可见即代表题面已渲染；优先于 .ant-layout-content
+    await this.page.locator('input[type="text"]').first()
+      .waitFor({ state: 'visible', timeout: 10000 });
   }
 
+  /**
+   * 只读题面 span 的文本，避免与 Result 错题详情里同格式 "a op b =" 文本串扰。
+   * 离开 Session 路由时 locator 不存在，返回 null。
+   */
   async getQuestionText() {
-    return this.page.locator('.ant-layout-content').textContent()
+    const prompt = this.page.locator('[data-testid="question-prompt"]');
+    if (!(await prompt.count())) return null;
+    return prompt.textContent();
+  }
+
+  /**
+   * 解析当前题面，返回 { a, op, b }。
+   * 减号统一返回 ASCII '-'，方便调用方比较。
+   * 不识别返回 null。
+   */
+  async getCurrentQuestion() {
+    const text = await this.getQuestionText();
+    if (!text) return null;
+    const m = text.match(/(-?\d+)\s*([+\-−])\s*(-?\d+)\s*=/);
+    if (!m) return null;
+    return {
+      a: parseInt(m[1], 10),
+      op: m[2] === '−' ? '-' : m[2],
+      b: parseInt(m[3], 10),
+    };
   }
 
   async answer(value) {
-    const input = this.page.locator('input[type="text"]').first()
-    await input.fill(String(value))
+    const input = this.page.locator('input[type="text"]').first();
+    await input.fill(String(value));
   }
 
+/**
+   * 点击「下一题」 / 「完成」。
+   * 这两个按钮带 Ant 图标（ArrowRightOutlined / CheckOutlined），其 a11y 名形如
+   * "arrow-right 下一题" / "check 完成"，因此用子串正则匹配两种文案。
+   */
   async clickNext() {
-    await this.page.getByRole('button', { name: '下一题' }).click()
+    await this.page.getByRole('button', { name: /下一题|完成/ }).click();
   }
 
   async pressEnter() {
-    await this.page.keyboard.press('Enter')
+    await this.page.keyboard.press('Enter');
+  }
+
+  // —— 辅助交互（第一层与第二层共用容器）
+
+  async expectAssistEntryVisible() {
+    await expect(this.page.getByRole('button', { name: '需要提示' })).toBeVisible();
+  }
+
+  async expectAssistEntryInvisible() {
+    await expect(this.page.getByRole('button', { name: '需要提示' })).toBeHidden();
   }
 
   async clickHint() {
-    await this.page.getByText('需要提示').click()
+    await this.page.getByRole('button', { name: '需要提示' }).click();
+  }
+
+  async clickICanThink() {
+    await this.page.getByRole('button', { name: '我再想想' }).click();
   }
 
   async clickShowMethod() {
-    await this.page.getByText('看看计算方法').click()
+    await this.page.getByRole('button', { name: '看看计算方法' }).click();
   }
+
+  // —— AnimationPlayer 控件（plain Button 无图标，保留 substring 匹配以统一风格）
 
   async clickPrevStep() {
-    await this.page.getByRole('button', { name: '上一步' }).click()
+    await this.page.getByRole('button', { name: '上一步' }).click();
   }
-
   async clickNextStep() {
-    await this.page.getByRole('button', { name: '下一步' }).click()
+    await this.page.getByRole('button', { name: '下一步' }).click();
   }
-
   async clickSkip() {
-    await this.page.getByRole('button', { name: '跳过演示' }).click()
+    await this.page.getByRole('button', { name: '跳过演示' }).click();
   }
-
   async clickReplay() {
-    await this.page.getByRole('button', { name: '重播' }).click()
+    await this.page.getByRole('button', { name: '重新播放' }).click();
+  }
+  async clickFinishDemo() {
+    await this.page.getByRole('button', { name: '回到题目' }).click();
   }
 
-  async clickFinishDemo() {
-    await this.page.getByRole('button', { name: '返回做题' }).click()
+  async isFirstStepPrevDisabled() {
+    return this.page.getByRole('button', { name: '上一步' }).first().isDisabled();
   }
 
   async isInputFocused() {
-    return this.page.locator('input[type="text"]').first().isFocused()
+    return this.page.locator('input[type="text"]').first().isFocused();
   }
 
   async getInputValue() {
-    return this.page.locator('input[type="text"]').first().inputValue()
+    return this.page.locator('input[type="text"]').first().inputValue();
   }
 
   async isHintVisible() {
-    return this.page.getByText('需要提示').isVisible()
+    return this.page.getByRole('button', { name: '需要提示' }).isVisible();
   }
 
+  /**
+   * 返回计时文本（形如 "1:23"）。
+   * Session 顶部信息行格式："第 N/M 题  {timer.formatted}"
+   * useTimer 的 formatted 通常是 mm:ss 形式。
+   */
   async getTimerText() {
-    const timer = this.page.locator('.ant-statistic-content')
-    return timer.textContent()
+    const text = await this.page.locator('.ant-layout-content').textContent();
+    const m = text.match(/(\d+):(\d+)/);
+    return m ? `${m[1]}:${m[2]}` : '';
   }
 
-  async clickFinish() {
-    await this.page.getByRole('button', { name: '完成' }).click()
+  async getProgressPercent() {
+    const bg = this.page.locator('.ant-progress .ant-progress-bg').first();
+    const style = await bg.getAttribute('style');
+    const m = style?.match(/width:\s*(\d+(?:\.\d+)?)%/);
+    return m ? parseFloat(m[1]) : 0;
+  }
+
+  async isNoHorizontalScroll() {
+    const overflow = await this.page.evaluate(
+      () => document.documentElement.scrollWidth - document.documentElement.clientWidth
+    );
+    return overflow <= 0;
   }
 }

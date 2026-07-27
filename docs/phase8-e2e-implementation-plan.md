@@ -162,9 +162,12 @@ tests/e2e/
 
 - 每轮答题前进、若非目标题则按正确答案继续
 - 命中目标题立即停止返回
-- 超过 `maxTries` 抛错（视为 phase7 中「无法稳定复现」的缺陷记录，而非篡改数据）
+- **路由感知早退**：每轮顶部检测 `page.url()` 是否仍含 `/practice/session`；解析 `null` 或路由已切都抛 `err.code === 'SESSION_ENDED'`，杜绝在结算页伪匹配题面
+- 超过 `maxTries` 抛 plain Error（视为 phase7 中「无法稳定复现」的缺陷记录，而非篡改数据）
 
-边界题 `18+2`、`10-3`、整十被减数采用更大 `maxTries`（100）+ 允许整轮重开训练。严格遵守 Phase 7 第 3 节约定，不通过读取/直接修改 `localStorage` 伪造题目。
+> 题面 span 上加了 `data-testid="question-prompt"`，`SessionPage.getQuestionText()` 只在该 locator 上取文本，避免与结算页逐题详情里相同格式的 `a op b =` 串扰。源码改动局限于 `src/pages/Practice/Session/index.jsx` 一处 attribute，不影响 a11y 与现有 Vitest 用 `getByText('27 + 5 =')` 的断言。
+
+边界题 `18+2`、`10-3`、整十被减数在 10 题规模下单场期望 ≤0.4 道，因此 spec 自定 `MAX_SESSIONS` 跨轮循环：捕获 `err.code === 'SESSION_ENDED'` 即返回设置页重开新训练，最多 5 轮。helper 不内建跨轮，保持单一职责。严格遵守 Phase 7 第 3 节约定，不通过读取/直接修改 `localStorage` 伪造题目。
 
 ## 7. 实施顺序与回归
 
