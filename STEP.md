@@ -674,7 +674,7 @@ CLIENT_BASE_URL=http://127.0.0.1:5173/that-math-things/ npm run test:e2e
 - 生产构建通过，无新增构建告警。
 - Playwright 9 个 spec 文件、60 个用例全部通过，结束后 5173 无监听进程。
 
-#### ⬜ Phase 2：GitHub Actions 基础持续集成
+#### 🚧 Phase 2：GitHub Actions 基础持续集成（实现完成，待首次远端验收）
 
 **目标：** 每次进入主分支前自动验证单元测试和生产构建。
 
@@ -704,6 +704,16 @@ CLIENT_BASE_URL=http://127.0.0.1:5173/that-math-things/ npm run test:e2e
 - 测试或构建失败时工作流明确失败，不继续视为可发布状态。
 - 全新 GitHub Actions runner 无需人工准备即可完成检查。
 - 工作流不需要写入仓库或使用高权限令牌。
+
+**本地验收结果（2026-07-28）：**
+
+- 已新增 `.github/workflows/ci.yml`，监听 `main` 推送及面向 `main` 的 Pull Request。
+- CI 固定使用 Node.js 24，通过 `actions/setup-node` 启用 npm 缓存并按 `package-lock.json` 生成缓存键。
+- 工作流权限为 `contents: read`，没有写仓库、发包或部署权限。
+- 同一工作流、同一 PR 或分支使用并发组，新提交会取消旧任务。
+- YAML 语法及必需字段检查通过。
+- 使用 `npm ci` 重新安装 284 个依赖后，Vitest 23 个文件、228 个用例全部通过，生产构建成功。
+- 待工作流提交并推送后，检查首次 GitHub Hosted Runner 结果；通过后将本阶段标记为完成。
 
 #### ⬜ Phase 3：Playwright E2E 接入 CI
 

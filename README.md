@@ -290,6 +290,18 @@ CLIENT_BASE_URL=http://127.0.0.1:5173/that-math-things/ npm run test:e2e
 
 外部服务不由 Playwright 启动或关闭。
 
+### 持续集成
+
+推送到 `main` 或创建面向 `main` 的 Pull Request 时，GitHub Actions 会在 Node.js 24 环境执行：
+
+```text
+npm ci
+  → npm test
+  → npm run build
+```
+
+工作流使用只读仓库权限和 npm 依赖缓存；同一分支有新提交时会取消仍在运行的旧检查。E2E 接入属于 v2.5.0 Phase 3。
+
 ### 如何新增一道题
 
 1. 在 `src/problems/data/` 下新建文件，按以下模板定义：
