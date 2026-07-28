@@ -567,6 +567,60 @@ v2.5.0 是已确定的下一个版本。本版本不新增学习功能，主要�
 
 ### v2.5.0 实现拆分
 
+#### ⬜ Phase 0：E2E 服务生命周期治理
+
+**目标：** 取消 `npm run test:e2e` 对人工执行 `npm start` 的依赖，让 Playwright 只管理自己创建的 Vite 进程，并在测试成功、失败或中断后自动回收。
+
+该阶段必须最先完成。Phase 1 及后续阶段都以能够直接运行 `npm run test:e2e` 为前提。
+
+**任务：**
+
+- 在 `tests/e2e/playwright.config.js` 中配置 Playwright `webServer`。
+- 默认由 Playwright 使用固定地址启动 Vite：
+
+  ```text
+  http://127.0.0.1:5173/that-math-things/
+  ```
+
+- 启动命令显式指定 `--host 127.0.0.1 --port 5173 --strictPort`：
+  - 禁止 Vite 在 5173 被占用时自动切换到 5174；
+  - 端口冲突时立即明确失败，避免测试误连旧服务。
+- 默认设置 `reuseExistingServer: false`，不静默复用未知来源的 5173 服务。
+- 当显式提供 `CLIENT_BASE_URL` 时不创建 `webServer`，允许开发者连接自己管理的外部服务。
+- 更新 README、STEP 和 E2E 运行说明，删除“必须先执行 `npm start`”的默认流程。
+- 验证以下退出路径均不会遗留监听进程：
+  - E2E 全部通过；
+  - E2E 用例失败；
+  - 在终端中断测试。
+- 不在 npm 脚本中使用 `pkill`、`kill` 或按端口强制清理，避免终止用户主动运行的开发服务。
+
+**预期运行方式：**
+
+```bash
+# 默认：Playwright 自动启动并回收 Vite
+npm run test:e2e
+
+# 可选：显式连接由开发者自行管理的服务
+CLIENT_BASE_URL=http://127.0.0.1:5173/that-math-things/ npm run test:e2e
+```
+
+**涉及文件：**
+
+- `tests/e2e/playwright.config.js`
+- `package.json`
+- `README.md`
+- `STEP.md`
+- `docs/phase8-e2e-implementation-plan.md`
+
+**完成标准：**
+
+- 未预先执行 `npm start` 时，`npm run test:e2e` 可以独立完成全部测试。
+- 测试运行期间使用固定的 5173 端口，不会自动漂移到 5174。
+- 测试正常结束、失败或中断后，Playwright 创建的 Vite 进程不再监听 5173。
+- 5173 已被占用时测试明确失败，并提示端口冲突。
+- 设置 `CLIENT_BASE_URL` 后可以连接外部服务，Playwright 不会终止该外部进程。
+- 完成本阶段后再执行 Phase 1 的测试、构建和 E2E 全量基线。
+
 #### ⬜ Phase 1：版本与设备基线
 
 **目标：** 在接入自动化发布前，先明确版本来源、支持设备和验收口径。
@@ -639,7 +693,7 @@ v2.5.0 是已确定的下一个版本。本版本不新增学习功能，主要�
 **任务：**
 
 - 在 CI 安装 Playwright Chromium 及其运行依赖。
-- 由 Playwright `webServer` 或工作流显式启动 Vite，避免依赖人工执行 `npm start`。
+- 复用 Phase 0 的 Playwright `webServer` 配置自动启动和回收 Vite。
 - 保持本地与 CI 使用同一份 `tests/e2e/playwright.config.js`。
 - 在 CI 环境配置合理的重试次数；本地仍可保持零重试以暴露不稳定问题。
 - 失败时上传以下构件：
