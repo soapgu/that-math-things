@@ -40,3 +40,21 @@ jobs:
 
       - name: 构建生产版本
         run: npm run build
+
+      - name: 安装 Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: 运行 Playwright E2E
+        id: e2e
+        run: npm run test:e2e
+
+      - name: 上传 Playwright 失败构件
+        if: failure() && steps.e2e.outcome == 'failure'
+        uses: actions/upload-artifact@v6
+        with:
+          name: playwright-failure-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            tests/e2e/test-results/
+            tests/e2e/e2e-report/
+          if-no-files-found: warn
+          retention-days: 7

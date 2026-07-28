@@ -298,9 +298,11 @@ CLIENT_BASE_URL=http://127.0.0.1:5173/that-math-things/ npm run test:e2e
 npm ci
   → npm test
   → npm run build
+  → 安装 Playwright Chromium
+  → npm run test:e2e
 ```
 
-工作流使用只读仓库权限和 npm 依赖缓存；同一分支有新提交时会取消仍在运行的旧检查。E2E 接入属于 v2.5.0 Phase 3。
+工作流使用只读仓库权限和 npm 依赖缓存；同一分支有新提交时会取消仍在运行的旧检查。E2E 在 CI 中使用 2 workers 和 1 次失败重试，本地仍使用 4 workers、零重试。若 E2E 最终失败，工作流会保留 7 天的 HTML 报告、截图和 Trace。
 
 ### 如何新增一道题
 
