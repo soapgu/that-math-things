@@ -716,7 +716,7 @@ CLIENT_BASE_URL=http://127.0.0.1:5173/that-math-things/ npm run test:e2e
 - GitHub Hosted Runner 由 `main` 推送触发，检出代码、配置 Node.js、`npm ci`、Vitest 和生产构建全部成功。
 - `actions/checkout@v6` 与 `actions/setup-node@v6` 均使用 Node 24 运行时；最终无弃用告警的任务耗时 39 秒，结果见 [基础质量检查 #30366866367](https://github.com/soapgu/that-math-things/actions/runs/30366866367)。
 
-#### 🚧 Phase 3：Playwright E2E 接入 CI（实现完成，待首次远端验收）
+#### ✅ Phase 3：Playwright E2E 接入 CI（已完成）
 
 **目标：** 将 Phase 8 已完成的 9 个 spec 文件、60 个 E2E 用例纳入持续集成，并提供可诊断的失败信息。
 
@@ -757,7 +757,9 @@ Vitest
 - E2E 最终失败时使用 `actions/upload-artifact@v6` 上传 HTML 报告、截图和 Trace，构件保留 7 天；前置 Vitest 或构建失败不会产生空 E2E 构件。
 - 以 `CI=1` 连续执行三轮完整 E2E，分别为 60/60、60/60、60/60，无重试、无偶发失败。
 - 三轮执行时间约为 50.3 秒、52.5 秒、49.7 秒，每轮结束后 5173 均无监听进程。
-- 待工作流提交并推送后，检查 GitHub Hosted Runner 的 Chromium 安装、60 个用例和失败构件步骤；通过后将本阶段标记为完成。
+- GitHub Hosted Runner 成功安装 Chromium 及系统依赖，完整 E2E 步骤通过；成功场景下失败构件上传按条件正确跳过。
+- 远端任务总耗时 2 分 18 秒，其中 Chromium 安装约 28 秒、E2E 约 62 秒，Check Run 为 0 条告警。
+- 远端结果见 [基础质量检查 #30370687890](https://github.com/soapgu/that-math-things/actions/runs/30370687890)。
 
 #### ⬜ Phase 4：平板、电脑与可访问性质量收尾
 
