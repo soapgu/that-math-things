@@ -495,7 +495,7 @@ npm run test:e2e:report                # 查看 HTML 报告
 
 配置文件：`tests/e2e/playwright.config.js`，`vite.config.js` 已通过 `exclude: ['tests/e2e/**']` 隔离 Playwright 测试。
 
-**测试文件清单（实际落地，按拆分后的 8 spec 规划）：**
+**测试文件清单（实际落地，共 9 个 spec 文件）：**
 
 | 文件 | 覆盖场景 | 对应 Phase 7 章节 |
 |---|---|---|
@@ -509,11 +509,11 @@ npm run test:e2e:report                # 查看 HTML 报告
 | `tests/e2e/responsive.spec.js` | 响应式矩阵（767/768/1024/1440） | 5 |
 | `tests/e2e/a11y-console.spec.js` | 减少动态效果、键盘 Tab/Enter、控制台 error/warning 检查 | 6, 7 |
 
-> 当前进度：全部 8 个 spec 已落地（60 用例通过）。Phase 8 E2E 完成。
+> 当前进度：全部 9 个 spec 文件已落地（60 用例通过）。Phase 8 E2E 完成。
 
 **完成标准：**
 
-- 所有 spec 在无头 chromium 中全部通过（workers: 1 串行）。
+- 所有 spec 在无头 Chromium 中全部通过（当前配置 `workers: 4`）。
 - 每个 spec 结束时控制台无未捕获 error，新增 warning 已说明原因。
 - 全量 Vitest 测试和生产构建在 E2E 执行前后均保持通过。
 - 响应式矩阵覆盖从宽屏 → 767px → 768px → 1024px → 1440px 且不刷新恢复。
@@ -541,9 +541,211 @@ npm run test:e2e:report                # 查看 HTML 报告
 
 ---
 
+## v2.5.0 发布体系与质量基线
+
+### 版本定位
+
+v2.5.0 是已确定的下一个版本。本版本不新增学习功能，主要把 v2.4 和 Phase 8 已完成的能力纳入可重复执行的持续集成、质量验收和正式发布流程，为后续功能迭代建立稳定基线。
+
+### 支持范围
+
+| 设备 | 目标宽度 | v2.5.0 要求 |
+|---|---:|---|
+| 平板 | `768px` 及以上 | 正式支持，覆盖竖屏和横屏场景 |
+| 电脑 | `1024px`、`1440px` 等常见宽度 | 正式支持，作为主要开发与验收环境 |
+| 手机小屏 | `< 768px` | 暂不支持，继续显示“目前网站只支持电脑和 Pad 访问”提示 |
+
+`767px` 只用于验证不支持设备的拦截边界，不代表 v2.5.0 承诺手机端布局适配。手机小屏适配留待后续版本单独规划。
+
+### 版本规范
+
+- 正式版本统一使用完整语义化版本号，本版本为 `2.5.0`，Git 标签为 `v2.5.0`。
+- `package.json` 是应用版本号的单一来源，页面版本展示通过构建配置读取，不再人工维护重复版本。
+- 同一次发布中的 `package.json`、页面展示、Git 标签和 GitHub Release 必须一致。
+- 补丁修复使用 `v2.5.x`；新增向后兼容功能进入后续次版本。
+- Release Notes 必须说明功能变化、质量改进、测试结果、设备支持范围和已知限制。
+
+### v2.5.0 实现拆分
+
+#### ⬜ Phase 1：版本与设备基线
+
+**目标：** 在接入自动化发布前，先明确版本来源、支持设备和验收口径。
+
+**任务：**
+
+- 将 `package.json` 版本更新为 `2.5.0`，并确认锁文件同步。
+- 检查页面版本展示逻辑，使其从 `package.json` 或 Vite 构建常量读取。
+- 在 README 和路线图中统一标注平板、电脑支持范围及 `< 768px` 暂不支持。
+- 将 E2E 设备矩阵明确为：
+  - `768px`：平板最小支持边界；
+  - `1024px`：常规平板横屏或小尺寸电脑；
+  - `1440px`：常见桌面宽屏；
+  - `767px`：仅验证设备拦截。
+- 核对 Phase 8 文档和 Playwright 配置中的实际并发数、报告目录及运行命令，修正文档与实现不一致之处。
+
+**涉及文件：**
+
+- `package.json`
+- `package-lock.json`
+- `vite.config.js`
+- 页面版本展示相关组件
+- `README.md`
+- `road-map.md`
+- `tests/e2e/helpers/viewport.js`
+- `tests/e2e/playwright.config.js`
+
+**完成标准：**
+
+- 本地页面展示 `v2.5.0`。
+- 所有版本信息只有一个代码来源。
+- 支持设备、拦截边界和测试矩阵在代码与文档中一致。
+- `npm test`、`npm run build` 和 `npm run test:e2e` 全部通过。
+
+#### ⬜ Phase 2：GitHub Actions 基础持续集成
+
+**目标：** 每次进入主分支前自动验证单元测试和生产构建。
+
+**任务：**
+
+- 新增 `.github/workflows/ci.yml`。
+- 在 `push` 和 `pull_request` 事件中运行工作流。
+- 固定 Node.js 主版本，并使用 `npm ci` 根据锁文件安装依赖。
+- 使用 npm 缓存减少重复安装时间。
+- 分别运行 `npm test` 和 `npm run build`，让失败步骤清晰可见。
+- 设置最小权限，例如工作流默认只需要 `contents: read`。
+- 增加并发控制，同一分支产生新提交后取消过期的旧任务。
+
+**建议流水线：**
+
+```text
+检出代码
+  → 配置 Node.js 与 npm 缓存
+  → npm ci
+  → npm test
+  → npm run build
+```
+
+**完成标准：**
+
+- 对 Pull Request 和主分支推送均自动触发。
+- 测试或构建失败时工作流明确失败，不继续视为可发布状态。
+- 全新 GitHub Actions runner 无需人工准备即可完成检查。
+- 工作流不需要写入仓库或使用高权限令牌。
+
+#### ⬜ Phase 3：Playwright E2E 接入 CI
+
+**目标：** 将 Phase 8 已完成的 9 个 spec 文件、60 个 E2E 用例纳入持续集成，并提供可诊断的失败信息。
+
+**任务：**
+
+- 在 CI 安装 Playwright Chromium 及其运行依赖。
+- 由 Playwright `webServer` 或工作流显式启动 Vite，避免依赖人工执行 `npm start`。
+- 保持本地与 CI 使用同一份 `tests/e2e/playwright.config.js`。
+- 在 CI 环境配置合理的重试次数；本地仍可保持零重试以暴露不稳定问题。
+- 失败时上传以下构件：
+  - `tests/e2e/test-results/` 中的截图和 Trace；
+  - `tests/e2e/e2e-report/` HTML 报告。
+- 构件只在失败时上传，并设置合理的保留天数。
+- 连续运行完整 E2E 三次，排查随机出题、动画时序和并发导致的不稳定。
+
+**CI 检查顺序：**
+
+```text
+Vitest
+  → 生产构建
+  → Playwright Chromium
+  → 失败时上传报告与 Trace
+```
+
+**完成标准：**
+
+- 9 个 spec 文件、60 个用例在 GitHub Actions Chromium 环境全部通过。
+- 同一提交连续执行三次无偶发失败。
+- 任一 E2E 失败时，可从工作流下载报告并定位到失败步骤。
+- E2E 不依赖 runner 中预先存在的 `localStorage`、浏览器或开发服务器。
+- 并行执行的测试之间不存在数据污染。
+
+#### ⬜ Phase 4：平板、电脑与可访问性质量收尾
+
+**目标：** 将正式支持的设备体验和基础无障碍能力固化为发布门槛。
+
+**平板与电脑验收：**
+
+- `768px` 下首页、设置、做题、辅助动画、结果、统计和订正页面无横向溢出。
+- 平板竖屏和横屏切换后页面可继续操作，当前训练不因尺寸变化意外丢失。
+- `1024px` 和 `1440px` 下主要操作区、图表和辅助动画布局正常。
+- 算式、等号和答案输入框不出现影响阅读的折行。
+- `767px` 显示设备提示；恢复到 `768px` 后应用可以正常显示。
+- 不要求 `767px` 及以下展示或操作应用内容。
+
+**键盘与无障碍验收：**
+
+- 设置、做题、辅助播放、结果和订正的主要操作可通过键盘到达。
+- Tab 焦点顺序与视觉顺序一致，焦点样式清晰可见。
+- Enter 提交不会导致重复提交，切题后焦点回到合理位置。
+- 按钮和表单控件具有可理解的可访问名称。
+- 正确、错误和辅助状态不只依赖颜色表达。
+- 启用 `prefers-reduced-motion` 后，关键步骤和结果仍可理解。
+- 浏览器控制台无未处理 error；新增 warning 必须记录原因。
+
+**完成标准：**
+
+- 响应式和无障碍 E2E 覆盖以上关键路径。
+- 平板与电脑设备矩阵全部通过。
+- 无 P1、P2 体验缺陷；延期的 P3 必须记录原因和后续版本。
+- 手机小屏没有被误列为支持设备。
+
+#### ⬜ Phase 5：发布清单与 v2.5.0 发布
+
+**目标：** 使用固定流程完成版本发布，并验证线上产物与源码一致。
+
+**任务：**
+
+- 新增 `docs/release-checklist.md`，至少包含：
+  - 工作区和目标分支确认；
+  - 版本号一致性检查；
+  - Vitest、生产构建和 E2E 结果；
+  - 平板、电脑设备矩阵；
+  - GitHub Pages 路由与刷新；
+  - Release Notes 和已知限制；
+  - 发布后线上冒烟验证。
+- 完成 README、`road-map.md` 和 `STEP.md` 的最终状态更新。
+- 按项目约定使用 `git-cz` 提交，由用户明确提出后再执行提交。
+- 创建 `v2.5.0` 标签和 GitHub Release。
+- 执行 GitHub Pages 部署。
+- 在线验证首页、训练、辅助、结算和订正核心路径。
+- 确认线上页面展示版本为 `v2.5.0`。
+
+**完成标准：**
+
+- 发布清单逐项完成并留有可追溯结果。
+- 主分支 CI 全绿后才创建正式标签。
+- `package.json`、页面版本、标签和 Release 均为 `v2.5.0`。
+- GitHub Pages 部署成功，平板和电脑端冒烟测试通过。
+- Release Notes 明确说明手机小屏暂不支持。
+
+### v2.5.0 总体验收标准
+
+- [ ] `npm test` 全部通过。
+- [ ] `npm run build` 成功且无新增构建告警。
+- [ ] `npm run test:e2e` 的 9 个 spec 文件、60 个用例全部通过。
+- [ ] GitHub Actions 自动执行 Vitest、生产构建和 Playwright E2E。
+- [ ] E2E 失败时可下载截图、Trace 和 HTML 报告。
+- [ ] 同一提交连续执行三次完整 E2E 无偶发失败。
+- [ ] `768px`、`1024px`、`1440px` 支持设备矩阵全部通过。
+- [ ] `767px` 正确显示不支持设备提示，但不要求应用内容适配。
+- [ ] 键盘操作、减少动态效果和控制台检查通过。
+- [ ] 无未关闭的 P1、P2 缺陷。
+- [ ] 发布检查清单完整执行。
+- [ ] 版本号在包信息、页面、标签和 Release 中保持一致。
+- [ ] `v2.5.0` GitHub Release 和 GitHub Pages 正式发布完成。
+
+---
+
 ## 关联文档
 
 - [README.md](./README.md)：当前生效的功能规格
+- [road-map.md](./road-map.md)：版本演化与未来路线图
 - [docs/phase7-真实浏览器验收与体验收尾.md](./docs/phase7-真实浏览器验收与体验收尾.md)：Phase 7 手工验收清单
 - [docs/phase8-e2e-implementation-plan.md](./docs/phase8-e2e-implementation-plan.md)：Phase 8 E2E 实施计划详版
 - [docs/github-pages-deploy-troubleshooting.md](./docs/github-pages-deploy-troubleshooting.md)：GitHub Pages 部署排障
