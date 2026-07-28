@@ -2,12 +2,12 @@
  * 视口切换与水平溢出检查，供 responsive.spec.js 使用。
  */
 
-// phase7 第 5 节尺寸矩阵
+// v2.5 正式支持 768px 及以上；767px 仅验证不支持设备的拦截边界。
 export const VIEWPORTS = {
-  WIDE:  { width: 1440, height: 900 },
-  NORMAL:{ width: 1024, height: 800 },
-  PAD:   { width: 768,  height: 700 },
-  MOBILE:{ width: 767,  height: 700 },
+  DESKTOP_WIDE: { width: 1440, height: 900 },
+  DESKTOP:      { width: 1024, height: 800 },
+  PAD_MIN:      { width: 768,  height: 700 },
+  UNSUPPORTED:  { width: 767,  height: 700 },
 };
 
 /**

@@ -628,7 +628,7 @@ CLIENT_BASE_URL=http://127.0.0.1:5173/that-math-things/ npm run test:e2e
 - 预先占用 5173 后运行默认 E2E，Playwright 明确报告 URL 已被占用，没有切换到 5174。
 - 设置 `CLIENT_BASE_URL` 后最小 E2E 的 2 个用例通过，外部服务在测试结束后仍保持运行，随后由验证流程主动关闭。
 
-#### ⬜ Phase 1：版本与设备基线
+#### ✅ Phase 1：版本与设备基线（已完成）
 
 **目标：** 在接入自动化发布前，先明确版本来源、支持设备和验收口径。
 
@@ -661,6 +661,18 @@ CLIENT_BASE_URL=http://127.0.0.1:5173/that-math-things/ npm run test:e2e
 - 所有版本信息只有一个代码来源。
 - 支持设备、拦截边界和测试矩阵在代码与文档中一致。
 - `npm test`、`npm run build` 和 `npm run test:e2e` 全部通过。
+
+**验收结果（2026-07-28）：**
+
+- `package.json` 与 `package-lock.json` 已统一为 `2.5.0`。
+- 页面版本继续由 Vite 读取 `package.json` 注入，已移除 `src/index.jsx` 中残留的独立版本注释。
+- 生产构建产物确认包含 `v2.5.0`。
+- README 与路线图均明确：正式支持 `768px` 及以上平板和电脑，`767px` 仅验证不支持设备拦截。
+- E2E 视口常量使用 `PAD_MIN`、`DESKTOP`、`DESKTOP_WIDE` 和 `UNSUPPORTED`，避免将 767px 误解为手机支持范围。
+- 修正平十法 E2E 的题目筛选：两阶段断言只使用非整十退位题，整十退位继续由边界用例单独覆盖。
+- Vitest 23 个测试文件、228 个用例全部通过。
+- 生产构建通过，无新增构建告警。
+- Playwright 9 个 spec 文件、60 个用例全部通过，结束后 5173 无监听进程。
 
 #### ⬜ Phase 2：GitHub Actions 基础持续集成
 

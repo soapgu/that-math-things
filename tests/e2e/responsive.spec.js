@@ -40,7 +40,7 @@ test.describe.serial('5. 响应式矩阵（767/768/1024/1440）', () => {
 
   test.beforeAll(async ({ browser }, testInfo) => {
     baseURL = testInfo.project.use.baseURL;
-    const ctx = await browser.newContext({ viewport: VIEWPORTS.WIDE });
+    const ctx = await browser.newContext({ viewport: VIEWPORTS.DESKTOP_WIDE });
     page = await ctx.newPage();
     home = new HomePage(page);
     settings = new SettingsPage(page);
@@ -79,28 +79,28 @@ test.describe.serial('5. 响应式矩阵（767/768/1024/1440）', () => {
   });
 
   test('02 - 1024px → 无横向溢出、按钮可见', async ({}, testInfo) => {
-    await setViewport(page, 'NORMAL');
+    await setViewport(page, 'DESKTOP');
     await expect(page.getByRole('button', { name: '下一步' })).toBeVisible();
     expect(await isNoHorizontalScroll(page)).toBe(true);
     await page.screenshot({ path: testInfo.outputPath('responsive-02-1024-demo.png'), fullPage: true });
   });
 
   test('03 - 768px → 演示卡片无水平溢出', async ({}, testInfo) => {
-    await setViewport(page, 'PAD');
+    await setViewport(page, 'PAD_MIN');
     await expect(page.getByRole('button', { name: '下一步' })).toBeVisible();
     expect(await isNoHorizontalScroll(page)).toBe(true);
     await page.screenshot({ path: testInfo.outputPath('responsive-03-768-demo.png'), fullPage: true });
   });
 
   test('04 - 767px → 移动端拦截层出现', async ({}, testInfo) => {
-    await setViewport(page, 'MOBILE');
+    await setViewport(page, 'UNSUPPORTED');
     await blocker.expectBlocked();
     await expect(page.getByRole('button', { name: '下一步' })).toBeHidden();
     await page.screenshot({ path: testInfo.outputPath('responsive-04-767-blocked.png'), fullPage: true });
   });
 
   test('05 - 767 → 768 不刷新 → 拦截层消失、页面内容恢复', async () => {
-    await setViewport(page, 'PAD');
+    await setViewport(page, 'PAD_MIN');
     await page.waitForTimeout(500);
     await blocker.expectUnblocked();
 
@@ -111,7 +111,7 @@ test.describe.serial('5. 响应式矩阵（767/768/1024/1440）', () => {
 
   test('06 - 1440 → 767 → 1024 不刷新 → 题号与输入值不重置', async () => {
     // 回到设置页，开一轮新训练
-    await setViewport(page, 'WIDE');
+    await setViewport(page, 'DESKTOP_WIDE');
     await page.goto(baseURL + '#/practice');
     await settings.waitForReady();
     await settings.clickStart();
@@ -123,11 +123,11 @@ test.describe.serial('5. 响应式矩阵（767/768/1024/1440）', () => {
     const savedQ = await session.getCurrentQuestion();
 
     // 1440 → 767（拦截层出现，但 React 状态保留在内存中）
-    await setViewport(page, 'MOBILE');
+    await setViewport(page, 'UNSUPPORTED');
     await blocker.expectBlocked();
 
     // 767 → 1024 不刷新
-    await setViewport(page, 'NORMAL');
+    await setViewport(page, 'DESKTOP');
     await page.waitForTimeout(500);
     await blocker.expectUnblocked();
 
@@ -155,7 +155,7 @@ test.describe.serial('5. 响应式矩阵（767/768/1024/1440）', () => {
     if (page.url().includes('/practice/result')) {
       await page.goto(baseURL + '#/practice');
     }
-    await setViewport(page, 'PAD');
+    await setViewport(page, 'PAD_MIN');
     await settings.waitForReady();
     await expect(page.getByText('运算范围')).toBeVisible();
     expect(await isNoHorizontalScroll(page)).toBe(true);

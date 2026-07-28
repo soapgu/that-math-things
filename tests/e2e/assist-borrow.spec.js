@@ -260,9 +260,12 @@ test.describe.serial('4.6-4.9 退位方法演示 + 速度与控制（borrow）',
     await settings.clickStart();
     await session.waitForReady();
 
-    // 找退位题
-    borrowQ = await finder.untilQuestion((q) => finder.isBorrow(q));
-    expect(borrowQ, '平十法轮次至少找到 1 道退位题').not.toBeNull();
+    // 找需要完整执行“先减到 10、再减剩余”两阶段的非整十退位题；
+    // 70-21 这类整十边界会按产品规则省略第一阶段，由用例 10 单独覆盖。
+    borrowQ = await finder.untilQuestion(
+      (q) => finder.isBorrow(q) && !finder.isBorrowBoundary(q)
+    );
+    expect(borrowQ, '平十法轮次至少找到 1 道非整十退位题').not.toBeNull();
 
     // 进入演示
     await session.expectAssistEntryVisible();
