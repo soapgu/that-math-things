@@ -6,7 +6,31 @@ import { MathAssistPage } from './pages/MathAssistPage.js';
 import { AssistPlayerPage } from './pages/AssistPlayerPage.js';
 import { QuestionFinder } from './helpers/QuestionFinder.js';
 import { ResultPage } from './pages/ResultPage.js';
+import { StatsPage } from './pages/StatsPage.js';
+import { CorrectionPage } from './pages/CorrectionPage.js';
 import { ConsoleCollector } from './helpers/ConsoleCollector.js';
+
+async function tabTo(page, locator, maxTabs = 30) {
+  if (await locator.count() === 0) {
+    throw new Error('目标控件不存在，无法执行 Tab 可达性检查');
+  }
+  await page.locator('body').focus();
+  for (let i = 0; i < maxTabs; i++) {
+    await page.keyboard.press('Tab');
+    if (await locator.evaluate((el) => el === document.activeElement).catch(() => false)) return;
+  }
+  throw new Error(`Tab ${maxTabs} 次后仍未到达目标控件`);
+}
+
+async function expectVisibleFocus(locator) {
+  await expect(locator).toBeFocused();
+  const hasVisibleStyle = await locator.evaluate((el) => {
+    const style = getComputedStyle(el);
+    return (style.outlineStyle !== 'none' && parseFloat(style.outlineWidth) > 0)
+      || (style.boxShadow !== 'none' && style.boxShadow !== '');
+  });
+  expect(hasVisibleStyle).toBe(true);
+}
 
 /**
  * Phase 7 § 6 可访问性 + § 7 控制台检查
@@ -121,6 +145,10 @@ test.describe.serial('6.2 键盘 + 7. 控制台', () => {
   let finder;
   /** @type {ResultPage} */
   let result;
+  /** @type {StatsPage} */
+  let stats;
+  /** @type {CorrectionPage} */
+  let correction;
   /** @type {ConsoleCollector} */
   let collector;
 
@@ -135,6 +163,8 @@ test.describe.serial('6.2 键盘 + 7. 控制台', () => {
     player = new AssistPlayerPage(page);
     finder = new QuestionFinder(session);
     result = new ResultPage(page);
+    stats = new StatsPage(page);
+    correction = new CorrectionPage(page);
     collector = new ConsoleCollector(page);
   });
 
@@ -150,36 +180,33 @@ test.describe.serial('6.2 键盘 + 7. 控制台', () => {
     collector.expectClean('首页加载');
   });
 
-  test('02 - 设置页键盘 Tab → 焦点遍历可控元素', async () => {
+  test('02 - 设置页键盘 Tab → 开始训练可达、焦点可见、Enter 可触发', async () => {
     await home.clickPractice();
     await settings.waitForReady();
 
-    // Tab 从辅助开关到「开始训练」按钮
-    await page.keyboard.press('Tab');
-    await page.keyboard.press('Tab');
-    // 聚焦在某个控件上（具体位置依赖 Ant Design 渲染，不做精确断言）
-    const focused = await page.locator(':focus').first().textContent().catch(() => '');
-    expect(typeof focused).toBe('string');
-
-    // 「开始训练」可通过 Enter 触发
-    await settings.clickStart();
+    const start = page.getByRole('button', { name: '开始训练' });
+    await tabTo(page, start);
+    await expectVisibleFocus(start);
+    await page.keyboard.press('Enter');
     await session.waitForReady();
 
     const snap1 = collector.snapshot();
     expect(snap1.errors.length).toBe(0);
   });
 
-  test('03 - Session 键盘 → 输入 Tab Enter 可用', async () => {
-    // 在 session 页输入后 Tab 到下一题按钮
+  test('03 - Session Enter → 只前进一题并把焦点交回输入框', async () => {
     await session.expectInputFocused();
-    await session.answer('99');
-    await page.keyboard.press('Tab');
-    await page.keyboard.press('Tab');
-    await page.keyboard.press('Enter');
-    await page.waitForTimeout(500);
+    const before = await session.getQuestionText();
+    const q = await session.getCurrentQuestion();
+    await session.answer(finder.answer(q) + 1000);
+    await session.pressEnter();
+    await expect.poll(() => session.getQuestionText()).not.toBe(before);
+    await session.expectInputFocused();
+    await page.waitForTimeout(150);
+    expect(await session.getProgressPercent()).toBe(10);
   });
 
-  test('04 - 展开进位演示后 → 控制台 diff 干净', async () => {
+  test('04 - 辅助入口和播放控件 → 键盘可达且状态名称可理解', async () => {
     const snapBefore = collector.snapshot();
 
     // 从设置页新开训练，确保稳定状态
@@ -193,14 +220,24 @@ test.describe.serial('6.2 键盘 + 7. 控制台', () => {
 
     await finder.untilQuestion((q) => finder.isCarry(q), { maxTries: 30 });
     await session.expectAssistEntryVisible();
-    await assist.expand();
-    await assist.showMethod();
+    await page.waitForTimeout(100);
+    const hintButton = page.getByRole('button', { name: '需要提示' });
+    await tabTo(page, hintButton);
+    await expectVisibleFocus(hintButton);
+    await hintButton.press('Enter');
+    await expect(page.getByText('想一想：', { exact: false }).first()).toBeVisible();
+
+    const methodButton = page.getByRole('button', { name: '看看计算方法' });
+    await tabTo(page, methodButton);
+    await methodButton.press('Enter');
     await player.waitForReady('carry');
 
-    // 操作几步
-    await player.clickNextStep();
-    await player.clickNextStep();
-    // 进位状态指示
+    const nextStep = page.getByRole('button', { name: '下一步' });
+    await tabTo(page, nextStep);
+    await expectVisibleFocus(nextStep);
+    await nextStep.press('Enter');
+    await nextStep.focus();
+    await page.keyboard.press('Enter');
     await expect(
       page.locator('[role="status"]').filter({ hasText: /10 个一换成 1 个十/ })
     ).toBeVisible({ timeout: 3000 });
@@ -227,11 +264,13 @@ test.describe.serial('6.2 键盘 + 7. 控制台', () => {
     const snapBefore = collector.snapshot();
 
     // 答完 session
+    let first = true;
     try {
       while (page.url().includes('/practice/session')) {
         const q = await session.getCurrentQuestion();
         if (!q) break;
-        await session.answer(finder.answer(q));
+        await session.answer(first ? finder.answer(q) + 1000 : finder.answer(q));
+        first = false;
         await session.pressEnter();
         await page.waitForTimeout(250);
       }
@@ -244,5 +283,32 @@ test.describe.serial('6.2 键盘 + 7. 控制台', () => {
     const diff = collector.diffSince(snapBefore);
     expect(diff.newErrors).toEqual([]);
     expect(diff.newConsoleErrors.length).toBeLessThanOrEqual(1);
+  });
+
+  test('07 - 结果与订正 → 键盘可达，错误/正确状态含文字', async () => {
+    const statsButton = page.getByRole('button', { name: '统计数据' });
+    await tabTo(page, statsButton);
+    await expectVisibleFocus(statsButton);
+    await page.keyboard.press('Enter');
+    await stats.waitForReady();
+
+    const correctionButton = page.getByRole('button', { name: /订/ }).first();
+    await tabTo(page, correctionButton);
+    await expectVisibleFocus(correctionButton);
+    await page.keyboard.press('Enter');
+    await correction.waitForReady();
+    await expect(page.locator('input[type="text"]').first()).toBeVisible();
+
+    const q = await correction.getCurrentQuestion();
+    expect(q).not.toBeNull();
+    await correction.answer(finder.answer(q) + 1);
+    await correction.pressEnter();
+    await expect(page.getByText('✗ 回答错误')).toBeVisible();
+    await expect(page.locator('input[type="text"]').first()).toBeFocused();
+
+    await correction.answer(finder.answer(q));
+    await correction.pressEnter();
+    await expect(page.getByRole('heading', { name: '🎉 全部订正完成！' })).toBeVisible();
+    await expect(page.getByText(/全部订正正确/)).toBeVisible();
   });
 });

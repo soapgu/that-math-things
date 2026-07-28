@@ -6,6 +6,9 @@ import { MathAssistPage } from './pages/MathAssistPage.js';
 import { AssistPlayerPage } from './pages/AssistPlayerPage.js';
 import { QuestionFinder } from './helpers/QuestionFinder.js';
 import { MobileBlockerPage } from './pages/MobileBlockerPage.js';
+import { ResultPage } from './pages/ResultPage.js';
+import { StatsPage } from './pages/StatsPage.js';
+import { CorrectionPage } from './pages/CorrectionPage.js';
 import { setViewport, isNoHorizontalScroll, VIEWPORTS } from './helpers/viewport.js';
 
 /**
@@ -15,7 +18,8 @@ import { setViewport, isNoHorizontalScroll, VIEWPORTS } from './helpers/viewport
  *   - 1440 / 1024 / 768 无横向溢出
  *   - 767px 显示移动端拦截层，文案「目前网站只支持电脑和 Pad 访问」
  *   - 767 → 768 不刷新，拦截层消失、应用内容恢复
- *   - 1440 → 767 → 1024 不刷新，题号与输入值不重置
+ *   - 平板竖屏 ↔ 横屏不刷新，题目与输入值不重置
+ *   - 结果、统计、订正等核心页面在 768px 无横向溢出
  *   - 退位演示卡片 768px 无水平溢出
  */
 test.describe.serial('5. 响应式矩阵（767/768/1024/1440）', () => {
@@ -37,6 +41,12 @@ test.describe.serial('5. 响应式矩阵（767/768/1024/1440）', () => {
   let finder;
   /** @type {MobileBlockerPage} */
   let blocker;
+  /** @type {ResultPage} */
+  let result;
+  /** @type {StatsPage} */
+  let stats;
+  /** @type {CorrectionPage} */
+  let correction;
 
   test.beforeAll(async ({ browser }, testInfo) => {
     baseURL = testInfo.project.use.baseURL;
@@ -49,6 +59,9 @@ test.describe.serial('5. 响应式矩阵（767/768/1024/1440）', () => {
     player = new AssistPlayerPage(page);
     finder = new QuestionFinder(session);
     blocker = new MobileBlockerPage(page);
+    result = new ResultPage(page);
+    stats = new StatsPage(page);
+    correction = new CorrectionPage(page);
 
     await home.goto(baseURL);
     await home.clickPractice();
@@ -109,59 +122,62 @@ test.describe.serial('5. 响应式矩阵（767/768/1024/1440）', () => {
     expect(await isNoHorizontalScroll(page)).toBe(true);
   });
 
-  test('06 - 1440 → 767 → 1024 不刷新 → 题号与输入值不重置', async () => {
+  test('06 - 平板竖屏 ↔ 横屏不刷新 → 当前训练状态保留', async () => {
     // 回到设置页，开一轮新训练
-    await setViewport(page, 'DESKTOP_WIDE');
+    await setViewport(page, 'PAD_PORTRAIT');
     await page.goto(baseURL + '#/practice');
     await settings.waitForReady();
     await settings.clickStart();
     await session.waitForReady();
 
-    // 输入测试值
-    const testInput = '99';
+    const testInput = '123';
     await session.answer(testInput);
     const savedQ = await session.getCurrentQuestion();
 
-    // 1440 → 767（拦截层出现，但 React 状态保留在内存中）
-    await setViewport(page, 'UNSUPPORTED');
-    await blocker.expectBlocked();
-
-    // 767 → 1024 不刷新
-    await setViewport(page, 'DESKTOP');
-    await page.waitForTimeout(500);
-    await blocker.expectUnblocked();
-
-    // 因 MobileBlocker 重新挂载，Session 组件已 reset
-    // 验证页面恢复正常即可
-    await expect(page.getByRole('heading', { name: '那年那数那些事' }).first()).toBeVisible();
+    await setViewport(page, 'PAD_LANDSCAPE');
+    expect(await session.getCurrentQuestion()).toEqual(savedQ);
+    expect(await session.getInputValue()).toBe(testInput);
     expect(await isNoHorizontalScroll(page)).toBe(true);
+
+    await setViewport(page, 'PAD_PORTRAIT');
+    expect(await session.getCurrentQuestion()).toEqual(savedQ);
+    expect(await session.getInputValue()).toBe(testInput);
   });
 
-  test('07 - 768px 设置页 + 首页回归截图', async ({}, testInfo) => {
-    // 答完当前题进入结算页
-    try {
-      while (page.url().includes('/practice/session')) {
-        const q = await session.getCurrentQuestion();
-        if (!q) break;
-        await session.answer(finder.answer(q));
-        await session.pressEnter();
-        await page.waitForTimeout(300);
-      }
-    } catch {
-      // 正常
+  test('07 - 768px 做题、结果、统计、订正 → 无横向溢出', async ({}, testInfo) => {
+    let first = true;
+    while (page.url().includes('/practice/session')) {
+      const q = await session.getCurrentQuestion();
+      if (!q) break;
+      await session.answer(first ? finder.answer(q) + 1000 : finder.answer(q));
+      first = false;
+      await session.pressEnter();
+      await page.waitForTimeout(250);
     }
 
-    // 回到设置页
-    if (page.url().includes('/practice/result')) {
-      await page.goto(baseURL + '#/practice');
-    }
-    await setViewport(page, 'PAD_MIN');
+    await result.waitForReady();
+    expect(await isNoHorizontalScroll(page)).toBe(true);
+    await page.screenshot({ path: testInfo.outputPath('responsive-07-768-result.png'), fullPage: true });
+
+    await result.clickToStats();
+    await stats.waitForReady();
+    expect(await isNoHorizontalScroll(page)).toBe(true);
+    await page.screenshot({ path: testInfo.outputPath('responsive-07-768-stats.png'), fullPage: true });
+
+    await stats.clickLatestRecordCorrection();
+    await correction.waitForReady();
+    await expect(page.getByRole('heading', { name: '订正练习' })).toBeVisible();
+    expect(await isNoHorizontalScroll(page)).toBe(true);
+    await page.screenshot({ path: testInfo.outputPath('responsive-07-768-correction.png'), fullPage: true });
+  });
+
+  test('08 - 768px 设置页 + 首页回归截图', async ({}, testInfo) => {
+    await page.goto(baseURL + '#/practice');
     await settings.waitForReady();
     await expect(page.getByText('运算范围')).toBeVisible();
     expect(await isNoHorizontalScroll(page)).toBe(true);
-    await page.screenshot({ path: testInfo.outputPath('responsive-07-768-settings.png'), fullPage: true });
+    await page.screenshot({ path: testInfo.outputPath('responsive-08-768-settings.png'), fullPage: true });
 
-    // 回家
     await page.goto(baseURL + '#/');
     await expect(page.getByRole('heading', { name: '那年那数那些事', exact: true })).toBeVisible();
     expect(await isNoHorizontalScroll(page)).toBe(true);

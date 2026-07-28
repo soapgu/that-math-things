@@ -11,3 +11,8 @@ body {
 #root {
   min-height: 100vh;
 }
+
+:where(button, input, select, textarea, [tabindex]:not([tabindex='-1'])):focus-visible {
+  outline: 3px solid #1677ff;
+  outline-offset: 2px;
+}

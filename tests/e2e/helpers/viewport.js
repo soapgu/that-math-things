@@ -6,6 +6,8 @@
 export const VIEWPORTS = {
   DESKTOP_WIDE: { width: 1440, height: 900 },
   DESKTOP:      { width: 1024, height: 800 },
+  PAD_PORTRAIT: { width: 768,  height: 1024 },
+  PAD_LANDSCAPE:{ width: 1024, height: 768 },
   PAD_MIN:      { width: 768,  height: 700 },
   UNSUPPORTED:  { width: 767,  height: 700 },
 };
