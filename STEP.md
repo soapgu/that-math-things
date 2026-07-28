@@ -713,8 +713,8 @@ CLIENT_BASE_URL=http://127.0.0.1:5173/that-math-things/ npm run test:e2e
 - 同一工作流、同一 PR 或分支使用并发组，新提交会取消旧任务。
 - YAML 语法及必需字段检查通过。
 - 使用 `npm ci` 重新安装 284 个依赖后，Vitest 23 个文件、228 个用例全部通过，生产构建成功。
-- 首次 GitHub Hosted Runner 由 `main` 推送触发，检出代码、配置 Node.js、`npm ci`、Vitest 和生产构建全部成功。
-- 首次运行从任务开始到完成约 48 秒，结果见 [基础质量检查 #30366573779](https://github.com/soapgu/that-math-things/actions/runs/30366573779)。
+- GitHub Hosted Runner 由 `main` 推送触发，检出代码、配置 Node.js、`npm ci`、Vitest 和生产构建全部成功。
+- `actions/checkout@v6` 与 `actions/setup-node@v6` 均使用 Node 24 运行时；最终无弃用告警的任务耗时 39 秒，结果见 [基础质量检查 #30366866367](https://github.com/soapgu/that-math-things/actions/runs/30366866367)。
 
 #### ⬜ Phase 3：Playwright E2E 接入 CI
 
