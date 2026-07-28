@@ -4,7 +4,7 @@ export default defineConfig({
   testDir: '.',
   timeout: 120000,
   expect: { timeout: 15000 },
-  workers: 1,
+  workers: 4,
   retries: 0,
   outputDir: 'test-results',
   use: {
