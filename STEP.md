@@ -487,13 +487,12 @@ Phase 8 在 Phase 7 验收条件基础上，将人工浏览器操作替换为 Pl
 **配置与运行：**
 
 ```bash
-npm start                              # 先启动 Vite 开发服务
-npm run test:e2e                       # 无头模式运行全部 E2E 测试
+npm run test:e2e                       # 自动启动/回收 Vite，无头运行全部 E2E
 npm run test:e2e:headed                # 有头模式（便于调试）
 npm run test:e2e:report                # 查看 HTML 报告
 ```
 
-配置文件：`tests/e2e/playwright.config.js`，`vite.config.js` 已通过 `exclude: ['tests/e2e/**']` 隔离 Playwright 测试。
+配置文件：`tests/e2e/playwright.config.js`。Playwright 默认以 `--strictPort` 在 5173 启动 Vite，测试结束后自动回收；显式设置 `CLIENT_BASE_URL` 时改用外部服务。`vite.config.js` 已通过 `exclude: ['tests/e2e/**']` 隔离 Playwright 测试。
 
 **测试文件清单（实际落地，共 9 个 spec 文件）：**
 
@@ -567,7 +566,7 @@ v2.5.0 是已确定的下一个版本。本版本不新增学习功能，主要�
 
 ### v2.5.0 实现拆分
 
-#### ⬜ Phase 0：E2E 服务生命周期治理
+#### ✅ Phase 0：E2E 服务生命周期治理（已完成）
 
 **目标：** 取消 `npm run test:e2e` 对人工执行 `npm start` 的依赖，让 Playwright 只管理自己创建的 Vite 进程，并在测试成功、失败或中断后自动回收。
 
@@ -620,6 +619,14 @@ CLIENT_BASE_URL=http://127.0.0.1:5173/that-math-things/ npm run test:e2e
 - 5173 已被占用时测试明确失败，并提示端口冲突。
 - 设置 `CLIENT_BASE_URL` 后可以连接外部服务，Playwright 不会终止该外部进程。
 - 完成本阶段后再执行 Phase 1 的测试、构建和 E2E 全量基线。
+
+**验收结果（2026-07-28）：**
+
+- 未启动外部服务直接运行完整 E2E，60 个用例全部通过，结束后 5173 无监听进程。
+- 使用临时失败用例验证失败退出，Playwright 自动回收 Vite，未遗留 5173 监听。
+- 运行完整 E2E 后通过 Ctrl+C 中断，进程以 130 退出，5173 自动释放。
+- 预先占用 5173 后运行默认 E2E，Playwright 明确报告 URL 已被占用，没有切换到 5174。
+- 设置 `CLIENT_BASE_URL` 后最小 E2E 的 2 个用例通过，外部服务在测试结束后仍保持运行，随后由验证流程主动关闭。
 
 #### ⬜ Phase 1：版本与设备基线
 

@@ -257,6 +257,29 @@ npm test
 # 浏览器会自动打开 http://localhost:5173/that-math-things/
 ```
 
+### 运行 E2E 测试
+
+Playwright 默认自动启动固定在 5173 端口的 Vite 服务，并在测试结束后回收该服务，无需预先运行 `npm start`：
+
+```bash
+# 无头模式运行全部 E2E
+npm run test:e2e
+
+# 有头模式调试
+npm run test:e2e:headed
+
+# 查看最近一次 HTML 报告
+npm run test:e2e:report
+```
+
+若 5173 已被占用，测试会直接报告端口冲突，不会自动切换到其他端口。需要连接自行管理的服务时，显式指定完整地址：
+
+```bash
+CLIENT_BASE_URL=http://127.0.0.1:5173/that-math-things/ npm run test:e2e
+```
+
+外部服务不由 Playwright 启动或关闭。
+
 ### 如何新增一道题
 
 1. 在 `src/problems/data/` 下新建文件，按以下模板定义：

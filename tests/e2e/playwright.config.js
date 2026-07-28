@@ -1,5 +1,8 @@
 import { defineConfig } from '@playwright/test';
 
+const externalBaseURL = process.env.CLIENT_BASE_URL;
+const defaultBaseURL = 'http://127.0.0.1:5173/that-math-things/';
+
 export default defineConfig({
   testDir: '.',
   timeout: 120000,
@@ -8,7 +11,7 @@ export default defineConfig({
   retries: 0,
   outputDir: 'test-results',
   use: {
-    baseURL: process.env.CLIENT_BASE_URL || 'http://127.0.0.1:5173/that-math-things/',
+    baseURL: externalBaseURL || defaultBaseURL,
     headless: process.env.HEADED !== '1',
     screenshot: 'only-on-failure',
     trace: 'retain-on-failure',
@@ -22,6 +25,14 @@ export default defineConfig({
       testMatch: /.*\.spec\.js/,
     },
   ],
+  webServer: externalBaseURL
+    ? undefined
+    : {
+        command: 'npm start -- --host 127.0.0.1 --port 5173 --strictPort',
+        url: defaultBaseURL,
+        reuseExistingServer: false,
+        timeout: 120000,
+      },
   reporter: [
     ['html', { outputFolder: 'e2e-report' }],
     ['list'],

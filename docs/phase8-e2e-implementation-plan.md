@@ -6,7 +6,7 @@
 
 覆盖 `phase7-真实浏览器验收与体验收尾.md` 第 4 节 10 个验收场景、第 5–7 节尺寸/可访问性/控制台三类横向检查。最终输出：
 
-- **8 个 spec 文件**
+- **9 个 spec 文件**
 - **3 个新增 Page Object**：`MathAssistPage`、`AssistPlayerPage`、`MobileBlockerPage`
 - **3 个 helper**：`ConsoleCollector`、`QuestionFinder`、`viewport`
 - **6 个现有 Page Object 的修订**
@@ -184,7 +184,7 @@ tests/e2e/
 
 ## 8. 完成标准（对齐 Phase 7 第 10 节）
 
-- 8 个 spec 在 `npm run test:e2e` 全绿（workers: 1 串行）
+- 9 个 spec 文件在 `npm run test:e2e` 全绿（当前配置 `workers: 4`）
 - 单 spec 控制台无未捕获 error，新增 warning 已在 `a11y-console.spec.js` 文档化或修复
 - 破十/平十法各实测一题退位演示，进位演示与三档速度/控制均通过
 - 刷新恢复、关辅助、Enter、结算、历史、订正闭环全部通过
@@ -200,8 +200,8 @@ tests/e2e/
 | framer-motion 12 在 reduced-motion 下行为差异 | 用 `newContext({ reducedMotion: 'reduce' })` 而非 CSS hack；只断言稳定终态不断言动画中间帧 |
 | Result 详情从 Stats 跳转依赖 `history.state` | Playwright 同一 page 内走 SPA 路由，状态由 React Router `location.state` 携带，不需要特殊处理 |
 | 控制台 warning 来源混杂 | `ConsoleCollector` 提供 Vite dev 白名单 + 仅匹配 `Warning:` 前缀的 React 警告 |
-| 真实出题速度慢导致总时长超 10 分钟 | 全局 timeout 120s，`assist-*.spec` 单文件 180s，整体 workers=1 串行但可顺序复用同一 browser context |
-| Playwright 与 Vite dev server 同步 | E2E 测试启动前由 `webServer` 配置（或手动 `npm start`）拉起 vite，`baseURL` 指向 `http://127.0.0.1:5173/that-math-things/` |
+| 真实出题速度慢导致总时长超 10 分钟 | 全局 timeout 120s，`assist-*.spec` 单文件 180s，当前使用 4 workers 并行执行 |
+| Playwright 与 Vite dev server 同步 | 默认由 `webServer` 以 `--strictPort` 在 5173 启动并回收 Vite；仅在显式设置 `CLIENT_BASE_URL` 时连接外部服务 |
 
 ## 10. 最终验收记录模板
 
