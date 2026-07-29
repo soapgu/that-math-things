@@ -1,4 +1,4 @@
-import{be as U,bf as Y,a9 as W,bg as J,al as Q,r as a,N as x,A as v,P as X,bh as Z,o as M,z as A,aj as ee,t as oe,b as N,ap as te,ao as ne,ak as se,bi as ae,bj as re}from"./index-CRQKJFTh.js";const ie=`accept acceptCharset accessKey action allowFullScreen allowTransparency
+import{be as U,bf as Y,a9 as W,bg as J,al as Q,r as a,N as x,A as v,P as X,bh as Z,o as M,z as A,aj as ee,t as oe,b as N,ap as te,ao as ne,ak as se,bi as ae,bj as re}from"./index-DTw6B2kI.js";const ie=`accept acceptCharset accessKey action allowFullScreen allowTransparency
     alt async autoComplete autoFocus autoPlay capture cellPadding cellSpacing challenge
     charSet checked classID className colSpan cols content contentEditable contextMenu
     controls coords crossOrigin data dateTime default defer dir disabled download draggable
