@@ -805,7 +805,7 @@ Vitest
 - `CI=1 npm run test:e2e`：9 个 spec 文件、62 个用例全部通过，耗时约 47.9 秒；结束后 5173 无监听进程。
 - 未发现待处理的 P1、P2 或延期 P3 体验缺陷。
 
-#### ⬜ Phase 5：发布清单与 v2.5.0 发布
+#### 🚧 Phase 5：发布清单与 v2.5.0 发布（执行中）
 
 **目标：** 使用固定流程完成版本发布，并验证线上产物与源码一致。
 
@@ -856,6 +856,7 @@ Vitest
 
 - [README.md](./README.md)：当前生效的功能规格
 - [road-map.md](./road-map.md)：版本演化与未来路线图
+- [docs/release-checklist.md](./docs/release-checklist.md)：v2.5.0 发布前后检查与结果记录
 - [docs/phase7-真实浏览器验收与体验收尾.md](./docs/phase7-真实浏览器验收与体验收尾.md)：Phase 7 手工验收清单
 - [docs/phase8-e2e-implementation-plan.md](./docs/phase8-e2e-implementation-plan.md)：Phase 8 E2E 实施计划详版
 - [docs/github-pages-deploy-troubleshooting.md](./docs/github-pages-deploy-troubleshooting.md)：GitHub Pages 部署排障

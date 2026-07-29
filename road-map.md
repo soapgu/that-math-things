@@ -18,8 +18,8 @@
 | [v2.2](https://github.com/soapgu/that-math-things/releases/tag/v2.2) | 2026-07-13 | ✅ | 综合评价 | 引入难度、准确、速度评价和综合等级，增加雷达图与趋势展示 |
 | [v2.3](https://github.com/soapgu/that-math-things/releases/tag/v2.3) | 2026-07-18 | ✅ | 工程质量优化 | 从 CRA 迁移到 Vite/Vitest，实施懒加载、图表按需引入和兼容性清理 |
 | [v2.4](https://github.com/soapgu/that-math-things/releases/tag/v2.4) | 2026-07-21 | ✅ | 辅助运算 | 提供进位、退位两层提示，加入数位动画、破十法/平十法和辅助使用记录 |
-| Phase 8 | — | 🧪 | E2E 自动化 | 已完成 9 个 Playwright spec 文件、60 个用例，覆盖核心训练与订正流程 |
-| v2.5.0 | 待定 | 🎯 | 发布体系与质量基线 | 面向平板和电脑建立持续集成、版本管理与可重复发布流程 |
+| Phase 8 | — | 🧪 | E2E 自动化 | 已完成 9 个 Playwright spec 文件、62 个用例，覆盖核心训练与订正流程 |
+| v2.5.0 | 2026-07-29 | 🎯 | 发布体系与质量基线 | 面向平板和电脑建立持续集成、版本管理与可重复发布流程 |
 
 ## 历史演化
 
@@ -101,7 +101,7 @@
 - 退位的破十法、平十法及播放控制；
 - 结算、历史详情和错题订正闭环；
 - 响应式布局、可访问性及控制台错误检查；
-- 共 9 个 spec 文件、60 个用例，并将并行执行时间优化至约 30 秒。
+- 共 9 个 spec 文件、62 个用例，并将 CI 并行执行时间稳定在约 1 分钟内。
 
 详细实施和验收记录见 [STEP.md](./STEP.md) 与 [Phase 8 E2E 实施计划](./docs/phase8-e2e-implementation-plan.md)。
 
@@ -118,7 +118,7 @@ v2.5.0 已确定为下一个版本。本版本不增加新的学习功能，重�
 
 ### 版本目标
 
-- 为 Phase 8 的 60 个 Playwright E2E 用例建立持续运行环境；
+- 为 9 个 spec 文件、62 个 Playwright E2E 用例建立持续运行环境；
 - 使用 GitHub Actions 自动执行单元测试、生产构建和 E2E；
 - 统一 `package.json`、页面展示、Git 标签和 GitHub Release 的版本号；
 - 建立发布检查清单，使发布过程可重复、可追溯；

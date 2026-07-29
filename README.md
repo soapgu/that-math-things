@@ -21,14 +21,19 @@
 - [项目命名](#项目命名)
 - [功能文档](#功能文档)
 
-> 版本演进与阶段性实施记录：见 [STEP.md](./STEP.md)  
+> 版本演进与阶段性实施记录：见 [STEP.md](./STEP.md)
+>
 > Phase 8 E2E 实施计划：见 [docs/phase8-e2e-implementation-plan.md](./docs/phase8-e2e-implementation-plan.md)
+>
+> v2.5.0 发布检查清单：见 [docs/release-checklist.md](./docs/release-checklist.md)
 
 ---
 
 ## 在线地址
 
 **<https://soapgu.github.io/that-math-things>**
+
+当前版本：**v2.5.0**
 
 ### 支持设备
 
@@ -481,6 +486,8 @@ npm run deploy
 
 # 产物在 build/ 目录，也可手动部署到任何静态服务器
 ```
+
+正式发布前后按 [v2.5.0 发布检查清单](./docs/release-checklist.md) 完成版本、CI、设备矩阵、Release 和线上冒烟确认。
 
 ---
 
