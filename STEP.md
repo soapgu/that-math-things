@@ -805,7 +805,7 @@ Vitest
 - `CI=1 npm run test:e2e`：9 个 spec 文件、62 个用例全部通过，耗时约 47.9 秒；结束后 5173 无监听进程。
 - 未发现待处理的 P1、P2 或延期 P3 体验缺陷。
 
-#### 🚧 Phase 5：发布清单与 v2.5.0 发布（执行中）
+#### ✅ Phase 5：发布清单与 v2.5.0 发布（已完成）
 
 **目标：** 使用固定流程完成版本发布，并验证线上产物与源码一致。
 
@@ -834,21 +834,31 @@ Vitest
 - GitHub Pages 部署成功，平板和电脑端冒烟测试通过。
 - Release Notes 明确说明手机小屏暂不支持。
 
+**发布结果（2026-07-29）：**
+
+- 新增 [v2.5.0 发布检查清单](./docs/release-checklist.md)，完整记录版本、质量门禁、设备矩阵、CI、Release、Pages 和线上冒烟结果。
+- 发布准备提交为 `32e557b`；对应 [基础质量检查 #30417340236](https://github.com/soapgu/that-math-things/actions/runs/30417340236) 在 2 分 13 秒内全部通过。
+- `v2.5.0` 标签准确指向发布准备提交，正式 [GitHub Release](https://github.com/soapgu/that-math-things/releases/tag/v2.5.0) 已创建。
+- GitHub Pages 部署提交为 `076fe62f`，构建状态为 built。
+- 线上页面展示 `v2.5.0`；在 `1024px` 完成设置、做题、辅助演示、结算和订正闭环，在 `768px` 无横向溢出。
+- `767px` 正确显示不支持设备提示；线上浏览器控制台无 error 或 warning。
+- 发布后无待处理 P1、P2 缺陷。
+
 ### v2.5.0 总体验收标准
 
 - [x] `npm test` 全部通过。
 - [x] `npm run build` 成功且无新增构建告警。
 - [x] `npm run test:e2e` 的 9 个 spec 文件、62 个用例全部通过。
-- [ ] GitHub Actions 自动执行 Vitest、生产构建和 Playwright E2E。
-- [ ] E2E 失败时可下载截图、Trace 和 HTML 报告。
-- [ ] 同一提交连续执行三次完整 E2E 无偶发失败。
+- [x] GitHub Actions 自动执行 Vitest、生产构建和 Playwright E2E。
+- [x] E2E 失败时可下载截图、Trace 和 HTML 报告。
+- [x] 同一提交连续执行三次完整 E2E 无偶发失败。
 - [x] `768px`、`1024px`、`1440px` 支持设备矩阵全部通过。
 - [x] `767px` 正确显示不支持设备提示，但不要求应用内容适配。
 - [x] 键盘操作、减少动态效果和控制台检查通过。
 - [x] 无未关闭的 P1、P2 缺陷。
-- [ ] 发布检查清单完整执行。
-- [ ] 版本号在包信息、页面、标签和 Release 中保持一致。
-- [ ] `v2.5.0` GitHub Release 和 GitHub Pages 正式发布完成。
+- [x] 发布检查清单完整执行。
+- [x] 版本号在包信息、页面、标签和 Release 中保持一致。
+- [x] `v2.5.0` GitHub Release 和 GitHub Pages 正式发布完成。
 
 ---
 

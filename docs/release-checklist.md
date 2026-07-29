@@ -13,7 +13,7 @@
 - [x] `package.json` 版本为 `2.5.0`。
 - [x] `package-lock.json` 根版本和项目版本均为 `2.5.0`。
 - [x] 页面展示版本为 `v2.5.0`。
-- [ ] 发布提交已推送，且对应主分支 CI 全绿。
+- [x] 发布提交 `32e557b` 已推送，且对应主分支 CI 全绿。
 
 ## 2. 本地质量门禁
 
@@ -38,24 +38,24 @@
 - [x] GitHub Actions 自动执行 Vitest、生产构建和 Playwright E2E。
 - [x] E2E 最终失败时上传截图、Trace 和 HTML 报告，保留 7 天。
 - [x] Phase 3 已完成同一提交连续三轮完整 E2E 无偶发失败。
-- [ ] `v2.5.0` 标签由通过 CI 的发布提交创建。
-- [ ] GitHub Release 已创建，Release Notes 包含功能摘要、质量基线和已知限制。
-- [ ] `npm run deploy` 已将生产构建发布到 `gh-pages`。
-- [ ] GitHub Pages 部署状态为 built。
+- [x] `v2.5.0` 标签由通过 CI 的发布提交创建。
+- [x] GitHub Release 已创建，Release Notes 包含功能摘要、质量基线和已知限制。
+- [x] `npm run deploy` 已构建生产产物，并将其发布到 `gh-pages`。
+- [x] GitHub Pages 部署提交为 `076fe62f`，状态为 built。
 
 ## 5. 发布后线上冒烟
 
 线上地址：<https://soapgu.github.io/that-math-things/>
 
-- [ ] 首页可打开并显示 `v2.5.0`。
-- [ ] HashRouter 首页、训练设置、做题和刷新路径正常。
-- [ ] 辅助提醒及进位/退位方法演示可进入。
-- [ ] 可完成一轮训练并进入结算页。
-- [ ] 故意答错后可从结果或统计进入订正并完成。
-- [ ] `768px` 平板视口核心流程无横向溢出。
-- [ ] `1024px` 电脑视口核心流程正常。
-- [ ] `767px` 显示“目前网站只支持电脑和 Pad 访问”。
-- [ ] 线上浏览器控制台无未处理 error。
+- [x] 首页可打开并显示 `v2.5.0`。
+- [x] HashRouter 首页、训练设置、做题和直接刷新路径正常。
+- [x] 辅助提醒及进位/退位方法演示可进入。
+- [x] 可完成一轮训练并进入结算页。
+- [x] 故意答错后可从结果页进入订正并完成。
+- [x] `768px` 平板视口核心流程无横向溢出。
+- [x] `1024px` 电脑视口核心流程正常。
+- [x] `767px` 显示“目前网站只支持电脑和 Pad 访问”。
+- [x] 线上浏览器控制台无未处理 error 或 warning。
 
 ## 6. Release Notes
 
@@ -75,9 +75,9 @@
 
 ## 7. 发布结果
 
-- 发布提交：待回填
-- 主分支 CI：待回填
-- GitHub Release：待回填
-- GitHub Pages 部署：待回填
-- 线上冒烟时间：待回填
-- P1/P2 缺陷：待回填
+- 发布提交：[`32e557b`](https://github.com/soapgu/that-math-things/commit/32e557b4c397ed617e9c8129db384b0e478f571f)
+- 主分支 CI：[基础质量检查 #30417340236](https://github.com/soapgu/that-math-things/actions/runs/30417340236)，2 分 13 秒，全部通过
+- GitHub Release：[v2.5.0 发布体系与质量基线](https://github.com/soapgu/that-math-things/releases/tag/v2.5.0)
+- GitHub Pages 部署：`076fe62f`，状态 built
+- 线上冒烟时间：2026-07-29
+- P1/P2 缺陷：无

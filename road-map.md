@@ -19,7 +19,7 @@
 | [v2.3](https://github.com/soapgu/that-math-things/releases/tag/v2.3) | 2026-07-18 | ✅ | 工程质量优化 | 从 CRA 迁移到 Vite/Vitest，实施懒加载、图表按需引入和兼容性清理 |
 | [v2.4](https://github.com/soapgu/that-math-things/releases/tag/v2.4) | 2026-07-21 | ✅ | 辅助运算 | 提供进位、退位两层提示，加入数位动画、破十法/平十法和辅助使用记录 |
 | Phase 8 | — | 🧪 | E2E 自动化 | 已完成 9 个 Playwright spec 文件、62 个用例，覆盖核心训练与订正流程 |
-| v2.5.0 | 2026-07-29 | 🎯 | 发布体系与质量基线 | 面向平板和电脑建立持续集成、版本管理与可重复发布流程 |
+| [v2.5.0](https://github.com/soapgu/that-math-things/releases/tag/v2.5.0) | 2026-07-29 | ✅ | 发布体系与质量基线 | 面向平板和电脑建立持续集成、版本管理与可重复发布流程 |
 
 ## 历史演化
 
@@ -105,9 +105,9 @@
 
 详细实施和验收记录见 [STEP.md](./STEP.md) 与 [Phase 8 E2E 实施计划](./docs/phase8-e2e-implementation-plan.md)。
 
-## 下一版本：v2.5.0
+## v2.5.0：发布体系与质量基线
 
-v2.5.0 已确定为下一个版本。本版本不增加新的学习功能，重点是把 v2.4 和 Phase 8 的成果整理为稳定、可持续的测试与发布体系。
+v2.5.0 已于 2026-07-29 发布。本版本不增加新的学习功能，重点是把 v2.4 和 Phase 8 的成果整理为稳定、可持续的测试与发布体系。
 
 ### 设备支持范围
 
@@ -136,6 +136,8 @@ v2.5.0 已确定为下一个版本。本版本不增加新的学习功能，重�
 5. 执行发布检查清单并发布 `v2.5.0`。
 
 详细任务与验收标准见 [STEP.md](./STEP.md#v250-发布体系与质量基线)。
+
+发布结果见 [GitHub Release](https://github.com/soapgu/that-math-things/releases/tag/v2.5.0) 与 [发布检查清单](./docs/release-checklist.md)。
 
 ## 未来版本候选
 

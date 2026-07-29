@@ -33,7 +33,7 @@
 
 **<https://soapgu.github.io/that-math-things>**
 
-当前版本：**v2.5.0**
+当前版本：[**v2.5.0**](https://github.com/soapgu/that-math-things/releases/tag/v2.5.0)
 
 ### 支持设备
 
