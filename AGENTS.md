@@ -62,4 +62,4 @@ HashRouter（`index.jsx`），所有路径相对于 `/#/`：
 
 ## 版本计划
 
-v2.0–v2.4 已完成。阶段性实施记录与验收标准见 [STEP.md](./STEP.md)；Phase 8 E2E 实施计划见 [docs/phase8-e2e-implementation-plan.md](./docs/phase8-e2e-implementation-plan.md)。
+v2.0–v2.5.0 已完成并发布。v2.6“九九乘法闯关”正在规划，当前下一步为 UE 页面流程设计。阶段性实施记录见 [STEP.md](./STEP.md)，详细规格与验收标准见 [docs/v2.6-九九乘法闯关实施计划.md](./docs/v2.6-九九乘法闯关实施计划.md)。

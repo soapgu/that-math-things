@@ -26,6 +26,8 @@
 > Phase 8 E2E 实施计划：见 [docs/phase8-e2e-implementation-plan.md](./docs/phase8-e2e-implementation-plan.md)
 >
 > v2.5.0 发布检查清单：见 [docs/release-checklist.md](./docs/release-checklist.md)
+>
+> 下一版本 v2.6 九九乘法闯关规划：见 [docs/v2.6-九九乘法闯关实施计划.md](./docs/v2.6-九九乘法闯关实施计划.md)
 
 ---
 
@@ -34,6 +36,8 @@
 **<https://soapgu.github.io/that-math-things>**
 
 当前版本：[**v2.5.0**](https://github.com/soapgu/that-math-things/releases/tag/v2.5.0)
+
+下一版本：**v2.6 九九乘法闯关（UE 页面流程设计阶段）**
 
 ### 支持设备
 
