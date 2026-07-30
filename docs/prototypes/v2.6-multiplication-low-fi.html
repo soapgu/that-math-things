@@ -1,0 +1,881 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>v2.6 九九乘法低保真交互原型</title>
+  <style>
+    * { box-sizing: border-box; }
+    :root {
+      color-scheme: light;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: #222;
+      background: #e9e9e9;
+    }
+    body { margin: 0; min-width: 320px; }
+    button, input, select { font: inherit; }
+    button { cursor: pointer; }
+    button:focus-visible, input:focus-visible, select:focus-visible {
+      outline: 3px solid #222;
+      outline-offset: 2px;
+    }
+    .review-bar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: end;
+      padding: 10px 16px;
+      border-bottom: 2px dashed #777;
+      background: #ddd;
+    }
+    .review-bar strong { align-self: center; }
+    .review-field { display: grid; gap: 3px; font-size: 12px; }
+    .review-field select { min-width: 132px; padding: 6px; border: 1px solid #555; background: #fff; }
+    .review-note { margin-left: auto; align-self: center; font-size: 12px; color: #555; }
+    .prototype-stage { padding: 16px; overflow: hidden; }
+    .app-frame {
+      width: 100%;
+      min-height: 760px;
+      margin: 0 auto;
+      border: 2px solid #444;
+      background: #f8f8f8;
+      box-shadow: 0 4px 16px rgb(0 0 0 / 12%);
+    }
+    .app-header {
+      display: flex;
+      min-height: 64px;
+      align-items: center;
+      padding: 0 20px;
+      border-bottom: 2px solid #333;
+      background: #555;
+      color: #fff;
+    }
+    .brand { flex: 0 0 auto; margin-right: 28px; white-space: nowrap; font-weight: 700; }
+    .brand-short { display: none; }
+    .version { margin-left: 5px; font-size: 11px; opacity: .7; font-weight: 400; }
+    .global-nav { display: flex; flex: 1; min-width: 0; height: 64px; }
+    .nav-button {
+      min-width: 0;
+      padding: 0 16px;
+      border: 0;
+      border-bottom: 4px solid transparent;
+      background: transparent;
+      color: #fff;
+      white-space: nowrap;
+    }
+    .nav-button[aria-current="page"] { border-bottom-color: #fff; background: rgb(255 255 255 / 12%); }
+    main { width: min(1180px, 100%); margin: 0 auto; padding: 24px; }
+    h1 { margin: 0 0 8px; text-align: center; font-size: 26px; }
+    .lead { margin: 0 0 24px; text-align: center; color: #555; }
+    .panel { border: 2px solid #777; background: #fff; padding: 20px; }
+    .section-title { margin: 0 0 10px; font-size: 18px; }
+    .choice-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .difficulty {
+      min-height: 116px;
+      padding: 14px;
+      border: 2px solid #999;
+      background: #fafafa;
+      text-align: left;
+    }
+    .difficulty[aria-pressed="true"] { border: 4px solid #222; padding: 12px; background: #ddd; }
+    .difficulty strong, .difficulty span { display: block; }
+    .difficulty span { margin-top: 7px; color: #555; font-size: 13px; line-height: 1.5; }
+    .count-row { display: flex; gap: 10px; margin-top: 10px; }
+    .count-button, .answer-choice, .secondary, .primary {
+      min-height: 44px;
+      border: 2px solid #777;
+      background: #f8f8f8;
+      padding: 8px 18px;
+    }
+    .count-button[aria-pressed="true"], .answer-choice[aria-pressed="true"] {
+      border: 4px solid #222;
+      padding: 6px 16px;
+      background: #ddd;
+    }
+    .primary { border-color: #222; background: #333; color: #fff; font-weight: 700; }
+    .start { width: 100%; margin-top: 22px; }
+    .screen[hidden] { display: none; }
+    .session-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 560px) minmax(0, 1fr);
+      gap: clamp(16px, 2.5vw, 32px);
+      align-items: start;
+    }
+    .session-side {
+      display: grid;
+      grid-template-rows: auto auto minmax(118px, auto) minmax(156px, auto);
+      gap: 12px;
+      min-width: 0;
+    }
+    .session-status {
+      padding-bottom: 10px;
+      border-bottom: 1px solid #999;
+      color: #555;
+      font-size: 14px;
+      font-weight: 700;
+    }
+    .equation { margin: 0; text-align: left; font-size: clamp(30px, 4vw, 46px); font-weight: 700; }
+    .matrix-wrap { width: 100%; margin: 0; }
+    .matrix-shell { position: relative; width: 100%; aspect-ratio: 1; }
+    .matrix {
+      display: grid;
+      grid-template-columns: repeat(10, 1fr);
+      grid-template-rows: repeat(10, minmax(0, 1fr));
+      width: 100%;
+      aspect-ratio: 1;
+      border-top: 1px solid #777;
+      border-left: 1px solid #777;
+      background: #fff;
+    }
+    .cell {
+      display: grid;
+      place-items: center;
+      min-width: 0;
+      border-right: 1px solid #777;
+      border-bottom: 1px solid #777;
+      font-size: clamp(11px, 2vw, 17px);
+      line-height: 1;
+      user-select: none;
+    }
+    .cell.header { background: #ddd; font-weight: 700; }
+    .cell.hidden-product { color: transparent; }
+    .cell.hint { background: #eee; }
+    .cell.target { position: relative; border: 3px solid #222; background: #ccc; font-weight: 700; }
+    .cell.target.correct::after,
+    .cell.target.wrong::after {
+      position: absolute;
+      right: 2px;
+      bottom: 2px;
+      font-size: .7em;
+      line-height: 1;
+    }
+    .cell.target.correct::after { content: "✓"; }
+    .cell.target.wrong::after { content: "✕"; }
+    .cell.symmetric { border: 3px dashed #222; background: #e1e1e1; font-weight: 700; }
+    .cell-input {
+      width: 82%;
+      height: 76%;
+      min-width: 0;
+      border: 2px solid #222;
+      padding: 0;
+      background: #fff;
+      text-align: center;
+      font-size: inherit;
+      font-weight: 700;
+    }
+    .axis-slider, .ray {
+      position: absolute;
+      z-index: 4;
+      pointer-events: none;
+      transition-duration: 800ms;
+      transition-timing-function: ease-in-out;
+    }
+    .axis-slider {
+      display: grid;
+      place-items: center;
+      width: 8%;
+      height: 8%;
+      border: 2px solid #222;
+      border-radius: 50%;
+      background: #fff;
+      font-size: clamp(10px, 1.5vw, 14px);
+      font-weight: 800;
+      transform: translate(-50%, -50%);
+    }
+    .axis-slider.x { left: var(--axis-x-start); top: 5%; }
+    .axis-slider.y { left: 5%; top: var(--axis-y-start); }
+    .matrix-shell.axis-target .axis-slider.x { left: var(--axis-x-target); }
+    .matrix-shell.axis-target .axis-slider.y { top: var(--axis-y-target); }
+    .ray { z-index: 3; background: #222; opacity: 0; transition-property: width, height, opacity; }
+    .ray.vertical { left: var(--axis-x-target); top: 5%; width: 2px; height: 0; }
+    .ray.horizontal { left: 5%; top: var(--axis-y-target); width: 0; height: 2px; }
+    .matrix-shell.axis-target .ray.vertical { height: calc(var(--axis-y-target) - 5%); opacity: .32; }
+    .matrix-shell.axis-target .ray.horizontal { width: calc(var(--axis-x-target) - 5%); opacity: .32; }
+    .matrix-shell.feedback-mode .ray { opacity: .8; }
+    .answer-area { min-height: 118px; display: grid; align-content: start; gap: 10px; }
+    .answer-prompt { margin: 0; color: #555; font-size: 13px; }
+    .answer-options { display: grid; width: 100%; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    .answer-choice { font-size: 20px; font-weight: 700; }
+    .input-row { display: grid; gap: 8px; }
+    .input-row .primary { width: 100%; }
+    .feedback {
+      width: 100%;
+      min-height: 156px;
+      margin: 0;
+      border: 2px dashed transparent;
+      padding: 10px;
+      text-align: left;
+    }
+    .feedback.active { border-color: #777; background: #eee; }
+    .feedback-message { min-height: 24px; margin-bottom: 8px; font-weight: 700; }
+    .feedback-detail { min-height: 42px; margin-bottom: 8px; color: #444; font-size: 13px; line-height: 1.5; }
+    .feedback-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+    .auto-note { font-size: 12px; color: #555; }
+    .result-stars { margin: 18px 0; text-align: center; font-size: 44px; letter-spacing: 8px; }
+    .score { text-align: center; font-size: 58px; font-weight: 700; }
+    .summary-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 20px 0; }
+    .summary-item { border: 2px solid #999; padding: 12px; text-align: center; }
+    .summary-item strong { display: block; margin-top: 5px; font-size: 22px; }
+    .result-actions { display: flex; justify-content: center; gap: 12px; }
+    .modal-backdrop {
+      position: absolute;
+      inset: 0;
+      z-index: 10;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      background: rgb(0 0 0 / 40%);
+    }
+    .modal-backdrop[hidden] { display: none; }
+    .modal { width: min(420px, 100%); border: 3px solid #222; background: #fff; padding: 24px; }
+    .modal h2 { margin-top: 0; }
+    .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+    .app-frame { position: relative; }
+    .prototype-caption { padding: 8px 14px; border-top: 1px dashed #777; color: #555; font-size: 12px; text-align: center; }
+    @media (max-width: 899px) {
+      .app-header { padding: 0 12px; }
+      .brand { margin-right: 10px; }
+      .brand-full, .version { display: none; }
+      .brand-short { display: inline; }
+      .nav-button { padding: 0 9px; font-size: 14px; }
+      main { padding: 16px; }
+      .session-layout { grid-template-columns: minmax(0, 1.75fr) minmax(0, 1fr); gap: 14px; }
+      .session-side { grid-template-rows: auto auto minmax(112px, auto) minmax(150px, auto); }
+      .feedback { min-height: 150px; padding: 8px; }
+    }
+    .app-frame.compact-header .app-header { padding: 0 12px; }
+    .app-frame.compact-header .brand { margin-right: 10px; }
+    .app-frame.compact-header .brand-full,
+    .app-frame.compact-header .version { display: none; }
+    .app-frame.compact-header .brand-short { display: inline; }
+    .app-frame.compact-header .nav-button { padding: 0 9px; font-size: 14px; }
+    @media (max-width: 620px) {
+      .choice-grid { grid-template-columns: 1fr; }
+      .answer-options { grid-template-columns: repeat(2, 1fr); }
+      .review-note { display: none; }
+      .session-layout { grid-template-columns: 1fr; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; animation: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="review-bar" aria-label="原型评审工具条">
+    <strong>原型评审</strong>
+    <label class="review-field">预览宽度
+      <select id="reviewViewport">
+        <option value="768">768 平板竖屏</option>
+        <option value="1024" selected>1024 平板横屏</option>
+        <option value="1440">1440 桌面</option>
+      </select>
+    </label>
+    <label class="review-field">快速难度
+      <select id="reviewDifficulty">
+        <option value="easy">简单</option>
+        <option value="medium">提升</option>
+        <option value="hard">挑战</option>
+      </select>
+    </label>
+    <label class="review-field">快速状态
+      <select id="reviewState">
+        <option value="settings">设置页</option>
+        <option value="ready">准备作答</option>
+        <option value="correct">正确反馈</option>
+        <option value="wrong">错误反馈</option>
+        <option value="last">最后一题反馈</option>
+        <option value="exit">离开确认</option>
+        <option value="result">结算页</option>
+      </select>
+    </label>
+    <span class="review-note">虚线工具条仅用于评审，不属于产品界面</span>
+  </div>
+
+  <div class="prototype-stage">
+    <div class="app-frame" id="appFrame">
+      <header class="app-header">
+        <div class="brand">
+          <span class="brand-full">那年那数那些事</span>
+          <span class="brand-short">那些数</span>
+          <span class="version">v2.6.0</span>
+        </div>
+        <nav class="global-nav" aria-label="主导航">
+          <button class="nav-button" data-nav="home">首页</button>
+          <button class="nav-button" data-nav="problems">错题列表</button>
+          <button class="nav-button" data-nav="practice">计算训练</button>
+          <button class="nav-button" data-nav="multiplication" aria-current="page">九九乘法</button>
+        </nav>
+      </header>
+
+      <main>
+        <section class="screen" id="settingsScreen">
+          <h1>九九乘法</h1>
+          <p class="lead">选择适合你的提示方式，开始一轮乘法挑战。</p>
+          <div class="panel">
+            <h2 class="section-title">选择难度</h2>
+            <div class="choice-grid" id="difficultyChoices">
+              <button class="difficulty" data-difficulty="easy" aria-pressed="true">
+                <strong>简单</strong><span>四选一，显示目标所在整行和整列。</span>
+              </button>
+              <button class="difficulty" data-difficulty="medium" aria-pressed="false">
+                <strong>提升</strong><span>自己填写，只显示上下左右相邻答案。</span>
+              </button>
+              <button class="difficulty" data-difficulty="hard" aria-pressed="false">
+                <strong>挑战</strong><span>自己填写，不显示其他乘积提示。</span>
+              </button>
+            </div>
+
+            <h2 class="section-title" style="margin-top: 22px;">选择题量</h2>
+            <div class="count-row" id="countChoices">
+              <button class="count-button" data-count="10" aria-pressed="true">10 题</button>
+              <button class="count-button" data-count="20" aria-pressed="false">20 题</button>
+              <button class="count-button" data-count="50" aria-pressed="false">50 题</button>
+            </div>
+            <button class="primary start" id="startButton">开始闯关</button>
+          </div>
+        </section>
+
+        <section class="screen" id="sessionScreen" hidden>
+          <div class="session-layout">
+            <div class="matrix-wrap">
+              <div class="matrix-shell" id="matrixShell">
+                <div class="matrix" id="matrix" role="grid" aria-label="九九乘法坐标表"></div>
+                <div class="ray vertical" aria-hidden="true"></div>
+                <div class="ray horizontal" aria-hidden="true"></div>
+                <div class="axis-slider x" id="axisX" aria-hidden="true">7</div>
+                <div class="axis-slider y" id="axisY" aria-hidden="true">6</div>
+              </div>
+            </div>
+            <div class="session-side">
+              <div class="session-status" id="sessionStatus">第 1/10 题 · 定位中</div>
+              <div class="equation" id="equation" aria-live="polite">6 × 7 = ?</div>
+              <div class="answer-area" id="answerArea"></div>
+              <div class="feedback" id="feedback" role="status" aria-live="polite">
+                <div class="feedback-message" id="feedbackMessage"></div>
+                <div class="feedback-detail" id="feedbackDetail"></div>
+                <div class="feedback-actions" id="feedbackActions"></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="screen" id="resultScreen" hidden>
+          <h1>本局结果</h1>
+          <p class="lead">这里只总结本局表现，不保存历史记录。</p>
+          <div class="panel">
+            <div class="result-stars" id="resultStars" aria-label="三星">★★★</div>
+            <div class="score"><span id="resultScore">90</span><small style="font-size: 18px;"> 分</small></div>
+            <div class="summary-grid">
+              <div class="summary-item">正确<strong id="resultCorrect">9</strong></div>
+              <div class="summary-item">总题数<strong id="resultTotal">10</strong></div>
+              <div class="summary-item">作答用时<strong id="resultTime">72秒</strong></div>
+            </div>
+            <div class="result-actions">
+              <button class="primary" id="againButton">再来一局</button>
+              <button class="secondary" id="settingsButton">返回难度选择</button>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <div class="modal-backdrop" id="exitBackdrop" hidden>
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="exitTitle">
+          <h2 id="exitTitle">要离开这局吗？</h2>
+          <p>离开后本局不会保存，已经完成的题目也不能恢复。</p>
+          <div class="modal-actions">
+            <button class="primary" id="continueButton">继续闯关</button>
+            <button class="secondary" id="leaveButton">确认离开</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="prototype-caption">灰度低保真：只验证结构、状态、尺寸与操作，不代表最终视觉</div>
+    </div>
+  </div>
+
+  <script>
+    (() => {
+      const $ = (selector) => document.querySelector(selector);
+      const $$ = (selector) => [...document.querySelectorAll(selector)];
+      const state = {
+        screen: 'settings',
+        difficulty: 'easy',
+        count: 10,
+        questions: [],
+        index: 0,
+        answers: [],
+        phase: 'LOCATING',
+        activeSeconds: 0,
+        tickId: null,
+        locateId: null,
+        advanceId: null,
+        advancing: false,
+        previousAxis: { a: 1, b: 1 },
+        exitSource: null,
+        pendingDestination: null,
+      };
+
+      const representative = [
+        [6, 7], [1, 1], [9, 9], [4, 8], [2, 9], [7, 3], [5, 6], [8, 8], [3, 4], [9, 1],
+        [6, 6], [1, 9], [7, 7], [2, 8], [8, 3], [5, 9], [4, 4], [9, 6], [3, 8], [7, 5],
+      ];
+
+      function buildQuestions(count) {
+        const all = [];
+        for (let a = 1; a <= 9; a += 1) {
+          for (let b = 1; b <= 9; b += 1) all.push([a, b]);
+        }
+        const ordered = [...representative, ...all.filter(([a, b]) => !representative.some(([x, y]) => x === a && y === b))];
+        return ordered.slice(0, count).map(([a, b]) => ({ a, b, answer: a * b }));
+      }
+
+      function currentQuestion() {
+        return state.questions[state.index] || { a: 6, b: 7, answer: 42 };
+      }
+
+      function setScreen(name) {
+        state.screen = name;
+        $('#settingsScreen').hidden = name !== 'settings';
+        $('#sessionScreen').hidden = name !== 'session';
+        $('#resultScreen').hidden = name !== 'result';
+        $$('.nav-button').forEach((button) => button.toggleAttribute('aria-current', button.dataset.nav === 'multiplication' && name !== 'external'));
+      }
+
+      function startTimer() {
+        stopTimer();
+        if (state.phase !== 'READY' || state.screen !== 'session') return;
+        state.tickId = window.setInterval(() => {
+          state.activeSeconds += 1;
+          renderTime();
+        }, 1000);
+      }
+
+      function stopTimer() {
+        if (state.tickId) window.clearInterval(state.tickId);
+        state.tickId = null;
+      }
+
+      function clearAdvance() {
+        if (state.advanceId) window.clearTimeout(state.advanceId);
+        state.advanceId = null;
+      }
+
+      function clearLocate() {
+        if (state.locateId) window.clearTimeout(state.locateId);
+        state.locateId = null;
+      }
+
+      function renderTime() {
+        const phaseText = state.phase === 'LOCATING'
+          ? '定位中'
+          : state.phase.startsWith('FEEDBACK')
+            ? `反馈中 · 作答用时 ${state.activeSeconds} 秒`
+            : `作答 ${state.activeSeconds} 秒`;
+        $('#sessionStatus').textContent = `第 ${state.index + 1}/${state.questions.length} 题 · ${phaseText}`;
+      }
+
+      function selectDifficulty(value) {
+        state.difficulty = value;
+        $$('.difficulty').forEach((button) => button.setAttribute('aria-pressed', String(button.dataset.difficulty === value)));
+        $('#reviewDifficulty').value = value;
+      }
+
+      function selectCount(value) {
+        state.count = Number(value);
+        $$('.count-button').forEach((button) => button.setAttribute('aria-pressed', String(Number(button.dataset.count) === state.count)));
+      }
+
+      function startSession() {
+        clearAdvance();
+        state.questions = buildQuestions(state.count);
+        state.index = 0;
+        state.answers = [];
+        state.activeSeconds = 0;
+        state.phase = 'LOCATING';
+        state.advancing = false;
+        state.previousAxis = { a: 1, b: 1 };
+        setScreen('session');
+        beginQuestion();
+      }
+
+      function visibleProduct(row, col, question) {
+        if (row === question.a && col === question.b) return false;
+        if (state.difficulty === 'easy') return row === question.a || col === question.b;
+        if (state.difficulty === 'medium') return Math.abs(row - question.a) + Math.abs(col - question.b) === 1;
+        return false;
+      }
+
+      function renderMatrix() {
+        const matrix = $('#matrix');
+        const q = currentQuestion();
+        matrix.replaceChildren();
+        for (let row = 0; row <= 9; row += 1) {
+          for (let col = 0; col <= 9; col += 1) {
+            const cell = document.createElement('div');
+            cell.className = 'cell';
+            cell.setAttribute('role', 'gridcell');
+            if (row === 0 || col === 0) {
+              cell.classList.add('header');
+              cell.textContent = row === 0 && col === 0 ? '×' : String(row === 0 ? col : row);
+              cell.setAttribute('aria-label', row === 0 && col === 0 ? '乘法表' : `表头 ${row === 0 ? col : row}`);
+            } else if (row === q.a && col === q.b) {
+              cell.classList.add('target');
+              cell.setAttribute('aria-label', '当前题目交叉格，答案待填写');
+              if (state.phase.startsWith('FEEDBACK') || state.phase === 'FINISHED') {
+                cell.textContent = String(q.answer);
+                cell.classList.add(state.phase === 'FEEDBACK_CORRECT' ? 'correct' : 'wrong');
+                cell.setAttribute('aria-label', `当前题目交叉格，正确答案 ${q.answer}`);
+              } else if (state.phase === 'READY' && state.difficulty !== 'easy') {
+                const input = document.createElement('input');
+                input.className = 'cell-input';
+                input.id = 'prototypeAnswer';
+                input.inputMode = 'numeric';
+                input.pattern = '[0-9]*';
+                input.setAttribute('aria-label', `在 ${q.a} 乘 ${q.b} 的目标格填写答案`);
+                input.addEventListener('keydown', (event) => {
+                  if (event.key === 'Enter') submitGridAnswer();
+                });
+                cell.appendChild(input);
+              }
+            } else if (
+              state.phase.startsWith('FEEDBACK')
+              && row === q.b
+              && col === q.a
+              && q.a !== q.b
+            ) {
+              cell.classList.add('symmetric');
+              cell.textContent = String(q.answer);
+              cell.setAttribute('aria-label', `交换律对称格，${q.b} 乘 ${q.a} 也等于 ${q.answer}`);
+            } else if (visibleProduct(row, col, q)) {
+              cell.classList.add('hint');
+              cell.textContent = String(row * col);
+              cell.setAttribute('aria-label', `${row} 乘 ${col} 等于 ${row * col}`);
+            } else {
+              cell.classList.add('hidden-product');
+              cell.textContent = '';
+              cell.setAttribute('aria-label', '隐藏乘积格');
+            }
+            matrix.appendChild(cell);
+          }
+        }
+      }
+
+      function submitGridAnswer() {
+        const input = $('#prototypeAnswer');
+        const value = Number(input?.value);
+        if (!Number.isInteger(value) || value <= 0) {
+          $('#feedback').classList.add('active');
+          $('#feedbackMessage').textContent = '请输入一个正整数。';
+          $('#feedbackDetail').textContent = '答案直接填写在矩阵中带粗边框的目标格里。';
+          input?.focus();
+          return;
+        }
+        submitAnswer(value, $('#submitGridAnswer'));
+      }
+
+      function getChoices(q) {
+        const values = [q.answer, q.a * Math.max(1, q.b - 1), q.a * Math.min(9, q.b + 1), q.answer + q.a];
+        let candidate = q.answer - q.b;
+        while (new Set(values).size < 4) {
+          if (candidate > 0) values.push(candidate);
+          candidate += 1;
+        }
+        return [...new Set(values)].slice(0, 4).sort((a, b) => a - b);
+      }
+
+      function renderAnswerArea() {
+        const area = $('#answerArea');
+        area.replaceChildren();
+        const locked = state.phase !== 'READY';
+        const prompt = document.createElement('p');
+        prompt.className = 'answer-prompt';
+        if (state.difficulty === 'easy') {
+          prompt.textContent = locked ? '答案已锁定' : '选择正确答案';
+          area.appendChild(prompt);
+          const wrap = document.createElement('div');
+          wrap.className = 'answer-options';
+          getChoices(currentQuestion()).forEach((value, index) => {
+            const button = document.createElement('button');
+            button.className = 'answer-choice';
+            button.textContent = String(value);
+            button.disabled = locked;
+            button.setAttribute('aria-pressed', 'false');
+            button.addEventListener('click', () => submitAnswer(value, button));
+            wrap.appendChild(button);
+            if (index === 0 && !locked) window.setTimeout(() => button.focus(), 0);
+          });
+          area.appendChild(wrap);
+        } else {
+          prompt.textContent = locked ? '答案已锁定' : '在左侧目标格填写答案，再提交';
+          const row = document.createElement('div');
+          row.className = 'input-row';
+          const button = document.createElement('button');
+          button.className = 'primary';
+          button.id = 'submitGridAnswer';
+          button.textContent = '提交答案';
+          button.disabled = locked;
+          button.addEventListener('click', submitGridAnswer);
+          row.append(button);
+          area.append(prompt, row);
+          if (!locked) window.setTimeout(() => $('#prototypeAnswer')?.focus(), 0);
+        }
+      }
+
+      function renderFeedback() {
+        const feedback = $('#feedback');
+        const message = $('#feedbackMessage');
+        const detail = $('#feedbackDetail');
+        const actions = $('#feedbackActions');
+        actions.replaceChildren();
+        if (state.phase === 'READY') {
+          feedback.classList.remove('active');
+          message.textContent = '';
+          detail.textContent = state.phase === 'LOCATING'
+            ? '横轴和纵轴正在定位两个乘数，定位完成后开始计时。'
+            : '';
+          return;
+        }
+        feedback.classList.add('active');
+        const q = currentQuestion();
+        const entry = state.answers[state.answers.length - 1];
+        if (state.phase === 'FEEDBACK_CORRECT') {
+          message.textContent = `回答正确：${q.a} × ${q.b} = ${q.answer}`;
+        } else {
+          message.textContent = `你的答案是 ${entry?.value ?? q.answer - 1}；正确算式：${q.a} × ${q.b} = ${q.answer}`;
+        }
+        detail.textContent = q.a === q.b
+          ? `${q.a} × ${q.b} 位于矩阵对角线上，它的对称位置就是自己。`
+          : `${q.a} × ${q.b} 和 ${q.b} × ${q.a} 都等于 ${q.answer}。`;
+        const button = document.createElement('button');
+        button.className = 'primary';
+        const isLast = state.index >= state.questions.length - 1;
+        button.textContent = isLast ? '查看结果' : '下一题';
+        button.addEventListener('click', isLast ? finishSession : advanceOnce);
+        actions.appendChild(button);
+        if (!isLast) {
+          const note = document.createElement('span');
+          note.className = 'auto-note';
+          note.textContent = '2 秒后自动进入下一题';
+          actions.appendChild(note);
+        }
+        window.setTimeout(() => button.focus({ preventScroll: true }), 0);
+      }
+
+      function renderQuestion() {
+        const q = currentQuestion();
+        $('#equation').textContent = `${q.a} × ${q.b} = ?`;
+        const shell = $('#matrixShell');
+        const startX = (state.previousAxis.b + 0.5) * 10;
+        const startY = (state.previousAxis.a + 0.5) * 10;
+        const targetX = (q.b + 0.5) * 10;
+        const targetY = (q.a + 0.5) * 10;
+        shell.style.setProperty('--axis-x-start', `${startX}%`);
+        shell.style.setProperty('--axis-y-start', `${startY}%`);
+        shell.style.setProperty('--axis-x-target', `${targetX}%`);
+        shell.style.setProperty('--axis-y-target', `${targetY}%`);
+        shell.classList.toggle('feedback-mode', state.phase.startsWith('FEEDBACK'));
+        $('#axisX').textContent = String(q.b);
+        $('#axisY').textContent = String(q.a);
+        renderTime();
+        renderMatrix();
+        renderAnswerArea();
+        renderFeedback();
+      }
+
+      function beginQuestion() {
+        clearLocate();
+        stopTimer();
+        state.phase = 'LOCATING';
+        const shell = $('#matrixShell');
+        shell.classList.remove('axis-target', 'feedback-mode');
+        renderQuestion();
+        const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        window.requestAnimationFrame(() => {
+          window.requestAnimationFrame(() => shell.classList.add('axis-target'));
+        });
+        state.locateId = window.setTimeout(() => {
+          if (state.phase !== 'LOCATING') return;
+          state.phase = 'READY';
+          state.previousAxis = { a: currentQuestion().a, b: currentQuestion().b };
+          renderQuestion();
+          shell.classList.add('axis-target');
+          startTimer();
+        }, reduced ? 0 : 820);
+      }
+
+      function submitAnswer(value, source) {
+        if (state.phase !== 'READY') return;
+        stopTimer();
+        const q = currentQuestion();
+        const correct = value === q.answer;
+        state.answers.push({ index: state.index, value, correct });
+        state.phase = correct ? 'FEEDBACK_CORRECT' : 'FEEDBACK_WRONG';
+        if (source) source.setAttribute('aria-pressed', 'true');
+        renderQuestion();
+        $('#matrixShell').classList.add('axis-target', 'feedback-mode');
+        if (state.index < state.questions.length - 1) {
+          clearAdvance();
+          state.advanceId = window.setTimeout(advanceOnce, 2000);
+        }
+      }
+
+      function advanceOnce() {
+        if (state.advancing || !state.phase.startsWith('FEEDBACK')) return;
+        state.advancing = true;
+        clearAdvance();
+        state.phase = 'ADVANCING';
+        state.index += 1;
+        state.advancing = false;
+        beginQuestion();
+      }
+
+      function calculateResult() {
+        const correct = state.answers.filter((item) => item.correct).length;
+        const total = state.questions.length;
+        const score = total ? Math.round((correct / total) * 100) : 0;
+        const target = { easy: 8, medium: 10, hard: 12 }[state.difficulty];
+        const average = total ? state.activeSeconds / total : Infinity;
+        const stars = score >= 90 && average <= target ? 3 : score >= 80 ? 2 : 1;
+        return { correct, total, score, stars };
+      }
+
+      function finishSession() {
+        if (!state.phase.startsWith('FEEDBACK')) return;
+        clearAdvance();
+        clearLocate();
+        stopTimer();
+        state.phase = 'FINISHED';
+        const result = calculateResult();
+        $('#resultStars').textContent = `${'★'.repeat(result.stars)}${'☆'.repeat(3 - result.stars)}`;
+        $('#resultStars').setAttribute('aria-label', `${result.stars} 星`);
+        $('#resultScore').textContent = String(result.score);
+        $('#resultCorrect').textContent = String(result.correct);
+        $('#resultTotal').textContent = String(result.total);
+        $('#resultTime').textContent = `${state.activeSeconds}秒`;
+        setScreen('result');
+        $('#againButton').focus();
+      }
+
+      function openExit(destination = 'settings') {
+        if (state.screen !== 'session') {
+          setScreen(destination === 'multiplication' ? 'settings' : 'settings');
+          return;
+        }
+        stopTimer();
+        clearAdvance();
+        clearLocate();
+        state.exitSource = state.phase;
+        state.pendingDestination = destination;
+        $('#exitBackdrop').hidden = false;
+        $('#continueButton').focus();
+      }
+
+      function closeExit() {
+        $('#exitBackdrop').hidden = true;
+        if (state.exitSource === 'LOCATING') beginQuestion();
+        if (state.exitSource === 'READY') startTimer();
+        if (state.exitSource?.startsWith('FEEDBACK') && state.index < state.questions.length - 1) {
+          state.advanceId = window.setTimeout(advanceOnce, 2000);
+        }
+        state.exitSource = null;
+        state.pendingDestination = null;
+        renderAnswerArea();
+      }
+
+      function confirmExit() {
+        $('#exitBackdrop').hidden = true;
+        clearAdvance();
+        clearLocate();
+        stopTimer();
+        state.phase = 'LOCATING';
+        setScreen('settings');
+        $('#startButton').focus();
+      }
+
+      function forceReviewState(value) {
+        clearAdvance();
+        stopTimer();
+        $('#exitBackdrop').hidden = true;
+        if (value === 'settings') {
+          setScreen('settings');
+          return;
+        }
+        if (!state.questions.length) {
+          state.questions = buildQuestions(state.count);
+          state.answers = [];
+          state.index = 0;
+          state.activeSeconds = 6;
+        }
+        if (value === 'result') {
+          while (state.answers.length < state.questions.length) {
+            const q = state.questions[state.answers.length];
+            state.answers.push({ index: state.answers.length, value: q.answer, correct: true });
+          }
+          state.phase = 'FEEDBACK_CORRECT';
+          finishSession();
+          return;
+        }
+        setScreen('session');
+        if (value === 'last') state.index = state.questions.length - 1;
+        else state.index = Math.min(0, state.questions.length - 1);
+        const q = currentQuestion();
+        if (value === 'ready' || value === 'exit') {
+          state.phase = 'LOCATING';
+          renderQuestion();
+          $('#matrixShell').classList.add('axis-target');
+          state.phase = 'READY';
+          renderQuestion();
+          $('#matrixShell').classList.add('axis-target');
+          if (value === 'exit') openExit('settings');
+          else startTimer();
+          return;
+        }
+        const correct = value === 'correct' || value === 'last';
+        state.answers = state.answers.filter((item) => item.index !== state.index);
+        state.answers.push({ index: state.index, value: correct ? q.answer : Math.max(1, q.answer - 1), correct });
+        state.phase = correct ? 'FEEDBACK_CORRECT' : 'FEEDBACK_WRONG';
+        renderQuestion();
+      }
+
+      $$('.difficulty').forEach((button) => button.addEventListener('click', () => selectDifficulty(button.dataset.difficulty)));
+      $$('.count-button').forEach((button) => button.addEventListener('click', () => selectCount(button.dataset.count)));
+      $('#startButton').addEventListener('click', startSession);
+      $('#againButton').addEventListener('click', startSession);
+      $('#settingsButton').addEventListener('click', () => setScreen('settings'));
+      $('#continueButton').addEventListener('click', closeExit);
+      $('#leaveButton').addEventListener('click', confirmExit);
+      $$('.nav-button').forEach((button) => button.addEventListener('click', () => {
+        if (button.dataset.nav === 'multiplication' && state.screen !== 'session') setScreen('settings');
+        else openExit(button.dataset.nav);
+      }));
+      $('#reviewViewport').addEventListener('change', (event) => {
+        const width = Number(event.target.value);
+        $('#appFrame').style.maxWidth = `${width}px`;
+        $('#appFrame').classList.toggle('compact-header', width === 768);
+      });
+      $('#reviewDifficulty').addEventListener('change', (event) => {
+        selectDifficulty(event.target.value);
+        if (state.screen === 'session') renderQuestion();
+      });
+      $('#reviewState').addEventListener('change', (event) => forceReviewState(event.target.value));
+      window.addEventListener('beforeunload', (event) => {
+        if (state.screen === 'session') {
+          event.preventDefault();
+          event.returnValue = '';
+        }
+      });
+
+      const initialViewport = window.innerWidth <= 800 ? 768 : window.innerWidth <= 1200 ? 1024 : 1440;
+      $('#reviewViewport').value = String(initialViewport);
+      $('#appFrame').style.maxWidth = `${initialViewport}px`;
+      $('#appFrame').classList.toggle('compact-header', initialViewport === 768);
+      selectDifficulty('easy');
+      selectCount(10);
+      setScreen('settings');
+    })();
+  </script>
+</body>
+</html>
