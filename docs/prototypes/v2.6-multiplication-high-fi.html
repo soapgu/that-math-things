@@ -10,7 +10,7 @@
   </style>
 </head>
 <body>
-  <iframe id="prototype" src="./v2.6-multiplication-low-fi.html?visual=choices-v5" title="v2.6 九九乘法高保真视觉原型"></iframe>
+  <iframe id="prototype" src="./v2.6-multiplication-low-fi.html?visual=cumulative-v1" title="v2.6 九九乘法高保真视觉原型"></iframe>
   <script>
     const frame = document.querySelector('#prototype');
     frame.addEventListener('load', () => {
@@ -163,6 +163,19 @@
         }
         .cell.target.correct { border-color: var(--success); background: var(--success-soft); animation: answer-pop 320ms ease-out; }
         .cell.target.wrong { border-color: var(--error); background: var(--error-soft); animation: answer-shake 320ms ease-out; }
+        .cell.history.correct {
+          border: 2px solid #95de64;
+          background: color-mix(in srgb, var(--success-soft) 72%, white);
+          color: #3f6600;
+        }
+        .cell.history.wrong {
+          border: 2px dashed #ff7875;
+          background: color-mix(in srgb, var(--error-soft) 68%, white);
+          color: #820014;
+        }
+        .cell.history.newly-opened { animation: history-open 280ms ease-out; }
+        .cell.history.correct::after { color: var(--success); }
+        .cell.history.wrong::after { color: var(--error); }
         .cell.symmetric {
           border: 3px dashed var(--success);
           background: var(--success-soft);
@@ -267,7 +280,18 @@
         .home-card p { min-height: 48px; color: var(--muted); line-height: 1.6; }
         @keyframes answer-pop { 50% { transform: scale(1.08); } }
         @keyframes answer-shake { 25%, 75% { transform: translateX(-3px); } 50% { transform: translateX(3px); } }
+        @keyframes history-open { from { opacity: .2; transform: rotateY(70deg) scale(.9); } }
         @keyframes symmetric-in { from { opacity: 0; transform: scale(.78); } }
+        .matrix-shell.full-table-complete .matrix {
+          animation: full-table-glow 760ms ease-out;
+        }
+        @keyframes full-table-glow {
+          45% {
+            box-shadow:
+              0 0 0 4px rgb(22 119 255 / 22%),
+              0 0 28px rgb(22 119 255 / 24%);
+          }
+        }
         @keyframes stars-in { from { opacity: 0; transform: translateY(10px) scale(.9); } }
         @media (max-width: 899px) {
           .session-side { padding: 14px; }

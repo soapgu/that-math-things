@@ -83,7 +83,8 @@
     .difficulty[aria-pressed="true"] { border: 4px solid #222; padding: 12px; background: #ddd; }
     .difficulty strong, .difficulty span { display: block; }
     .difficulty span { margin-top: 7px; color: #555; font-size: 13px; line-height: 1.5; }
-    .count-row { display: flex; gap: 10px; margin-top: 10px; }
+    .count-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 10px; }
+    .count-note { min-height: 20px; margin: 8px 0 0; color: #555; font-size: 13px; }
     .count-button, .answer-choice, .secondary, .primary {
       min-height: 44px;
       border: 2px solid #777;
@@ -155,6 +156,22 @@
     }
     .cell.target.correct::after { content: "✓"; }
     .cell.target.wrong::after { content: "✕"; }
+    .cell.history {
+      position: relative;
+      font-weight: 700;
+    }
+    .cell.history.correct { border: 2px solid #777; background: #e8e8e8; }
+    .cell.history.wrong { border: 2px dashed #555; background: #ddd; }
+    .cell.history::after {
+      position: absolute;
+      right: 2px;
+      bottom: 2px;
+      font-size: .62em;
+      line-height: 1;
+    }
+    .cell.history.correct::after { content: "✓"; }
+    .cell.history.wrong::after { content: "✕"; }
+    .cell.history.newly-opened { animation: cell-open 260ms ease-out; }
     .cell.symmetric { border: 3px dashed #222; background: #e1e1e1; font-weight: 700; }
     .cell-input {
       width: 82%;
@@ -235,6 +252,13 @@
     .cell.hint.revealed-hint { animation: hint-reveal 220ms ease-out both; }
     @keyframes hint-reveal {
       from { color: transparent; background: #fff; transform: scale(.9); }
+    }
+    @keyframes cell-open {
+      from { opacity: .35; transform: scale(.82); }
+    }
+    .matrix-shell.full-table-complete .matrix { animation: table-complete 680ms ease-out; }
+    @keyframes table-complete {
+      45% { box-shadow: 0 0 0 5px rgb(34 34 34 / 22%); }
     }
     .answer-area { min-height: 118px; display: grid; align-content: start; gap: 10px; }
     .answer-prompt { margin: 0; color: #555; font-size: 13px; }
@@ -342,6 +366,11 @@
         <option value="ready">准备作答</option>
         <option value="correct">正确反馈</option>
         <option value="wrong">错误反馈</option>
+        <option value="history-early">累计开图·早期</option>
+        <option value="history-dense">累计开图·高密度</option>
+        <option value="symmetric-answered">对称格已作答</option>
+        <option value="last81">81题·最后一题</option>
+        <option value="complete81">81/81·全表完成</option>
         <option value="last">最后一题反馈</option>
         <option value="exit">离开确认</option>
         <option value="result">结算页</option>
@@ -389,7 +418,9 @@
               <button class="count-button" data-count="10" aria-pressed="true">10 题</button>
               <button class="count-button" data-count="20" aria-pressed="false">20 题</button>
               <button class="count-button" data-count="50" aria-pressed="false">50 题</button>
+              <button class="count-button" data-count="81" aria-pressed="false">81 题</button>
             </div>
+            <p class="count-note" id="countNote" aria-live="polite"></p>
             <button class="primary start" id="startButton">开始闯关</button>
           </div>
         </section>
@@ -463,6 +494,8 @@
         questions: [],
         index: 0,
         answers: [],
+        answeredCells: new Map(),
+        newestCellKey: null,
         phase: 'LOCATING',
         activeSeconds: 0,
         tickId: null,
@@ -549,6 +582,7 @@
       function selectCount(value) {
         state.count = Number(value);
         $$('.count-button').forEach((button) => button.setAttribute('aria-pressed', String(Number(button.dataset.count) === state.count)));
+        $('#countNote').textContent = state.count === 81 ? '完成整张九九乘法表' : '';
       }
 
       function startSession() {
@@ -556,6 +590,8 @@
         state.questions = buildQuestions(state.count);
         state.index = 0;
         state.answers = [];
+        state.answeredCells = new Map();
+        state.newestCellKey = null;
         state.activeSeconds = 0;
         state.phase = 'LOCATING';
         state.advancing = false;
@@ -569,6 +605,26 @@
         if (state.difficulty === 'easy') return row === question.a || col === question.b;
         if (state.difficulty === 'medium') return Math.abs(row - question.a) + Math.abs(col - question.b) === 1;
         return false;
+      }
+
+      function cellKey(row, col) {
+        return `${row}x${col}`;
+      }
+
+      function saveAnsweredCell(question, value, correct) {
+        const key = cellKey(question.a, question.b);
+        const entry = {
+          key,
+          row: question.a,
+          col: question.b,
+          answer: question.answer,
+          value,
+          correct,
+          order: state.answers.length,
+        };
+        state.answeredCells.set(key, entry);
+        state.newestCellKey = key;
+        return entry;
       }
 
       function renderMatrix() {
@@ -589,9 +645,10 @@
               if (state.phase === 'LOCATING') cell.classList.add('locating-target');
               cell.setAttribute('aria-label', '当前题目交叉格，答案待填写');
               if (state.phase.startsWith('FEEDBACK') || state.phase === 'FINISHED') {
+                const currentEntry = state.answeredCells.get(cellKey(row, col));
                 cell.textContent = String(q.answer);
-                cell.classList.add(state.phase === 'FEEDBACK_CORRECT' ? 'correct' : 'wrong');
-                cell.setAttribute('aria-label', `当前题目交叉格，正确答案 ${q.answer}`);
+                cell.classList.add(currentEntry?.correct ? 'correct' : 'wrong');
+                cell.setAttribute('aria-label', `当前题目交叉格，正确答案 ${q.answer}，${currentEntry?.correct ? '回答正确' : '回答错误'}`);
               } else if (state.phase === 'READY' && state.difficulty !== 'easy') {
                 const input = document.createElement('input');
                 input.className = 'cell-input';
@@ -604,6 +661,15 @@
                 });
                 cell.appendChild(input);
               }
+            } else if (state.answeredCells.has(cellKey(row, col))) {
+              const history = state.answeredCells.get(cellKey(row, col));
+              cell.classList.add('history', history.correct ? 'correct' : 'wrong');
+              if (history.key === state.newestCellKey) cell.classList.add('newly-opened');
+              cell.textContent = String(history.answer);
+              cell.setAttribute(
+                'aria-label',
+                `已完成，${row} 乘 ${col} 等于 ${history.answer}，${history.correct ? '回答正确' : `回答错误，你的答案是 ${history.value}`}`
+              );
             } else if (
               state.phase.startsWith('FEEDBACK')
               && row === q.b
@@ -760,6 +826,9 @@
         detail.textContent = q.a === q.b
           ? `${q.a} × ${q.b} 位于矩阵对角线上，它的对称位置就是自己。`
           : `${q.a} × ${q.b} 和 ${q.b} × ${q.a} 都等于 ${q.answer}。`;
+        if (state.count === 81 && state.answeredCells.size === 81) {
+          detail.textContent += ' 整张九九乘法表已经全部打开！';
+        }
         const button = document.createElement('button');
         button.className = 'primary';
         const isLast = state.index >= state.questions.length - 1;
@@ -788,6 +857,12 @@
         shell.style.setProperty('--axis-x-target', `${targetX}%`);
         shell.style.setProperty('--axis-y-target', `${targetY}%`);
         shell.classList.toggle('feedback-mode', state.phase.startsWith('FEEDBACK'));
+        shell.classList.toggle(
+          'full-table-complete',
+          state.count === 81
+            && state.answeredCells.size === 81
+            && state.phase.startsWith('FEEDBACK')
+        );
         shell.dataset.locateStage = state.locateStage;
         $('#axisX').textContent = String(q.b);
         $('#axisY').textContent = String(q.a);
@@ -856,6 +931,7 @@
         const q = currentQuestion();
         const correct = value === q.answer;
         state.answers.push({ index: state.index, value, correct });
+        saveAnsweredCell(q, value, correct);
         state.phase = correct ? 'FEEDBACK_CORRECT' : 'FEEDBACK_WRONG';
         if (source) source.setAttribute('aria-pressed', 'true');
         renderQuestion();
@@ -872,6 +948,7 @@
         clearAdvance();
         state.phase = 'ADVANCING';
         state.index += 1;
+        state.newestCellKey = null;
         state.advancing = false;
         beginQuestion();
       }
@@ -941,30 +1018,99 @@
 
       function forceReviewState(value) {
         clearAdvance();
+        clearLocate();
         stopTimer();
         $('#exitBackdrop').hidden = true;
         if (value === 'settings') {
           setScreen('settings');
           return;
         }
-        if (!state.questions.length) {
-          state.questions = buildQuestions(state.count);
-          state.answers = [];
-          state.index = 0;
-          state.activeSeconds = 6;
-        }
-        if (value === 'result') {
-          while (state.answers.length < state.questions.length) {
-            const q = state.questions[state.answers.length];
-            state.answers.push({ index: state.answers.length, value: q.answer, correct: true });
+        const needsFullTable = ['last81', 'complete81'].includes(value);
+        if (needsFullTable) selectCount(81);
+        state.questions = buildQuestions(state.count);
+        state.answers = [];
+        state.answeredCells = new Map();
+        state.newestCellKey = null;
+        state.index = 0;
+        state.activeSeconds = 6;
+
+        const addReviewAnswer = (index, correct = true) => {
+          const question = state.questions[index];
+          const answerValue = correct ? question.answer : Math.max(1, question.answer - 1);
+          const entry = { index, value: answerValue, correct };
+          state.answers.push(entry);
+          saveAnsweredCell(question, answerValue, correct);
+        };
+
+        const fillReviewHistory = (amount, mixed = false) => {
+          for (let index = 0; index < amount; index += 1) {
+            addReviewAnswer(index, !mixed || index % 5 !== 2);
           }
+          state.newestCellKey = null;
+        };
+
+        if (value === 'result') {
+          fillReviewHistory(state.questions.length);
+          state.index = state.questions.length - 1;
           state.phase = 'FEEDBACK_CORRECT';
           finishSession();
           return;
         }
         setScreen('session');
+        if (value === 'history-early') {
+          fillReviewHistory(Math.min(7, state.questions.length - 1), true);
+          state.index = Math.min(7, state.questions.length - 1);
+          state.phase = 'READY';
+          state.locateStage = 'revealed';
+          renderQuestion();
+          $('#matrixShell').classList.add('axis-target', 'beam-revealed');
+          return;
+        }
+        if (value === 'history-dense') {
+          if (state.count < 50) selectCount(50);
+          state.questions = buildQuestions(state.count);
+          fillReviewHistory(Math.min(40, state.questions.length - 1), true);
+          state.index = Math.min(40, state.questions.length - 1);
+          state.phase = 'READY';
+          state.locateStage = 'revealed';
+          renderQuestion();
+          $('#matrixShell').classList.add('axis-target', 'beam-revealed');
+          return;
+        }
+        if (value === 'symmetric-answered') {
+          selectCount(81);
+          state.questions = buildQuestions(state.count);
+          const targetIndex = state.questions.findIndex(({ a, b }) => a === 6 && b === 7);
+          const symmetricIndex = state.questions.findIndex(({ a, b }) => a === 7 && b === 6);
+          addReviewAnswer(symmetricIndex, false);
+          state.index = targetIndex;
+          addReviewAnswer(targetIndex, true);
+          state.phase = 'FEEDBACK_CORRECT';
+          state.locateStage = 'revealed';
+          renderQuestion();
+          $('#matrixShell').classList.add('axis-target', 'beam-revealed', 'feedback-mode');
+          return;
+        }
+        if (value === 'last81') {
+          fillReviewHistory(80, true);
+          state.index = 80;
+          state.phase = 'READY';
+          state.locateStage = 'revealed';
+          renderQuestion();
+          $('#matrixShell').classList.add('axis-target', 'beam-revealed');
+          return;
+        }
+        if (value === 'complete81') {
+          fillReviewHistory(81, true);
+          state.index = 80;
+          state.phase = state.answers.at(-1).correct ? 'FEEDBACK_CORRECT' : 'FEEDBACK_WRONG';
+          state.locateStage = 'revealed';
+          renderQuestion();
+          $('#matrixShell').classList.add('axis-target', 'beam-revealed', 'feedback-mode', 'full-table-complete');
+          return;
+        }
         if (value === 'last') state.index = state.questions.length - 1;
-        else state.index = Math.min(0, state.questions.length - 1);
+        else state.index = 0;
         const q = currentQuestion();
         if (value === 'ready' || value === 'exit') {
           state.locateStage = 'revealed';
@@ -979,9 +1125,9 @@
           return;
         }
         const correct = value === 'correct' || value === 'last';
-        state.answers = state.answers.filter((item) => item.index !== state.index);
         const reviewValue = correct ? q.answer : getChoices(q).find((choice) => choice !== q.answer);
         state.answers.push({ index: state.index, value: reviewValue, correct });
+        saveAnsweredCell(q, reviewValue, correct);
         state.locateStage = 'revealed';
         state.phase = correct ? 'FEEDBACK_CORRECT' : 'FEEDBACK_WRONG';
         renderQuestion();
