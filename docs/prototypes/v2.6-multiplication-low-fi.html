@@ -144,6 +144,7 @@
     .cell.hidden-product { color: transparent; }
     .cell.hint { background: #eee; }
     .cell.target { position: relative; border: 3px solid #222; background: #ccc; font-weight: 700; }
+    .cell.target.locating-target { border: 1px solid #777; background: #fff; }
     .cell.target.correct::after,
     .cell.target.wrong::after {
       position: absolute;
@@ -170,7 +171,6 @@
       position: absolute;
       z-index: 4;
       pointer-events: none;
-      transition-duration: 800ms;
       transition-timing-function: ease-in-out;
     }
     .axis-slider {
@@ -184,21 +184,76 @@
       font-size: clamp(10px, 1.5vw, 14px);
       font-weight: 800;
       transform: translate(-50%, -50%);
+      transition-duration: 600ms;
+      transition-property: left, top;
     }
     .axis-slider.x { left: var(--axis-x-start); top: 5%; }
     .axis-slider.y { left: 5%; top: var(--axis-y-start); }
     .matrix-shell.axis-target .axis-slider.x { left: var(--axis-x-target); }
     .matrix-shell.axis-target .axis-slider.y { top: var(--axis-y-target); }
-    .ray { z-index: 3; background: #222; opacity: 0; transition-property: width, height, opacity; }
-    .ray.vertical { left: var(--axis-x-target); top: 5%; width: 2px; height: 0; }
-    .ray.horizontal { left: 5%; top: var(--axis-y-target); width: 0; height: 2px; }
-    .matrix-shell.axis-target .ray.vertical { height: calc(var(--axis-y-target) - 5%); opacity: .32; }
-    .matrix-shell.axis-target .ray.horizontal { width: calc(var(--axis-x-target) - 5%); opacity: .32; }
-    .matrix-shell.feedback-mode .ray { opacity: .8; }
+    .ray {
+      z-index: 3;
+      opacity: 0;
+      background: rgb(34 34 34 / 22%);
+      filter: blur(1px);
+      transition: width 800ms ease-out, height 800ms ease-out, opacity 180ms ease;
+    }
+    .ray::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: rgb(34 34 34 / 24%);
+      filter: blur(5px);
+    }
+    .ray.vertical {
+      left: var(--axis-x-target);
+      top: 5%;
+      width: 5%;
+      height: 0;
+      transform: translateX(-50%);
+      background: linear-gradient(90deg, transparent, rgb(34 34 34 / 34%) 45%, rgb(34 34 34 / 34%) 55%, transparent);
+    }
+    .ray.horizontal {
+      left: 5%;
+      top: var(--axis-y-target);
+      width: 0;
+      height: 5%;
+      transform: translateY(-50%);
+      background: linear-gradient(180deg, transparent, rgb(34 34 34 / 34%) 45%, rgb(34 34 34 / 34%) 55%, transparent);
+    }
+    .matrix-shell.beam-firing .ray.vertical,
+    .matrix-shell.beam-revealed .ray.vertical { height: 95%; opacity: .48; }
+    .matrix-shell.beam-firing .ray.horizontal,
+    .matrix-shell.beam-revealed .ray.horizontal { width: 95%; opacity: .48; }
+    .matrix-shell.beam-revealed .ray,
+    .matrix-shell.beam-revealed .ray.vertical,
+    .matrix-shell.beam-revealed .ray.horizontal { opacity: .2; transition-duration: 180ms; }
+    .matrix-shell.feedback-mode .ray,
+    .matrix-shell.feedback-mode .ray.vertical,
+    .matrix-shell.feedback-mode .ray.horizontal { opacity: .62; }
+    .cell.hint.pending-hint { color: transparent; background: #fff; }
+    .cell.hint.revealed-hint { animation: hint-reveal 220ms ease-out both; }
+    @keyframes hint-reveal {
+      from { color: transparent; background: #fff; transform: scale(.9); }
+    }
     .answer-area { min-height: 118px; display: grid; align-content: start; gap: 10px; }
     .answer-prompt { margin: 0; color: #555; font-size: 13px; }
     .answer-options { display: grid; width: 100%; grid-template-columns: repeat(2, 1fr); gap: 10px; }
     .answer-choice { font-size: 20px; font-weight: 700; }
+    .answer-choice .choice-value { display: inline-block; }
+    .answer-choice .choice-mark { margin-left: 6px; font-size: .85em; }
+    .answer-choice[data-choice-state="selected-correct"],
+    .answer-choice[data-choice-state="correct-answer"] {
+      border-color: #237804;
+      background: #f6ffed;
+      color: #237804;
+    }
+    .answer-choice[data-choice-state="selected-wrong"] {
+      border-color: #cf1322;
+      background: #fff2f0;
+      color: #cf1322;
+    }
+    .answer-choice[data-choice-state="inactive"] { color: #777; background: #f5f5f5; }
     .input-row { display: grid; gap: 8px; }
     .input-row .primary { width: 100%; }
     .feedback {
@@ -260,6 +315,7 @@
     }
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; animation: none !important; }
+      .matrix-shell.beam-revealed .ray { opacity: .2; }
     }
   </style>
 </head>
@@ -410,7 +466,8 @@
         phase: 'LOCATING',
         activeSeconds: 0,
         tickId: null,
-        locateId: null,
+        locateIds: [],
+        locateStage: 'sliding',
         advanceId: null,
         advancing: false,
         previousAxis: { a: 1, b: 1 },
@@ -464,8 +521,14 @@
       }
 
       function clearLocate() {
-        if (state.locateId) window.clearTimeout(state.locateId);
-        state.locateId = null;
+        state.locateIds.forEach((id) => window.clearTimeout(id));
+        state.locateIds = [];
+      }
+
+      function scheduleLocate(callback, delay) {
+        const id = window.setTimeout(callback, delay);
+        state.locateIds.push(id);
+        return id;
       }
 
       function renderTime() {
@@ -523,6 +586,7 @@
               cell.setAttribute('aria-label', row === 0 && col === 0 ? '乘法表' : `表头 ${row === 0 ? col : row}`);
             } else if (row === q.a && col === q.b) {
               cell.classList.add('target');
+              if (state.phase === 'LOCATING') cell.classList.add('locating-target');
               cell.setAttribute('aria-label', '当前题目交叉格，答案待填写');
               if (state.phase.startsWith('FEEDBACK') || state.phase === 'FINISHED') {
                 cell.textContent = String(q.answer);
@@ -553,6 +617,9 @@
               cell.classList.add('hint');
               cell.textContent = String(row * col);
               cell.setAttribute('aria-label', `${row} 乘 ${col} 等于 ${row * col}`);
+              cell.dataset.row = String(row);
+              cell.dataset.col = String(col);
+              if (state.phase === 'LOCATING') cell.classList.add('pending-hint');
             } else {
               cell.classList.add('hidden-product');
               cell.textContent = '';
@@ -592,17 +659,59 @@
         const locked = state.phase !== 'READY';
         const prompt = document.createElement('p');
         prompt.className = 'answer-prompt';
+        if (state.phase === 'LOCATING') {
+          prompt.textContent = state.locateStage === 'sliding'
+            ? '数字轨道正在定位…'
+            : '光束正在照亮乘法路径…';
+          area.appendChild(prompt);
+          return;
+        }
         if (state.difficulty === 'easy') {
           prompt.textContent = locked ? '答案已锁定' : '选择正确答案';
           area.appendChild(prompt);
           const wrap = document.createElement('div');
           wrap.className = 'answer-options';
-          getChoices(currentQuestion()).forEach((value, index) => {
+          const q = currentQuestion();
+          const entry = [...state.answers].reverse().find((item) => item.index === state.index);
+          getChoices(q).forEach((value, index) => {
             const button = document.createElement('button');
             button.className = 'answer-choice';
-            button.textContent = String(value);
             button.disabled = locked;
-            button.setAttribute('aria-pressed', 'false');
+            let choiceState = 'idle';
+            let mark = '';
+            let accessibleName = `答案 ${value}`;
+            if (locked && entry) {
+              if (value === entry.value && entry.correct) {
+                choiceState = 'selected-correct';
+                mark = '✓';
+                accessibleName = `${value}，你的选择，回答正确`;
+              } else if (value === entry.value) {
+                choiceState = 'selected-wrong';
+                mark = '✕';
+                accessibleName = `${value}，你的选择，回答错误`;
+              } else if (!entry.correct && value === q.answer) {
+                choiceState = 'correct-answer';
+                mark = '✓';
+                accessibleName = `${value}，正确答案`;
+              } else {
+                choiceState = 'inactive';
+                accessibleName = `${value}，未选择`;
+              }
+            }
+            button.dataset.choiceState = choiceState;
+            button.setAttribute('aria-pressed', String(Boolean(entry && value === entry.value)));
+            button.setAttribute('aria-label', accessibleName);
+            const valueSpan = document.createElement('span');
+            valueSpan.className = 'choice-value';
+            valueSpan.textContent = String(value);
+            button.appendChild(valueSpan);
+            if (mark) {
+              const markSpan = document.createElement('span');
+              markSpan.className = 'choice-mark';
+              markSpan.setAttribute('aria-hidden', 'true');
+              markSpan.textContent = mark;
+              button.appendChild(markSpan);
+            }
             button.addEventListener('click', () => submitAnswer(value, button));
             wrap.appendChild(button);
             if (index === 0 && !locked) window.setTimeout(() => button.focus(), 0);
@@ -630,11 +739,13 @@
         const detail = $('#feedbackDetail');
         const actions = $('#feedbackActions');
         actions.replaceChildren();
-        if (state.phase === 'READY') {
+        if (state.phase === 'READY' || state.phase === 'LOCATING') {
           feedback.classList.remove('active');
           message.textContent = '';
           detail.textContent = state.phase === 'LOCATING'
-            ? '横轴和纵轴正在定位两个乘数，定位完成后开始计时。'
+            ? state.locateStage === 'sliding'
+              ? '横轴和纵轴正在定位两个乘数，滑块到位后发射光束。'
+              : '光束正在贯穿目标行列并照亮允许的提示。'
             : '';
           return;
         }
@@ -677,6 +788,7 @@
         shell.style.setProperty('--axis-x-target', `${targetX}%`);
         shell.style.setProperty('--axis-y-target', `${targetY}%`);
         shell.classList.toggle('feedback-mode', state.phase.startsWith('FEEDBACK'));
+        shell.dataset.locateStage = state.locateStage;
         $('#axisX').textContent = String(q.b);
         $('#axisY').textContent = String(q.a);
         renderTime();
@@ -689,21 +801,53 @@
         clearLocate();
         stopTimer();
         state.phase = 'LOCATING';
+        state.locateStage = 'sliding';
         const shell = $('#matrixShell');
-        shell.classList.remove('axis-target', 'feedback-mode');
+        shell.classList.remove('axis-target', 'beam-firing', 'beam-revealed', 'feedback-mode');
         renderQuestion();
         const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-        window.requestAnimationFrame(() => {
-          window.requestAnimationFrame(() => shell.classList.add('axis-target'));
-        });
-        state.locateId = window.setTimeout(() => {
-          if (state.phase !== 'LOCATING') return;
+        if (reduced) {
+          shell.classList.add('axis-target', 'beam-revealed');
+          state.locateStage = 'revealed';
           state.phase = 'READY';
           state.previousAxis = { a: currentQuestion().a, b: currentQuestion().b };
           renderQuestion();
-          shell.classList.add('axis-target');
+          shell.classList.add('axis-target', 'beam-revealed');
           startTimer();
-        }, reduced ? 0 : 820);
+          return;
+        }
+        window.requestAnimationFrame(() => {
+          window.requestAnimationFrame(() => shell.classList.add('axis-target'));
+        });
+        scheduleLocate(() => {
+          if (state.phase !== 'LOCATING') return;
+          state.locateStage = 'firing';
+          shell.dataset.locateStage = 'firing';
+          shell.classList.add('beam-firing');
+          renderAnswerArea();
+          renderFeedback();
+          $$('.cell.hint.pending-hint').forEach((cell) => {
+            const row = Number(cell.dataset.row);
+            const col = Number(cell.dataset.col);
+            const q = currentQuestion();
+            const progress = (row === q.a ? col : row) / 9;
+            scheduleLocate(() => {
+              if (state.phase !== 'LOCATING') return;
+              cell.classList.remove('pending-hint');
+              cell.classList.add('revealed-hint');
+            }, 40 + Math.round(progress * 620));
+          });
+        }, 600);
+        scheduleLocate(() => {
+          if (state.phase !== 'LOCATING') return;
+          state.locateStage = 'revealed';
+          state.phase = 'READY';
+          state.previousAxis = { a: currentQuestion().a, b: currentQuestion().b };
+          renderQuestion();
+          shell.classList.remove('beam-firing');
+          shell.classList.add('axis-target', 'beam-revealed');
+          startTimer();
+        }, 1400);
       }
 
       function submitAnswer(value, source) {
@@ -715,7 +859,7 @@
         state.phase = correct ? 'FEEDBACK_CORRECT' : 'FEEDBACK_WRONG';
         if (source) source.setAttribute('aria-pressed', 'true');
         renderQuestion();
-        $('#matrixShell').classList.add('axis-target', 'feedback-mode');
+        $('#matrixShell').classList.add('axis-target', 'beam-revealed', 'feedback-mode');
         if (state.index < state.questions.length - 1) {
           clearAdvance();
           state.advanceId = window.setTimeout(advanceOnce, 2000);
@@ -823,21 +967,25 @@
         else state.index = Math.min(0, state.questions.length - 1);
         const q = currentQuestion();
         if (value === 'ready' || value === 'exit') {
+          state.locateStage = 'revealed';
           state.phase = 'LOCATING';
           renderQuestion();
-          $('#matrixShell').classList.add('axis-target');
+          $('#matrixShell').classList.add('axis-target', 'beam-revealed');
           state.phase = 'READY';
           renderQuestion();
-          $('#matrixShell').classList.add('axis-target');
+          $('#matrixShell').classList.add('axis-target', 'beam-revealed');
           if (value === 'exit') openExit('settings');
           else startTimer();
           return;
         }
         const correct = value === 'correct' || value === 'last';
         state.answers = state.answers.filter((item) => item.index !== state.index);
-        state.answers.push({ index: state.index, value: correct ? q.answer : Math.max(1, q.answer - 1), correct });
+        const reviewValue = correct ? q.answer : getChoices(q).find((choice) => choice !== q.answer);
+        state.answers.push({ index: state.index, value: reviewValue, correct });
+        state.locateStage = 'revealed';
         state.phase = correct ? 'FEEDBACK_CORRECT' : 'FEEDBACK_WRONG';
         renderQuestion();
+        $('#matrixShell').classList.add('axis-target', 'beam-revealed', 'feedback-mode');
       }
 
       $$('.difficulty').forEach((button) => button.addEventListener('click', () => selectDifficulty(button.dataset.difficulty)));
