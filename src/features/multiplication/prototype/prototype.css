@@ -1,0 +1,76 @@
+* { box-sizing: border-box; }
+
+:root {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: #1f1f1f;
+  background: #eef3f8;
+}
+
+body { margin: 0; min-width: 768px; }
+button, select { min-height: 40px; font: inherit; }
+
+.tech-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: end;
+  padding: 12px 18px;
+  border-bottom: 1px solid #b7c9d8;
+  background: #dfeaf3;
+}
+
+.tech-toolbar label,
+.tech-controls label {
+  display: grid;
+  gap: 4px;
+  font-size: 12px;
+}
+
+.tech-toolbar span { margin-left: auto; color: #595959; font-size: 12px; }
+.tech-page { min-height: 100vh; padding-bottom: 24px; }
+
+.tech-stage {
+  width: calc(100% - 32px);
+  margin: 16px auto 0;
+  overflow: hidden;
+  border: 1px solid #b7c9d8;
+  border-radius: 14px;
+  background: #f5f7fa;
+  box-shadow: 0 8px 28px rgb(31 35 41 / 10%);
+}
+
+.tech-controls {
+  display: flex;
+  gap: 16px;
+  align-items: end;
+  padding: 14px 18px;
+  border-bottom: 1px solid #d9e2ec;
+  background: #fff;
+}
+
+.tech-workspace {
+  display: grid;
+  grid-template-columns: minmax(430px, 560px) minmax(240px, 1fr);
+  gap: clamp(14px, 2vw, 28px);
+  padding: clamp(14px, 2vw, 24px);
+}
+
+.tech-matrix-card,
+.tech-side {
+  min-width: 0;
+  padding: 16px;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.tech-side h1 { font-size: clamp(32px, 4vw, 48px); font-variant-numeric: tabular-nums; }
+.tech-progress { color: var(--multiplication-text); font-weight: 700; }
+.tech-actions { display: grid; gap: 10px; margin: 20px 0; }
+.tech-actions button { border: 1px solid #b7c9d8; border-radius: 8px; background: #fff; }
+.tech-actions button:not(:disabled):hover { border-color: var(--multiplication-accent); background: var(--multiplication-soft); }
+.tech-side pre { overflow: auto; padding: 12px; border-radius: 8px; background: #f0f3f5; font-size: 12px; }
+
+@media (max-width: 899px) {
+  .tech-workspace { grid-template-columns: minmax(454px, 1.75fr) minmax(224px, 1fr); }
+  .tech-matrix-card, .tech-side { padding: 12px; }
+}

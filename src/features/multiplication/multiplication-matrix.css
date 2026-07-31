@@ -1,0 +1,76 @@
+.multiplication-matrix {
+  display: grid;
+  grid-template-columns: repeat(10, minmax(0, 1fr));
+  grid-template-rows: repeat(10, minmax(0, 1fr));
+  width: 100%;
+  aspect-ratio: 1;
+  overflow: hidden;
+  border: 1px solid #b7c9d8;
+  border-radius: 12px;
+  background: #fff;
+  font-variant-numeric: tabular-nums;
+}
+
+.multiplication-cell {
+  position: relative;
+  display: grid;
+  min-width: 0;
+  place-items: center;
+  border-right: 1px solid #d9e2ec;
+  border-bottom: 1px solid #d9e2ec;
+  color: #1f1f1f;
+  font-size: clamp(12px, 1.65vw, 17px);
+  line-height: 1;
+}
+
+.multiplication-header {
+  background: #edf4fa;
+  color: #24435c;
+  font-weight: 700;
+}
+
+.multiplication-target {
+  border: 3px solid var(--multiplication-accent, #1677ff);
+  background: var(--multiplication-soft, #e6f4ff);
+}
+
+.multiplication-hint {
+  background: var(--multiplication-soft, #e6f4ff);
+  color: var(--multiplication-text, #0958d9);
+  font-weight: 650;
+}
+
+.multiplication-target-correct,
+.multiplication-history-correct {
+  border: 2px solid #95de64;
+  background: #f6ffed;
+  color: #3f6600;
+  font-weight: 700;
+}
+
+.multiplication-target-wrong,
+.multiplication-history-wrong {
+  border: 2px dashed #ff7875;
+  background: #fff2f0;
+  color: #820014;
+  font-weight: 700;
+}
+
+.multiplication-target-correct,
+.multiplication-target-wrong {
+  border-width: 3px;
+}
+
+.multiplication-symmetric {
+  border: 3px dashed #52c41a;
+  background: #f6ffed;
+  color: #237804;
+  font-weight: 700;
+}
+
+.multiplication-marker {
+  position: absolute;
+  right: 2px;
+  bottom: 1px;
+  font-size: .62em;
+}
