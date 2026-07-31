@@ -1,0 +1,92 @@
+.multiplication-session-page {
+  display: grid;
+  grid-template-columns: minmax(430px, 560px) minmax(240px, 1fr);
+  gap: 24px;
+  align-items: start;
+  --multiplication-accent: #1677ff;
+  --multiplication-soft: #e6f4ff;
+  --multiplication-text: #0958d9;
+}
+
+.multiplication-answer-panel .ant-card-body {
+  padding: 20px;
+}
+
+.multiplication-session-meta {
+  color: #595959;
+  font-variant-numeric: tabular-nums;
+}
+
+.multiplication-formula {
+  margin: 24px 0 !important;
+  font-size: clamp(32px, 4vw, 44px) !important;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.multiplication-choices {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.multiplication-choices .ant-btn {
+  height: 52px;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.multiplication-choices [data-choice-state="selected-correct"],
+.multiplication-choices [data-choice-state="correct-answer"] {
+  border-color: #52c41a;
+  background: #f6ffed;
+  color: #237804;
+}
+
+.multiplication-choices [data-choice-state="selected-wrong"] {
+  border-color: #ff4d4f;
+  background: #fff2f0;
+  color: #a8071a;
+}
+
+.multiplication-choices [data-choice-state="inactive"] {
+  opacity: 0.55;
+}
+
+.multiplication-feedback {
+  min-height: 152px;
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.feedback-correct,
+.feedback-wrong {
+  margin-bottom: 8px;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.feedback-correct {
+  color: #237804;
+}
+
+.feedback-wrong {
+  color: #a8071a;
+}
+
+.multiplication-law {
+  min-height: 44px;
+  color: #595959;
+}
+
+@media (max-width: 900px) {
+  .multiplication-session-page {
+    grid-template-columns: minmax(430px, 1.35fr) minmax(220px, .75fr);
+    gap: 16px;
+  }
+
+  .multiplication-answer-panel .ant-card-body {
+    padding: 14px;
+  }
+}

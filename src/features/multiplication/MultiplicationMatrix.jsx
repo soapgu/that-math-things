@@ -21,23 +21,45 @@ export default function MultiplicationMatrix({
   const cells = buildMatrixCells({ question, difficulty, phase, answeredCells });
 
   return (
-    <div className="multiplication-matrix" role="grid" aria-label="九九乘法坐标表">
-      <div className="multiplication-cell multiplication-header" role="gridcell" aria-label="乘法表">×</div>
-      {Array.from({ length: 9 }, (_, index) => (
+    <div
+      className="multiplication-matrix"
+      role="grid"
+      aria-label="九九乘法坐标表"
+      aria-rowcount={10}
+      aria-colcount={10}
+    >
+      <div className="multiplication-row" role="row" aria-rowindex={1}>
         <div
           className="multiplication-cell multiplication-header"
-          role="gridcell"
-          aria-label={`列表头 ${index + 1}`}
-          key={`column-${index + 1}`}
+          role="columnheader"
+          aria-colindex={1}
+          aria-label="乘法表"
         >
-          {index + 1}
+          ×
         </div>
-      ))}
-      {Array.from({ length: 9 }, (_, rowIndex) => (
-        <React.Fragment key={`row-${rowIndex + 1}`}>
+        {Array.from({ length: 9 }, (_, index) => (
           <div
             className="multiplication-cell multiplication-header"
-            role="gridcell"
+            role="columnheader"
+            aria-colindex={index + 2}
+            aria-label={`列表头 ${index + 1}`}
+            key={`column-${index + 1}`}
+          >
+            {index + 1}
+          </div>
+        ))}
+      </div>
+      {Array.from({ length: 9 }, (_, rowIndex) => (
+        <div
+          className="multiplication-row"
+          role="row"
+          aria-rowindex={rowIndex + 2}
+          key={`row-${rowIndex + 1}`}
+        >
+          <div
+            className="multiplication-cell multiplication-header"
+            role="rowheader"
+            aria-colindex={1}
             aria-label={`行表头 ${rowIndex + 1}`}
           >
             {rowIndex + 1}
@@ -48,6 +70,7 @@ export default function MultiplicationMatrix({
               <div
                 className={`multiplication-cell multiplication-${cell.kind}`}
                 role="gridcell"
+                aria-colindex={cell.column + 1}
                 aria-label={cell.ariaLabel}
                 data-kind={cell.kind}
                 data-row={cell.row}
@@ -62,7 +85,7 @@ export default function MultiplicationMatrix({
                 ) : null}
               </div>
             ))}
-        </React.Fragment>
+        </div>
       ))}
     </div>
   );

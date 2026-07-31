@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Typography, Card, Row, Col } from 'antd';
-import { BookOutlined, CalculatorOutlined } from '@ant-design/icons';
+import { BookOutlined, CalculatorOutlined, AppstoreOutlined } from '@ant-design/icons';
 
 const entries = [
   {
@@ -17,6 +17,13 @@ const entries = [
     title: '计算训练',
     desc: '50以内计算，可调参数、辅助运算、统计错题',
     path: '/practice',
+  },
+  {
+    key: 'multiplication',
+    icon: <AppstoreOutlined style={{ fontSize: 48, color: '#1677ff' }} />,
+    title: '九九乘法',
+    desc: '在乘法矩阵中逐格闯关，掌握九九乘法表',
+    path: '/multiplication',
   },
 ];
 
@@ -34,7 +41,7 @@ export default function Home() {
 
       <Row gutter={[24, 24]} justify="center">
         {entries.map((entry) => (
-          <Col xs={24} sm={12} md={10} key={entry.key}>
+          <Col xs={24} sm={12} md={8} key={entry.key}>
             <Card
               hoverable
               style={{ borderRadius: 12, padding: '24px 16px', height: '100%' }}

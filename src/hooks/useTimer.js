@@ -1,6 +1,17 @@
 import { useState, useRef, useCallback } from 'react';
 
 /**
+ * 将非负秒数格式化为统一的 mm:ss；分钟超过 59 时继续累加。
+ * @param {number} seconds
+ * @returns {string}
+ */
+export function formatTimerDuration(seconds) {
+  const minutes = Math.floor(seconds / 60);
+  const rest = seconds % 60;
+  return `${String(minutes).padStart(2, '0')}:${String(rest).padStart(2, '0')}`;
+}
+
+/**
  * 秒级计时器 hook
  * @returns {{ seconds: number, formatted: string, start: Function, stop: Function, reset: Function }}
  *
@@ -38,7 +49,7 @@ export default function useTimer() {
   }, [stop]);
 
   /** 格式化为 mm:ss */
-  const formatted = `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`;
+  const formatted = formatTimerDuration(seconds);
 
   return { seconds, formatted, start, stop, reset };
 }
