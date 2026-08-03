@@ -29,6 +29,15 @@ function renderSession(state = { settings, questions }) {
   );
 }
 
+function createSessionState(difficulty, questionCount = 10, startId = 30) {
+  return {
+    settings: { difficulty, questionCount },
+    questions: Array.from({ length: questionCount }, (_, index) => (
+      questionFromCoordinateId((startId + index) % 81)
+    )),
+  };
+}
+
 describe('九九乘法最小闭环', () => {
   afterEach(() => {
     vi.useRealTimers();
@@ -36,6 +45,7 @@ describe('九九乘法最小闭环', () => {
 
   it('作答前矩阵目标格不泄露答案，首次选择后锁定并累计开图', () => {
     renderSession();
+    expect(screen.getAllByRole('button', { name: /选择答案/ })[0]).toHaveFocus();
     const matrix = screen.getByRole('grid', { name: '九九乘法坐标表' });
     const target = within(matrix).getByRole('gridcell', { name: '1乘1目标格，答案待填写' });
     expect(target).toBeEmptyDOMElement();
@@ -50,6 +60,72 @@ describe('九九乘法最小闭环', () => {
     fireEvent.click(screen.getByRole('button', { name: /下一题/ }));
     expect(within(matrix).getByRole('gridcell', { name: /1乘1已完成.*回答正确/ })).toHaveTextContent('1');
     expect(screen.getByText(/第 2\/10 题/)).toBeInTheDocument();
+  });
+
+  it('提升难度在目标格内输入，Enter提交并正确流转焦点', () => {
+    renderSession(createSessionState('medium'));
+    const matrix = screen.getByRole('grid', { name: '九九乘法坐标表' });
+    expect(matrix.querySelectorAll('[data-kind="hint"]')).toHaveLength(4);
+    const input = within(matrix).getByRole('textbox', { name: '4乘4的答案' });
+    expect(input).toHaveFocus();
+    expect(input.closest('[data-kind="target"]')).toBeInTheDocument();
+
+    fireEvent.change(input, { target: { value: '16' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+    expect(screen.getByText('回答正确：4 × 4 = 16')).toBeInTheDocument();
+    const next = screen.getByRole('button', { name: /下一题/ });
+    expect(next).toHaveFocus();
+
+    fireEvent.click(next);
+    const nextInput = within(matrix).getByRole('textbox', { name: '4乘5的答案' });
+    expect(nextInput).toHaveValue('');
+    expect(nextInput).toHaveFocus();
+  });
+
+  it('挑战难度不泄露提示，并通过提交按钮记录错误答案', () => {
+    renderSession(createSessionState('hard'));
+    const matrix = screen.getByRole('grid', { name: '九九乘法坐标表' });
+    expect(matrix.querySelectorAll('[data-kind="hint"]')).toHaveLength(0);
+    const input = within(matrix).getByRole('textbox', { name: '4乘4的答案' });
+    expect(matrix.outerHTML).not.toContain('16');
+    fireEvent.change(input, { target: { value: '15' } });
+    fireEvent.click(screen.getByRole('button', { name: '提交答案' }));
+    expect(screen.getByText('你的答案是 15，正确答案：4 × 4 = 16')).toBeInTheDocument();
+    expect(within(matrix).queryByRole('textbox')).not.toBeInTheDocument();
+  });
+
+  it('格内输入拒绝空值、非数字和0', () => {
+    renderSession(createSessionState('medium'));
+    const input = screen.getByRole('textbox', { name: '4乘4的答案' });
+    expect(screen.getByRole('button', { name: '提交答案' })).toBeDisabled();
+
+    fireEvent.change(input, { target: { value: 'abc' } });
+    fireEvent.click(screen.getByRole('button', { name: '提交答案' }));
+    expect(screen.getByText('请输入有效的正整数')).toBeInTheDocument();
+    expect(input).toHaveFocus();
+
+    fireEvent.change(input, { target: { value: '0' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+    expect(screen.getByText('请输入有效的正整数')).toBeInTheDocument();
+    expect(screen.queryByText(/回答正确|正确答案：/)).not.toBeInTheDocument();
+  });
+
+  it('超长数字不会进入提交状态或导致页面崩溃', () => {
+    vi.useFakeTimers();
+    renderSession(createSessionState('hard'));
+    const matrix = screen.getByRole('grid', { name: '九九乘法坐标表' });
+    const input = screen.getByRole('textbox', { name: '4乘4的答案' });
+    fireEvent.change(input, { target: { value: '9'.repeat(400) } });
+    fireEvent.click(screen.getByRole('button', { name: '提交答案' }));
+
+    expect(screen.getByText('请输入有效的正整数')).toBeInTheDocument();
+    expect(input).toBeInTheDocument();
+    expect(input).toHaveFocus();
+    expect(input).toHaveAttribute('aria-invalid', 'true');
+    expect(screen.queryByText(/回答正确|正确答案：/)).not.toBeInTheDocument();
+    expect(matrix.querySelectorAll('[data-kind^="history-"]')).toHaveLength(0);
+    act(() => vi.advanceTimersByTime(1100));
+    expect(screen.getByText(/作答 00:01/)).toBeInTheDocument();
   });
 
   it('反馈期间暂停计时，切题后继续计时', () => {
@@ -80,6 +156,32 @@ describe('九九乘法最小闭环', () => {
     fireEvent.click(screen.getByRole('button', { name: /返回难度选择/ }));
     await waitFor(() => expect(screen.getByText('设置页回退')).toBeInTheDocument());
   });
+
+  it.each([20, 50, 81])('简单模式%i题可真实完成并显示动态结算', async (questionCount) => {
+    const state = createSessionState('easy', questionCount, 0);
+    renderSession(state);
+    const matrix = screen.getByRole('grid', { name: '九九乘法坐标表' });
+
+    for (let index = 0; index < state.questions.length; index += 1) {
+      const question = state.questions[index];
+      fireEvent.click(screen.getByRole('button', { name: `选择答案 ${question.answer}` }));
+      if (index < state.questions.length - 1) {
+        fireEvent.click(screen.getByRole('button', { name: /下一题/ }));
+      }
+    }
+
+    expect(matrix.querySelectorAll('[data-kind$="-correct"]')).toHaveLength(questionCount);
+    fireEvent.click(screen.getByRole('button', { name: /查看结果/ }));
+
+    await waitFor(() => expect(screen.getByRole('heading', { name: '闯关结果' })).toBeInTheDocument());
+    expect(screen.getByLabelText('3星')).toBeInTheDocument();
+    expect(screen.getByText('100', { selector: '.ant-statistic-content-value-int' })).toBeInTheDocument();
+    const correctStatistic = screen.getByText('正确题数').closest('.ant-statistic');
+    const totalStatistic = screen.getByText('总题数').closest('.ant-statistic');
+    expect(within(correctStatistic).getByText(String(questionCount), { selector: '.ant-statistic-content-value-int' })).toBeInTheDocument();
+    expect(within(correctStatistic).getByText(`/ ${questionCount}`)).toBeInTheDocument();
+    expect(within(totalStatistic).getByText(String(questionCount), { selector: '.ant-statistic-content-value-int' })).toBeInTheDocument();
+  }, 30000);
 
   it('会话和结算缺少有效状态时 replace 回设置页', async () => {
     const { unmount } = renderSession(null);

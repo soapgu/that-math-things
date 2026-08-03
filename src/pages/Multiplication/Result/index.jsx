@@ -16,7 +16,7 @@ export default function MultiplicationResult() {
 
   if (!validState) return null;
 
-  const { answeredCells, result, timeSpent } = location.state;
+  const { settings, answeredCells, result, timeSpent } = location.state;
   const correct = Object.values(answeredCells).filter((entry) => entry.correct).length;
 
   return (
@@ -33,8 +33,8 @@ export default function MultiplicationResult() {
         </div>
         <Statistic title="得分" value={result.score} suffix="分" styles={{ content: { color: '#1677ff', fontSize: 48 } }} />
         <Row gutter={16} style={{ marginTop: 24 }}>
-          <Col span={8}><Statistic title="正确题数" value={correct} suffix="/ 10" /></Col>
-          <Col span={8}><Statistic title="总题数" value={10} /></Col>
+          <Col span={8}><Statistic title="正确题数" value={correct} suffix={`/ ${settings.questionCount}`} /></Col>
+          <Col span={8}><Statistic title="总题数" value={settings.questionCount} /></Col>
           <Col span={8}><Statistic title="作答用时" value={formatTimerDuration(timeSpent)} /></Col>
         </Row>
       </Card>

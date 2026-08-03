@@ -39,6 +39,25 @@
   background: var(--multiplication-soft, #e6f4ff);
 }
 
+.multiplication-target-control {
+  width: calc(100% - 8px);
+  min-width: 0;
+  height: calc(100% - 8px);
+  padding: 0;
+  border: 2px solid var(--multiplication-text, #0958d9);
+  border-radius: 6px;
+  outline: none;
+  background: #fff;
+  color: var(--multiplication-text, #0958d9);
+  font: inherit;
+  font-weight: 700;
+  text-align: center;
+}
+
+.multiplication-target-control:focus-visible {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--multiplication-accent, #1677ff) 28%, transparent);
+}
+
 .multiplication-hint {
   background: var(--multiplication-soft, #e6f4ff);
   color: var(--multiplication-text, #0958d9);

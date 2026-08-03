@@ -3,10 +3,12 @@ import {
   DEFAULT_MULTIPLICATION_SETTINGS,
   DIFFICULTIES,
   getCellKey,
+  QUESTION_COUNTS,
 } from './model';
 
-export function isEasyTenSettings(settings) {
-  return settings?.difficulty === DIFFICULTIES.EASY && settings?.questionCount === 10;
+export function isValidMultiplicationSettings(settings) {
+  return Object.values(DIFFICULTIES).includes(settings?.difficulty)
+    && QUESTION_COUNTS.includes(settings?.questionCount);
 }
 
 export function isValidQuestion(question) {
@@ -21,21 +23,23 @@ export function isValidQuestion(question) {
 }
 
 export function isValidMultiplicationSessionState(state) {
-  if (!isEasyTenSettings(state?.settings) || !Array.isArray(state?.questions) || state.questions.length !== 10) {
+  if (!isValidMultiplicationSettings(state?.settings)
+    || !Array.isArray(state?.questions)
+    || state.questions.length !== state.settings.questionCount) {
     return false;
   }
   const keys = state.questions.map((question) => (
     isValidQuestion(question) ? getCellKey(question.a, question.b) : null
   ));
-  return keys.every(Boolean) && new Set(keys).size === 10;
+  return keys.every(Boolean) && new Set(keys).size === state.settings.questionCount;
 }
 
 export function isValidMultiplicationResultState(state) {
-  if (!isEasyTenSettings(state?.settings)
+  if (!isValidMultiplicationSettings(state?.settings)
     || !state?.result
     || !state?.answeredCells
     || Array.isArray(state.answeredCells)
-    || Object.keys(state.answeredCells).length !== 10
+    || Object.keys(state.answeredCells).length !== state.settings.questionCount
     || !Number.isFinite(state.timeSpent)
     || state.timeSpent < 0) {
     return false;
@@ -49,16 +53,16 @@ export function isValidMultiplicationResultState(state) {
     && entry.b <= 9
     && entry.answer === entry.a * entry.b
     && key === getCellKey(entry.a, entry.b)
-    && Number.isInteger(entry.submittedValue)
+    && Number.isSafeInteger(entry.submittedValue)
     && entry.submittedValue > 0
     && entry.correct === (entry.submittedValue === entry.answer)
     && Number.isInteger(entry.order)
     && entry.order >= 1
-    && entry.order <= 10
+    && entry.order <= state.settings.questionCount
   ));
   if (!entriesAreValid) return false;
   const orders = Object.values(state.answeredCells).map(({ order }) => order);
-  if (new Set(orders).size !== 10) return false;
+  if (new Set(orders).size !== state.settings.questionCount) return false;
   const { score, averageSeconds, stars } = state.result;
   const resultShapeIsValid = Number.isInteger(score)
     && score >= 0

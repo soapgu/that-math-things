@@ -92,6 +92,18 @@ describe('累计开图记录', () => {
     expect(() => recordAnsweredCell(answered, question, 12)).toThrow('不能重复提交');
   });
 
+  it.each([
+    Infinity,
+    Number.MAX_SAFE_INTEGER + 1,
+  ])('拒绝非安全整数答案 %s', (submittedValue) => {
+    expect(() => recordAnsweredCell({}, question, submittedValue)).toThrow('提交答案必须是正整数');
+  });
+
+  it('允许大于81的普通正安全整数作为错误答案', () => {
+    const answered = recordAnsweredCell({}, question, 99);
+    expect(answered['3×4']).toMatchObject({ submittedValue: 99, correct: false });
+  });
+
   it('81次提交后恰好记录81格', () => {
     const questions = generateMultiplicationQuestions(81, fixedRng(0.5));
     const answered = questions.reduce(

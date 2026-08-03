@@ -8,6 +8,18 @@
   --multiplication-text: #0958d9;
 }
 
+.multiplication-session-page[data-difficulty="medium"] {
+  --multiplication-accent: #ad4e00;
+  --multiplication-soft: #fff7e6;
+  --multiplication-text: #873800;
+}
+
+.multiplication-session-page[data-difficulty="hard"] {
+  --multiplication-accent: #722ed1;
+  --multiplication-soft: #f9f0ff;
+  --multiplication-text: #531dab;
+}
+
 .multiplication-answer-panel .ant-card-body {
   padding: 20px;
 }
@@ -51,6 +63,19 @@
 
 .multiplication-choices [data-choice-state="inactive"] {
   opacity: 0.55;
+}
+
+.multiplication-input-actions {
+  min-height: 112px;
+  color: #595959;
+  line-height: 1.55;
+}
+
+.multiplication-input-error {
+  min-height: 30px;
+  padding-top: 4px;
+  color: #a8071a;
+  font-weight: 600;
 }
 
 .multiplication-feedback {

@@ -274,7 +274,7 @@ export function recordAnsweredCell(answeredCells, question, submittedValue) {
   if (!answeredCells || typeof answeredCells !== 'object' || Array.isArray(answeredCells)) {
     throw new TypeError('answeredCells 必须是普通对象');
   }
-  if (!Number.isInteger(submittedValue) || submittedValue <= 0) {
+  if (!Number.isSafeInteger(submittedValue) || submittedValue <= 0) {
     throw new RangeError('提交答案必须是正整数');
   }
   const key = getCellKey(question.a, question.b);

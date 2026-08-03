@@ -17,6 +17,7 @@ export default function MultiplicationMatrix({
   difficulty,
   phase = 'READY',
   answeredCells = {},
+  targetControl = null,
 }) {
   const cells = buildMatrixCells({ question, difficulty, phase, answeredCells });
 
@@ -77,6 +78,7 @@ export default function MultiplicationMatrix({
                 data-column={cell.column}
                 key={cell.key}
               >
+                {cell.kind === 'target' ? targetControl : null}
                 {'value' in cell ? <span className="multiplication-value">{cell.value}</span> : null}
                 {markerForKind(cell.kind) ? (
                   <span className="multiplication-marker" aria-hidden="true">
