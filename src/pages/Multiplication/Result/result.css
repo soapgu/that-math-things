@@ -1,0 +1,76 @@
+.multiplication-result-page {
+  max-width: 600px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.multiplication-result-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.multiplication-result-stars {
+  color: #d9d9d9;
+  font-size: 48px;
+  letter-spacing: 8px;
+}
+
+.multiplication-result-stars span {
+  display: inline-block;
+  animation: multiplication-star-in 420ms calc(var(--star-index) * 150ms) both ease-out;
+}
+
+.multiplication-result-stars .is-earned {
+  color: #faad14;
+  filter: drop-shadow(0 3px 6px rgb(250 173 20 / 28%));
+}
+
+.multiplication-result-actions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.multiplication-confetti i {
+  position: absolute;
+  z-index: 0;
+  top: -12px;
+  left: calc((var(--piece, 0) + 1) * 6.5%);
+  width: 7px;
+  height: 12px;
+  border-radius: 2px;
+  background: #1677ff;
+  animation: multiplication-confetti-fall 900ms calc(var(--piece, 0) * 35ms) both ease-out;
+}
+
+.multiplication-confetti i:nth-child(3n) { background: #faad14; }
+.multiplication-confetti i:nth-child(3n + 1) { background: #722ed1; }
+.multiplication-confetti i:nth-child(1) { --piece: 1; }
+.multiplication-confetti i:nth-child(2) { --piece: 2; }
+.multiplication-confetti i:nth-child(3) { --piece: 3; }
+.multiplication-confetti i:nth-child(4) { --piece: 4; }
+.multiplication-confetti i:nth-child(5) { --piece: 5; }
+.multiplication-confetti i:nth-child(6) { --piece: 6; }
+.multiplication-confetti i:nth-child(7) { --piece: 7; }
+.multiplication-confetti i:nth-child(8) { --piece: 8; }
+.multiplication-confetti i:nth-child(9) { --piece: 9; }
+.multiplication-confetti i:nth-child(10) { --piece: 10; }
+.multiplication-confetti i:nth-child(11) { --piece: 11; }
+.multiplication-confetti i:nth-child(12) { --piece: 12; }
+.multiplication-confetti i:nth-child(13) { --piece: 13; }
+.multiplication-confetti i:nth-child(14) { --piece: 14; }
+
+@keyframes multiplication-star-in {
+  from { opacity: 0; transform: scale(.55) rotate(-12deg); }
+  70% { transform: scale(1.12) rotate(3deg); }
+}
+
+@keyframes multiplication-confetti-fall {
+  to { opacity: 0; transform: translateY(165px) rotate(240deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .multiplication-result-stars span { animation: none; }
+  .multiplication-confetti { display: none; }
+}

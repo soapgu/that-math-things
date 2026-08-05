@@ -1,4 +1,5 @@
 .multiplication-matrix {
+  position: relative;
   display: grid;
   grid-template-rows: repeat(10, minmax(0, 1fr));
   width: 100%;
@@ -8,6 +9,99 @@
   border-radius: 12px;
   background: #fff;
   font-variant-numeric: tabular-nums;
+}
+
+.multiplication-beam-layer {
+  position: absolute;
+  z-index: 3;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.multiplication-axis-slider {
+  position: absolute;
+  z-index: 2;
+  display: grid;
+  width: 7%;
+  aspect-ratio: 1;
+  place-items: center;
+  border: 2px solid var(--multiplication-text, #0958d9);
+  border-radius: 50%;
+  background: #fff;
+  color: var(--multiplication-text, #0958d9);
+  box-shadow: 0 2px 8px var(--multiplication-beam-glow, rgb(145 202 255 / 28%));
+  font-size: clamp(10px, 1.2vw, 14px);
+  font-weight: 700;
+  transition: left 600ms ease, top 600ms ease;
+}
+
+.multiplication-axis-slider-top {
+  top: 1.5%;
+  left: calc((var(--previous-column) + .5) * 10% - 3.5%);
+}
+
+.multiplication-axis-slider-left {
+  top: calc((var(--previous-row) + .5) * 10% - 3.5%);
+  left: 1.5%;
+}
+
+[data-locate-stage="sliding"] .multiplication-axis-slider-top,
+[data-locate-stage="firing"] .multiplication-axis-slider-top,
+[data-locate-stage="revealed"] .multiplication-axis-slider-top,
+[data-locate-stage="feedback"] .multiplication-axis-slider-top {
+  left: calc((var(--target-column) + .5) * 10% - 3.5%);
+}
+
+[data-locate-stage="sliding"] .multiplication-axis-slider-left,
+[data-locate-stage="firing"] .multiplication-axis-slider-left,
+[data-locate-stage="revealed"] .multiplication-axis-slider-left,
+[data-locate-stage="feedback"] .multiplication-axis-slider-left {
+  top: calc((var(--target-row) + .5) * 10% - 3.5%);
+}
+
+.multiplication-beam {
+  position: absolute;
+  z-index: 1;
+  opacity: 0;
+  filter: blur(.5px);
+  transform-origin: top left;
+}
+
+.multiplication-beam-vertical {
+  top: 10%;
+  left: calc((var(--target-column) + .25) * 10%);
+  width: 5%;
+  height: 90%;
+  background: linear-gradient(90deg, transparent, var(--multiplication-beam, #91caff), transparent);
+  transform: scaleY(0);
+}
+
+.multiplication-beam-horizontal {
+  top: calc((var(--target-row) + .25) * 10%);
+  left: 10%;
+  width: 90%;
+  height: 5%;
+  background: linear-gradient(180deg, transparent, var(--multiplication-beam, #91caff), transparent);
+  transform: scaleX(0);
+}
+
+[data-locate-stage="firing"] .multiplication-beam {
+  opacity: .52;
+  transform: scale(1);
+  transition: transform 800ms ease-out, opacity 160ms ease;
+  box-shadow: 0 0 10px var(--multiplication-beam-glow, rgb(145 202 255 / 28%));
+}
+
+[data-locate-stage="revealed"] .multiplication-beam {
+  opacity: .18;
+  transform: scale(1);
+}
+
+[data-locate-stage="feedback"] .multiplication-beam {
+  opacity: .38;
+  transform: scale(1);
+  transition: opacity 180ms ease;
 }
 
 .multiplication-row {
@@ -85,11 +179,20 @@
   border-width: 3px;
 }
 
+.multiplication-target-correct {
+  animation: multiplication-answer-pop 320ms ease-out;
+}
+
+.multiplication-target-wrong {
+  animation: multiplication-answer-shake 320ms ease-out;
+}
+
 .multiplication-symmetric {
   border: 3px dashed #52c41a;
   background: #f6ffed;
   color: #237804;
   font-weight: 700;
+  animation: multiplication-symmetric-in 360ms 120ms both ease-out;
 }
 
 .multiplication-marker {
@@ -97,4 +200,36 @@
   right: 2px;
   bottom: 1px;
   font-size: .62em;
+}
+
+.multiplication-table-complete {
+  animation: multiplication-table-glow 600ms ease-out;
+}
+
+@keyframes multiplication-answer-pop {
+  50% { transform: scale(1.08); }
+}
+
+@keyframes multiplication-answer-shake {
+  25% { transform: translateX(-3px); }
+  50% { transform: translateX(3px); }
+  75% { transform: translateX(-2px); }
+}
+
+@keyframes multiplication-symmetric-in {
+  from { opacity: 0; transform: scale(.88); }
+}
+
+@keyframes multiplication-table-glow {
+  50% { box-shadow: 0 0 28px rgb(250 173 20 / 48%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .multiplication-axis-slider,
+  .multiplication-beam,
+  .multiplication-cell,
+  .multiplication-table-complete {
+    animation: none !important;
+    transition: none !important;
+  }
 }

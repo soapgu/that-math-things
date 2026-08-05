@@ -1,5 +1,8 @@
 import '@testing-library/jest-dom';
 
+const nativeGetComputedStyle = window.getComputedStyle;
+window.getComputedStyle = (element) => nativeGetComputedStyle(element);
+
 window.matchMedia = (query) => ({
   matches: false,
   media: query,

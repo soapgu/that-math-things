@@ -6,18 +6,24 @@
   --multiplication-accent: #1677ff;
   --multiplication-soft: #e6f4ff;
   --multiplication-text: #0958d9;
+  --multiplication-beam: #91caff;
+  --multiplication-beam-glow: rgb(145 202 255 / 28%);
 }
 
 .multiplication-session-page[data-difficulty="medium"] {
   --multiplication-accent: #ad4e00;
   --multiplication-soft: #fff7e6;
   --multiplication-text: #873800;
+  --multiplication-beam: #ffd591;
+  --multiplication-beam-glow: rgb(255 213 145 / 30%);
 }
 
 .multiplication-session-page[data-difficulty="hard"] {
   --multiplication-accent: #722ed1;
   --multiplication-soft: #f9f0ff;
   --multiplication-text: #531dab;
+  --multiplication-beam: #d3adf7;
+  --multiplication-beam-glow: rgb(211 173 247 / 30%);
 }
 
 .multiplication-answer-panel .ant-card-body {
@@ -46,6 +52,27 @@
   height: 52px;
   font-size: 20px;
   font-weight: 700;
+  transition: transform 160ms ease, border-color 160ms ease, background 160ms ease, box-shadow 160ms ease;
+}
+
+.multiplication-choices [data-choice-state="ready"]:hover,
+.multiplication-choices [data-choice-state="ready"]:focus-visible {
+  border-color: #1677ff;
+  background: #e6f4ff;
+  color: #0958d9;
+  box-shadow: 0 5px 14px rgb(22 119 255 / 18%);
+  transform: translateY(-2px);
+}
+
+.multiplication-choices [data-choice-state="ready"]:hover span,
+.multiplication-choices [data-choice-state="ready"]:focus-visible span {
+  display: inline-block;
+  transform: scale(1.05);
+}
+
+.multiplication-choices [data-choice-state="ready"]:active {
+  box-shadow: 0 2px 6px rgb(22 119 255 / 12%);
+  transform: translateY(0) scale(.98);
 }
 
 .multiplication-choices [data-choice-state="selected-correct"],
@@ -103,6 +130,31 @@
 .multiplication-law {
   min-height: 44px;
   color: #595959;
+}
+
+.multiplication-auto-note {
+  margin-bottom: 10px;
+  color: #8c8c8c;
+  font-size: 13px;
+}
+
+.visually-hidden {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .multiplication-choices .ant-btn,
+  .multiplication-choices .ant-btn span {
+    transition: none !important;
+    transform: none !important;
+  }
 }
 
 @media (max-width: 900px) {

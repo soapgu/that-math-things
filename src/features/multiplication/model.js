@@ -338,7 +338,8 @@ function isHintCell(row, column, question, difficulty) {
  *   question: MultiplicationQuestion,
  *   difficulty: MultiplicationDifficulty,
  *   phase?: MultiplicationPhase,
- *   answeredCells?: AnsweredCells
+ *   answeredCells?: AnsweredCells,
+ *   revealedHintKeys?: Set<string> | null
  * }} input
  * @returns {Array<{
  *   key: string,
@@ -354,6 +355,7 @@ export function buildMatrixCells({
   difficulty,
   phase = 'READY',
   answeredCells = {},
+  revealedHintKeys = null,
 }) {
   assertQuestion(question);
   assertDifficulty(difficulty);
@@ -408,7 +410,9 @@ export function buildMatrixCells({
     }
 
     // 优先级 4：仅公开当前难度允许的临时乘积。
-    if (isHintCell(row, column, question, difficulty)) {
+    const hintIsRevealed = phase !== 'LOCATING'
+      || (revealedHintKeys instanceof Set && revealedHintKeys.has(key));
+    if (hintIsRevealed && isHintCell(row, column, question, difficulty)) {
       const value = row * column;
       return { ...base, kind: 'hint', value, ariaLabel: `${row}乘${column}等于${value}` };
     }

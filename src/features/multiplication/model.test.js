@@ -115,6 +115,18 @@ describe('累计开图记录', () => {
 });
 
 describe('矩阵安全视图模型', () => {
+  it('定位阶段只公开已随光束显现的提示格', () => {
+    const locatingQuestion = { a: 3, b: 4, op: '*', answer: 12 };
+    const cells = buildMatrixCells({
+      question: locatingQuestion,
+      difficulty: 'easy',
+      phase: 'LOCATING',
+      revealedHintKeys: new Set(['3×1', '1×4']),
+    });
+    expect(cells.filter(({ kind }) => kind === 'hint').map(({ key }) => key).sort()).toEqual(['1×4', '3×1']);
+    expect(cells.find(({ key }) => key === '3×2')).not.toHaveProperty('value');
+  });
+
   const question = { a: 3, b: 4, op: '*', answer: 12 };
   const byKey = (cells, key) => cells.find((cell) => cell.key === key);
 

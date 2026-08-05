@@ -18,17 +18,42 @@ export default function MultiplicationMatrix({
   phase = 'READY',
   answeredCells = {},
   targetControl = null,
+  locateStage = 'revealed',
+  revealedHintKeys = null,
+  previousQuestion = null,
+  fullTableComplete = false,
 }) {
-  const cells = buildMatrixCells({ question, difficulty, phase, answeredCells });
+  const cells = buildMatrixCells({
+    question,
+    difficulty,
+    phase,
+    answeredCells,
+    revealedHintKeys,
+  });
+
+  const matrixStyle = {
+    '--target-row': question.a,
+    '--target-column': question.b,
+    '--previous-row': previousQuestion?.a ?? 1,
+    '--previous-column': previousQuestion?.b ?? 1,
+  };
 
   return (
     <div
-      className="multiplication-matrix"
+      className={`multiplication-matrix${fullTableComplete ? ' multiplication-table-complete' : ''}`}
+      data-locate-stage={locateStage}
+      style={matrixStyle}
       role="grid"
       aria-label="九九乘法坐标表"
       aria-rowcount={10}
       aria-colcount={10}
     >
+      <div className="multiplication-beam-layer" aria-hidden="true">
+        <span className="multiplication-axis-slider multiplication-axis-slider-top">{question.b}</span>
+        <span className="multiplication-axis-slider multiplication-axis-slider-left">{question.a}</span>
+        <span className="multiplication-beam multiplication-beam-vertical" />
+        <span className="multiplication-beam multiplication-beam-horizontal" />
+      </div>
       <div className="multiplication-row" role="row" aria-rowindex={1}>
         <div
           className="multiplication-cell multiplication-header"
