@@ -27,7 +27,7 @@
 >
 > v2.5.0 发布检查清单：见 [docs/release-checklist.md](./docs/release-checklist.md)
 >
-> 下一版本 v2.6 九九乘法闯关规划：见 [docs/v2.6-九九乘法闯关实施计划.md](./docs/v2.6-九九乘法闯关实施计划.md)
+> v2.6 九九乘法闯关实施记录：见 [docs/v2.6-九九乘法闯关实施计划.md](./docs/v2.6-九九乘法闯关实施计划.md)
 >
 > v2.6 UE 页面流程设计：见 [docs/v2.6-九九乘法闯关UE页面流程设计.md](./docs/v2.6-九九乘法闯关UE页面流程设计.md)
 >
@@ -49,9 +49,9 @@
 
 **<https://soapgu.github.io/that-math-things>**
 
-当前版本：[**v2.5.0**](https://github.com/soapgu/that-math-things/releases/tag/v2.5.0)
+当前版本：[**v2.6.0**](https://github.com/soapgu/that-math-things/releases/tag/v2.6.0)
 
-下一版本：**v2.6.0 九九乘法闯关（步骤 8 文档与发布进行中）**
+下一版本规划：**v2.7 学习数据与复盘**
 
 ### 支持设备
 
