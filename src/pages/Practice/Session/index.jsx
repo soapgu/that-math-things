@@ -86,14 +86,14 @@ export default function PracticeSession() {
     setInputValue('');
 
     if (currentIndex >= questions.length - 1) {
-      timer.stop();
+      const timeSpent = timer.stop();
       const record = savePracticeRecord({
         questions,
         userAnswers: newAnswers,
         // Phase 5.1 在会话结束时把逐题快照交给存储边界；Phase 5.2 再负责将其写入
         // schemaVersion: 2 的 items[]，此处不直接拼接持久化记录。
         assistUsage: questionAssistsRef.current.map(({ usage }) => ({ ...usage })),
-        timeSpent: timer.seconds,
+        timeSpent,
         settings,
       });
       navigate('/practice/result', {

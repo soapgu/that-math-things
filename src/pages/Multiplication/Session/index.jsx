@@ -32,6 +32,7 @@ const PHASES = {
 const SLIDING_MS = 600;
 const FIRING_MS = 800;
 const AUTO_ADVANCE_MS = 2000;
+const TARGET_FEEDBACK_MS = 300;
 
 function getHintKeys(question, difficulty) {
   if (difficulty === DIFFICULTIES.HARD) return [];
@@ -88,6 +89,7 @@ export default function MultiplicationSession() {
   const [revealedHintKeys, setRevealedHintKeys] = useState(() => new Set());
   const [announcement, setAnnouncement] = useState('');
   const [locateRun, setLocateRun] = useState(0);
+  const [targetFeedbackStage, setTargetFeedbackStage] = useState('idle');
   const answerControlRef = useRef(null);
   const feedbackActionRef = useRef(null);
   const previousQuestionRef = useRef(null);
@@ -95,6 +97,8 @@ export default function MultiplicationSession() {
   const autoTimerRef = useRef(null);
   const autoDeadlineRef = useRef(0);
   const autoRemainingRef = useRef(AUTO_ADVANCE_MS);
+  const targetFeedbackTimerRef = useRef(null);
+  const timeSpentSnapshotRef = useRef(0);
   const advanceLockRef = useRef(false);
   const resultLockRef = useRef(false);
   const allowNavigationRef = useRef(false);
@@ -121,6 +125,13 @@ export default function MultiplicationSession() {
     }
   }, []);
 
+  const clearTargetFeedbackTimer = useCallback(() => {
+    if (targetFeedbackTimerRef.current !== null) {
+      window.clearTimeout(targetFeedbackTimerRef.current);
+      targetFeedbackTimerRef.current = null;
+    }
+  }, []);
+
   const blocker = useBlocker(({ currentLocation, nextLocation }) => (
     validState
     && !allowNavigationRef.current
@@ -138,11 +149,13 @@ export default function MultiplicationSession() {
     if (!validState || !current) return undefined;
     clearLocateTimers();
     clearAutoTimer();
+    clearTargetFeedbackTimer();
     timer.stop();
     advanceLockRef.current = false;
     setPhase(PHASES.LOCATING);
     setLocateStage('idle');
     setRevealedHintKeys(new Set());
+    setTargetFeedbackStage('idle');
 
     const hints = getHintKeys(current, settings.difficulty);
     const hintKeys = hints.map(({ key }) => key);
@@ -175,6 +188,7 @@ export default function MultiplicationSession() {
   }, [
     clearAutoTimer,
     clearLocateTimers,
+    clearTargetFeedbackTimer,
     current,
     currentIndex,
     locateRun,
@@ -236,8 +250,9 @@ export default function MultiplicationSession() {
   useEffect(() => () => {
     clearLocateTimers();
     clearAutoTimer();
+    clearTargetFeedbackTimer();
     timer.stop();
-  }, [clearAutoTimer, clearLocateTimers, timer.stop]);
+  }, [clearAutoTimer, clearLocateTimers, clearTargetFeedbackTimer, timer.stop]);
 
   if (!validState || !current) return null;
 
@@ -252,13 +267,25 @@ export default function MultiplicationSession() {
 
   const submitAnswer = (value) => {
     if (phase !== PHASES.READY) return;
-    timer.stop();
+    timeSpentSnapshotRef.current = timer.stop();
     setInputError('');
     setSubmittedValue(value);
     setAnsweredCells((previous) => recordAnsweredCell(previous, current, value));
     const correct = value === current.answer;
     setPhase(correct ? PHASES.FEEDBACK_CORRECT : PHASES.FEEDBACK_WRONG);
     setLocateStage('feedback');
+    if (!usesChoices) {
+      clearTargetFeedbackTimer();
+      if (reducedMotion) {
+        setTargetFeedbackStage('result');
+      } else {
+        setTargetFeedbackStage('submitted');
+        targetFeedbackTimerRef.current = window.setTimeout(() => {
+          targetFeedbackTimerRef.current = null;
+          setTargetFeedbackStage('result');
+        }, TARGET_FEEDBACK_MS);
+      }
+    }
     setAnnouncement(correct
       ? `回答正确，${current.a}乘${current.b}等于${current.answer}${isLast ? '' : '，2秒后自动进入下一题'}`
       : `回答错误，你的答案是${value}，正确答案是${current.a}乘${current.b}等于${current.answer}${isLast ? '' : '，2秒后自动进入下一题'}`);
@@ -281,6 +308,7 @@ export default function MultiplicationSession() {
     advanceLockRef.current = true;
     clearAutoTimer();
     clearLocateTimers();
+    clearTargetFeedbackTimer();
     if (isLast) {
       if (resultLockRef.current) return;
       resultLockRef.current = true;
@@ -289,11 +317,16 @@ export default function MultiplicationSession() {
         difficulty: settings.difficulty,
         total: settings.questionCount,
         correct,
-        timeSpent: timer.seconds,
+        timeSpent: timeSpentSnapshotRef.current,
       });
       allowNavigationRef.current = true;
       navigate('/multiplication/result', {
-        state: { settings, answeredCells, timeSpent: timer.seconds, result },
+        state: {
+          settings,
+          answeredCells,
+          timeSpent: timeSpentSnapshotRef.current,
+          result,
+        },
       });
       return;
     }
@@ -303,6 +336,7 @@ export default function MultiplicationSession() {
     setSubmittedValue(null);
     setInputValue('');
     setInputError('');
+    setTargetFeedbackStage('idle');
   };
   advanceOnceRef.current = advanceOnce;
 
@@ -328,6 +362,7 @@ export default function MultiplicationSession() {
     allowNavigationRef.current = true;
     clearLocateTimers();
     clearAutoTimer();
+    clearTargetFeedbackTimer();
     timer.stop();
     exitSourceRef.current = null;
     blocker.proceed?.();
@@ -373,6 +408,10 @@ export default function MultiplicationSession() {
           revealedHintKeys={revealedHintKeys}
           previousQuestion={previousQuestionRef.current}
           fullTableComplete={fullTableComplete}
+          targetFeedback={!usesChoices && feedback ? {
+            stage: targetFeedbackStage,
+            submittedValue,
+          } : null}
         />
       </section>
 

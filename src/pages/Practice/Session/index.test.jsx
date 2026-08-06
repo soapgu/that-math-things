@@ -10,7 +10,7 @@ const mocks = vi.hoisted(() => ({
     seconds: 0,
     formatted: '00:00',
     start: vi.fn(),
-    stop: vi.fn(),
+    stop: vi.fn(() => 42),
     reset: vi.fn(),
   },
 }));

@@ -179,6 +179,32 @@
   border-width: 3px;
 }
 
+.multiplication-target-submitted {
+  border: 3px solid var(--multiplication-accent, #1677ff);
+  background: var(--multiplication-soft, #e6f4ff);
+  color: var(--multiplication-text, #0958d9);
+}
+
+.multiplication-submitted-value {
+  font-weight: 700;
+}
+
+.multiplication-target-result .multiplication-value,
+.multiplication-target-result .multiplication-marker {
+  animation: multiplication-result-reveal 300ms ease-out both;
+}
+
+@keyframes multiplication-result-reveal {
+  from {
+    opacity: 0;
+    transform: scale(.88);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
 .multiplication-target-correct {
   animation: multiplication-answer-pop 320ms ease-out;
 }
@@ -228,6 +254,8 @@
   .multiplication-axis-slider,
   .multiplication-beam,
   .multiplication-cell,
+  .multiplication-value,
+  .multiplication-marker,
   .multiplication-table-complete {
     animation: none !important;
     transition: none !important;

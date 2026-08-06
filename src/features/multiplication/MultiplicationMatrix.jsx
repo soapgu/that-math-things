@@ -22,6 +22,7 @@ export default function MultiplicationMatrix({
   revealedHintKeys = null,
   previousQuestion = null,
   fullTableComplete = false,
+  targetFeedback = null,
 }) {
   const cells = buildMatrixCells({
     question,
@@ -92,26 +93,36 @@ export default function MultiplicationMatrix({
           </div>
           {cells
             .filter(({ row }) => row === rowIndex + 1)
-            .map((cell) => (
-              <div
-                className={`multiplication-cell multiplication-${cell.kind}`}
-                role="gridcell"
-                aria-colindex={cell.column + 1}
-                aria-label={cell.ariaLabel}
-                data-kind={cell.kind}
-                data-row={cell.row}
-                data-column={cell.column}
-                key={cell.key}
-              >
-                {cell.kind === 'target' ? targetControl : null}
-                {'value' in cell ? <span className="multiplication-value">{cell.value}</span> : null}
-                {markerForKind(cell.kind) ? (
-                  <span className="multiplication-marker" aria-hidden="true">
-                    {markerForKind(cell.kind)}
-                  </span>
-                ) : null}
-              </div>
-            ))}
+            .map((cell) => {
+              const feedbackTarget = cell.kind === 'target-correct' || cell.kind === 'target-wrong';
+              const showsSubmittedValue = feedbackTarget && targetFeedback?.stage === 'submitted';
+              const showsFeedbackResult = feedbackTarget && targetFeedback?.stage === 'result';
+              return (
+                <div
+                  className={`multiplication-cell multiplication-${cell.kind}${showsSubmittedValue ? ' multiplication-target-submitted' : ''}${showsFeedbackResult ? ' multiplication-target-result' : ''}`}
+                  role="gridcell"
+                  aria-colindex={cell.column + 1}
+                  aria-label={cell.ariaLabel}
+                  data-kind={cell.kind}
+                  data-row={cell.row}
+                  data-column={cell.column}
+                  data-feedback-stage={feedbackTarget ? targetFeedback?.stage : undefined}
+                  key={cell.key}
+                >
+                  {cell.kind === 'target' ? targetControl : null}
+                  {showsSubmittedValue ? (
+                    <span className="multiplication-submitted-value">{targetFeedback.submittedValue}</span>
+                  ) : 'value' in cell ? (
+                    <span className="multiplication-value">{cell.value}</span>
+                  ) : null}
+                  {!showsSubmittedValue && markerForKind(cell.kind) ? (
+                    <span className="multiplication-marker" aria-hidden="true">
+                      {markerForKind(cell.kind)}
+                    </span>
+                  ) : null}
+                </div>
+              );
+            })}
         </div>
       ))}
     </div>

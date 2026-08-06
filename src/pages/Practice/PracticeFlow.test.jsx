@@ -15,7 +15,7 @@ const mocks = vi.hoisted(() => ({
     seconds: 42,
     formatted: '00:42',
     start: vi.fn(),
-    stop: vi.fn(),
+    stop: vi.fn(() => 42),
     reset: vi.fn(),
   },
 }));
@@ -85,6 +85,7 @@ it('Session → Storage → Result 保留逐题辅助记录并展示一致摘要
   expect(getByText('查看方法').closest('.ant-statistic').textContent).toContain('1题');
 
   const [stored] = getPracticeRecords();
+  expect(stored.timeSpent).toBe(42);
   expect(stored.schemaVersion).toBe(2);
   expect(stored.items.map(({ assistUsage }) => assistUsage)).toEqual([
     expect.objectContaining({ level: 1, method: null, strategy: null }),

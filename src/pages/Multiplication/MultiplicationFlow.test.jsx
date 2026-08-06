@@ -200,6 +200,70 @@ describe('九九乘法最小闭环', () => {
     expect(nextInput).toHaveFocus();
   });
 
+  it('提升难度提交后保留输入300ms，再显示正确结果', () => {
+    vi.useFakeTimers();
+    window.matchMedia = vi.fn().mockImplementation((query) => ({
+      matches: false,
+      media: query,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    }));
+    renderSession(createSessionState('medium'));
+    act(() => vi.advanceTimersByTime(1400));
+    const matrix = screen.getByRole('grid', { name: '九九乘法坐标表' });
+    const input = within(matrix).getByRole('textbox', { name: '4乘4的答案' });
+    fireEvent.change(input, { target: { value: '15' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+
+    let target = matrix.querySelector('[data-row="4"][data-column="4"]');
+    expect(target).toHaveAttribute('data-feedback-stage', 'submitted');
+    expect(target).toHaveTextContent('15');
+    expect(target).not.toHaveTextContent('16');
+    expect(target.querySelector('.multiplication-marker')).not.toBeInTheDocument();
+
+    act(() => vi.advanceTimersByTime(299));
+    expect(target).toHaveAttribute('data-feedback-stage', 'submitted');
+    act(() => vi.advanceTimersByTime(1));
+    target = matrix.querySelector('[data-row="4"][data-column="4"]');
+    expect(target).toHaveAttribute('data-feedback-stage', 'result');
+    expect(target).toHaveTextContent('16');
+    expect(target).toHaveTextContent('✕');
+    expect(screen.getByText(/你的答案是 15/)).toBeInTheDocument();
+  });
+
+  it('格内反馈过渡在快速切题时清理，减少动态效果时直接显示结果', () => {
+    vi.useFakeTimers();
+    window.matchMedia = vi.fn().mockImplementation((query) => ({
+      matches: false,
+      media: query,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    }));
+    const { unmount } = renderSession(createSessionState('medium'));
+    act(() => vi.advanceTimersByTime(1400));
+    let input = screen.getByRole('textbox', { name: '4乘4的答案' });
+    fireEvent.change(input, { target: { value: '16' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+    expect(document.querySelector('[data-feedback-stage="submitted"]')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /下一题/ }));
+    act(() => vi.advanceTimersByTime(300));
+    expect(document.querySelector('[data-feedback-stage]')).not.toBeInTheDocument();
+    unmount();
+
+    window.matchMedia = vi.fn().mockImplementation((query) => ({
+      matches: query === '(prefers-reduced-motion: reduce)',
+      media: query,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    }));
+    renderSession(createSessionState('hard'));
+    input = screen.getByRole('textbox', { name: '4乘4的答案' });
+    fireEvent.change(input, { target: { value: '15' } });
+    fireEvent.click(screen.getByRole('button', { name: '提交答案' }));
+    expect(document.querySelector('[data-feedback-stage="result"]')).toHaveTextContent('16');
+    expect(document.querySelector('[data-feedback-stage="submitted"]')).not.toBeInTheDocument();
+  });
+
   it('挑战难度不泄露提示，并通过提交按钮记录错误答案', () => {
     renderSession(createSessionState('hard'));
     const matrix = screen.getByRole('grid', { name: '九九乘法坐标表' });
