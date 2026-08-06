@@ -38,6 +38,10 @@
 > v2.6 技术原型与基础模型：见 [docs/v2.6-九九乘法闯关技术原型与基础模型.md](./docs/v2.6-九九乘法闯关技术原型与基础模型.md)
 >
 > v2.6 测试与体验验收：见 [docs/v2.6-九九乘法闯关测试与体验验收.md](./docs/v2.6-九九乘法闯关测试与体验验收.md)
+>
+> v2.6.0 发布检查清单：见 [docs/v2.6.0-release-checklist.md](./docs/v2.6.0-release-checklist.md)
+>
+> v2.6.0 Release Notes：见 [docs/v2.6.0-release-notes.md](./docs/v2.6.0-release-notes.md)
 
 ---
 
@@ -47,7 +51,7 @@
 
 当前版本：[**v2.5.0**](https://github.com/soapgu/that-math-things/releases/tag/v2.5.0)
 
-下一版本：**v2.6 九九乘法闯关（步骤 7 已完成，步骤 8 文档与发布为下一步）**
+下一版本：**v2.6.0 九九乘法闯关（步骤 8 文档与发布进行中）**
 
 ### 支持设备
 
@@ -501,7 +505,7 @@ npm run deploy
 # 产物在 build/ 目录，也可手动部署到任何静态服务器
 ```
 
-正式发布前后按 [v2.5.0 发布检查清单](./docs/release-checklist.md) 完成版本、CI、设备矩阵、Release 和线上冒烟确认。
+正式发布前后按对应版本检查清单执行；v2.5.0 历史记录见 [原发布检查清单](./docs/release-checklist.md)，当前 v2.6.0 见 [发布检查清单](./docs/v2.6.0-release-checklist.md)。
 
 ---
 
