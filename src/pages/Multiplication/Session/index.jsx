@@ -16,7 +16,11 @@ import {
   getCellKey,
   recordAnsweredCell,
 } from '../../../features/multiplication/model';
-import { isValidMultiplicationSessionState } from '../../../features/multiplication/routeState';
+import {
+  isReloadNavigation,
+  isValidMultiplicationSessionState,
+  markReloadNavigationHandled,
+} from '../../../features/multiplication/routeState';
 import useTimer from '../../../hooks/useTimer';
 import './session.css';
 
@@ -70,7 +74,8 @@ function revealDelayForHint({ position }) {
 export default function MultiplicationSession() {
   const navigate = useNavigate();
   const location = useLocation();
-  const validState = isValidMultiplicationSessionState(location.state);
+  const reloadedDocument = isReloadNavigation();
+  const validState = !reloadedDocument && isValidMultiplicationSessionState(location.state);
   const settings = validState ? location.state.settings : null;
   const questions = validState ? location.state.questions : [];
   const choices = useMemo(
@@ -103,6 +108,7 @@ export default function MultiplicationSession() {
   const resultLockRef = useRef(false);
   const allowNavigationRef = useRef(false);
   const exitSourceRef = useRef(null);
+  const focusRestorePhaseRef = useRef(null);
   const timer = useTimer();
   const current = questions[currentIndex];
   const isLast = currentIndex === questions.length - 1;
@@ -132,18 +138,15 @@ export default function MultiplicationSession() {
     }
   }, []);
 
-  const blocker = useBlocker(({ currentLocation, nextLocation }) => (
-    validState
-    && !allowNavigationRef.current
-    && currentLocation.pathname !== nextLocation.pathname
-  ));
+  const blocker = useBlocker(() => validState && !allowNavigationRef.current);
 
   useEffect(() => {
     if (!validState) {
+      if (reloadedDocument) markReloadNavigationHandled();
       allowNavigationRef.current = true;
       navigate('/multiplication', { replace: true });
     }
-  }, [navigate, validState]);
+  }, [navigate, reloadedDocument, validState]);
 
   useEffect(() => {
     if (!validState || !current) return undefined;
@@ -343,18 +346,25 @@ export default function MultiplicationSession() {
   const handleStay = () => {
     const source = exitSourceRef.current;
     exitSourceRef.current = null;
+    focusRestorePhaseRef.current = source;
     blocker.reset?.();
     if (source === PHASES.LOCATING) setLocateRun((run) => run + 1);
     if (source === PHASES.READY) {
       timer.start();
-      window.setTimeout(() => answerControlRef.current?.focus(), 0);
     }
     if ((source === PHASES.FEEDBACK_CORRECT || source === PHASES.FEEDBACK_WRONG) && !isLast) {
       scheduleAutoAdvance(autoRemainingRef.current);
-      window.setTimeout(() => feedbackActionRef.current?.focus(), 0);
     }
-    if (source === PHASES.FINISHED) {
-      window.setTimeout(() => feedbackActionRef.current?.focus(), 0);
+  };
+
+  const restoreFocusAfterExitDialog = () => {
+    const source = focusRestorePhaseRef.current;
+    focusRestorePhaseRef.current = null;
+    if (source === PHASES.READY) answerControlRef.current?.focus();
+    if (source === PHASES.FEEDBACK_CORRECT
+      || source === PHASES.FEEDBACK_WRONG
+      || source === PHASES.FINISHED) {
+      feedbackActionRef.current?.focus();
     }
   };
 
@@ -365,6 +375,7 @@ export default function MultiplicationSession() {
     clearTargetFeedbackTimer();
     timer.stop();
     exitSourceRef.current = null;
+    focusRestorePhaseRef.current = null;
     blocker.proceed?.();
   };
 
@@ -508,6 +519,7 @@ export default function MultiplicationSession() {
         closable={false}
         mask={{ closable: false }}
         keyboard={false}
+        afterClose={restoreFocusAfterExitDialog}
         footer={[
           <Button danger key="leave" onClick={handleLeave}>确认离开</Button>,
           <Button type="primary" key="stay" autoFocus onClick={handleStay}>继续闯关</Button>,

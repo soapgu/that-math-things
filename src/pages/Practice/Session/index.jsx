@@ -122,7 +122,7 @@ export default function PracticeSession() {
           <span style={{ fontSize: 13, color: '#999', userSelect: 'none' }}>
             第 {currentIndex + 1}/{questions.length} 题
           </span>
-          <span style={{ fontSize: 13, color: '#999', userSelect: 'none' }}>
+          <span data-testid="practice-timer" style={{ fontSize: 13, color: '#999', userSelect: 'none' }}>
             {timer.formatted}
           </span>
         </div>

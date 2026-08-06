@@ -18,7 +18,7 @@ root.render(
   <React.StrictMode>
     <ConfigProvider locale={zhCN}>
       <MobileBlocker>
-        <RouterProvider router={router} />
+        <RouterProvider router={router} future={{ v7_startTransition: true }} />
       </MobileBlocker>
     </ConfigProvider>
   </React.StrictMode>

@@ -44,7 +44,10 @@ function renderSession(state = { settings, questions }) {
     initialIndex: 1,
     future: { v7_startTransition: true, v7_relativeSplatPath: true },
   });
-  return { ...render(<RouterProvider router={router} />), router };
+  return {
+    ...render(<RouterProvider router={router} future={{ v7_startTransition: true }} />),
+    router,
+  };
 }
 
 function createSessionState(difficulty, questionCount = 10, startId = 30) {
@@ -500,7 +503,7 @@ describe('九九乘法最小闭环', () => {
       }],
       future: { v7_startTransition: true, v7_relativeSplatPath: true },
     });
-    render(<RouterProvider router={router} />);
+    render(<RouterProvider router={router} future={{ v7_startTransition: true }} />);
     fireEvent.click(screen.getByRole('button', { name: /再来一局/ }));
     await waitFor(() => expect(screen.getByTestId('replay-state')).toBeInTheDocument());
     const state = JSON.parse(screen.getByTestId('replay-state').textContent);

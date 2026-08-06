@@ -117,8 +117,10 @@ test.describe.serial('5. 响应式矩阵（767/768/1024/1440）', () => {
     await page.waitForTimeout(500);
     await blocker.expectUnblocked();
 
-    // 页面顶栏可见
-    await expect(page.getByRole('heading', { name: '那年那数那些事' }).first()).toBeVisible();
+    // 768px 使用已确认的短品牌，但应用顶栏和内容必须恢复。
+    await expect(page.locator('.app-brand-short')).toHaveText('那些数');
+    await expect(page.locator('.app-brand-short')).toBeVisible();
+    await expect(page.getByRole('button', { name: /下一题/ })).toBeVisible();
     expect(await isNoHorizontalScroll(page)).toBe(true);
   });
 

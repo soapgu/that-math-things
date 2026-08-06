@@ -6,6 +6,8 @@ import {
   QUESTION_COUNTS,
 } from './model';
 
+let reloadNavigationHandled = false;
+
 export function isValidMultiplicationSettings(settings) {
   return Object.values(DIFFICULTIES).includes(settings?.difficulty)
     && QUESTION_COUNTS.includes(settings?.questionCount);
@@ -81,6 +83,26 @@ export function isValidMultiplicationResultState(state) {
   return expected.score === score
     && expected.averageSeconds === averageSeconds
     && expected.stars === stars;
+}
+
+/**
+ * 判断当前文档是否由浏览器刷新产生。
+ *
+ * React Router 会把 location.state 写入 history.state，部分浏览器刷新后仍会
+ * 保留它。乘法闯关明确不恢复会话，因此不能只依赖路由 state 是否存在。
+ */
+export function isReloadNavigation() {
+  if (reloadNavigationHandled) return false;
+  if (typeof performance === 'undefined' || typeof performance.getEntriesByType !== 'function') {
+    return false;
+  }
+  const [navigation] = performance.getEntriesByType('navigation');
+  return navigation?.type === 'reload';
+}
+
+/** 当前刷新产生的旧路由已回退后，允许同一文档中重新开始一局。 */
+export function markReloadNavigationHandled() {
+  reloadNavigationHandled = true;
 }
 
 export function createDefaultMultiplicationSettings() {

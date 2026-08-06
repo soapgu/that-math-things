@@ -2,7 +2,11 @@ import React, { useEffect } from 'react';
 import { Button, Card, Col, Row, Statistic, Typography } from 'antd';
 import { ArrowLeftOutlined, ReloadOutlined, StarFilled } from '@ant-design/icons';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { isValidMultiplicationResultState } from '../../../features/multiplication/routeState';
+import {
+  isReloadNavigation,
+  isValidMultiplicationResultState,
+  markReloadNavigationHandled,
+} from '../../../features/multiplication/routeState';
 import { generateMultiplicationQuestions } from '../../../features/multiplication/model';
 import { formatTimerDuration } from '../../../hooks/useTimer';
 import './result.css';
@@ -10,11 +14,15 @@ import './result.css';
 export default function MultiplicationResult() {
   const navigate = useNavigate();
   const location = useLocation();
-  const validState = isValidMultiplicationResultState(location.state);
+  const reloadedDocument = isReloadNavigation();
+  const validState = !reloadedDocument && isValidMultiplicationResultState(location.state);
 
   useEffect(() => {
-    if (!validState) navigate('/multiplication', { replace: true });
-  }, [navigate, validState]);
+    if (!validState) {
+      if (reloadedDocument) markReloadNavigationHandled();
+      navigate('/multiplication', { replace: true });
+    }
+  }, [navigate, reloadedDocument, validState]);
 
   if (!validState) return null;
 

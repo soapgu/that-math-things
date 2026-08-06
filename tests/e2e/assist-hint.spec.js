@@ -100,11 +100,12 @@ test.describe.serial('4.4 第一层提醒', () => {
     await expect(page.getByRole('button', { name: '上一步' })).toBeHidden();
     await expect(page.getByRole('button', { name: '下一步' })).toBeHidden();
 
-    // 最终答案不出现在第一层提醒卡里
+    // 第一层不能把数字明确标成最终答案；答案恰好为 10 时，允许教学阈值
+    // “超过了 10”正常出现，不能仅凭裸数字判定泄露。
     const reminderCard = page.locator('.ant-card[aria-live="polite"]');
     const cardText = await reminderCard.textContent();
     const answer = finder.answer(eligibleQ);
-    expect(new RegExp(`(?<!\\d)${answer}(?!\\d)`).test(cardText || ''),
+    expect(new RegExp(`(?:答案|结果|等于|=)\\s*${answer}(?!\\d)`).test(cardText || ''),
       `第一层提醒避免泄露最终答案 ${answer}`).toBe(false);
 
     // 两个分支按钮可见

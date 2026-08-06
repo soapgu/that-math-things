@@ -33,6 +33,14 @@ export class HomePage {
   }
 
   /**
+   * 点击「九九乘法」入口卡片。
+   * @returns {Promise<void>}
+   */
+  async clickMultiplication() {
+    await this.page.getByRole('heading', { name: '九九乘法', exact: true }).click();
+  }
+
+  /**
    * 首页标题是否可见。
    * @returns {Promise<boolean>}
    */

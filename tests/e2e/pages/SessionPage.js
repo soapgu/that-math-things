@@ -212,9 +212,7 @@ export class SessionPage {
    * @returns {Promise<string>}
    */
   async getTimerText() {
-    const text = await this.page.locator('.ant-layout-content').textContent();
-    const m = text.match(/(\d+):(\d+)/);
-    return m ? `${m[1]}:${m[2]}` : '';
+    return this.page.getByTestId('practice-timer').innerText();
   }
 
   /**
