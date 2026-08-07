@@ -51,7 +51,7 @@
 
 当前版本：[**v2.6.0**](https://github.com/soapgu/that-math-things/releases/tag/v2.6.0)
 
-下一版本规划：**v2.7 学习数据与复盘**
+后续版本：**待重新规划**
 
 ### 支持设备
 
