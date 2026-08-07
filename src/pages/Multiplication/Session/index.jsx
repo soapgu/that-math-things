@@ -6,7 +6,12 @@ import React, {
   useState,
 } from 'react';
 import { Button, Card, Modal, Typography } from 'antd';
-import { ArrowRightOutlined, CheckOutlined } from '@ant-design/icons';
+import {
+  ArrowRightOutlined,
+  AudioMutedOutlined,
+  CheckOutlined,
+  SoundFilled,
+} from '@ant-design/icons';
 import { useBlocker, useLocation, useNavigate } from 'react-router-dom';
 import MultiplicationMatrix from '../../../features/multiplication/MultiplicationMatrix';
 import {
@@ -22,6 +27,11 @@ import {
   markReloadNavigationHandled,
 } from '../../../features/multiplication/routeState';
 import useTimer from '../../../hooks/useTimer';
+import {
+  createMultiplicationSoundPlayer,
+  loadMultiplicationSoundEnabled,
+  saveMultiplicationSoundEnabled,
+} from '../../../features/multiplication/sound';
 import './session.css';
 
 const PHASES = {
@@ -95,6 +105,7 @@ export default function MultiplicationSession() {
   const [announcement, setAnnouncement] = useState('');
   const [locateRun, setLocateRun] = useState(0);
   const [targetFeedbackStage, setTargetFeedbackStage] = useState('idle');
+  const [soundEnabled, setSoundEnabled] = useState(loadMultiplicationSoundEnabled);
   const answerControlRef = useRef(null);
   const feedbackActionRef = useRef(null);
   const previousQuestionRef = useRef(null);
@@ -109,6 +120,7 @@ export default function MultiplicationSession() {
   const allowNavigationRef = useRef(false);
   const exitSourceRef = useRef(null);
   const focusRestorePhaseRef = useRef(null);
+  const soundPlayerRef = useRef(null);
   const timer = useTimer();
   const current = questions[currentIndex];
   const isLast = currentIndex === questions.length - 1;
@@ -118,6 +130,12 @@ export default function MultiplicationSession() {
     || phase === PHASES.FINISHED;
   const reducedMotion = typeof window !== 'undefined'
     && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  useEffect(() => {
+    const player = createMultiplicationSoundPlayer();
+    soundPlayerRef.current = player;
+    return () => player.dispose();
+  }, []);
 
   const clearLocateTimers = useCallback(() => {
     locateTimersRef.current.forEach(window.clearTimeout);
@@ -154,6 +172,7 @@ export default function MultiplicationSession() {
     clearAutoTimer();
     clearTargetFeedbackTimer();
     timer.stop();
+    soundPlayerRef.current?.stop();
     advanceLockRef.current = false;
     setPhase(PHASES.LOCATING);
     setLocateStage('idle');
@@ -255,6 +274,7 @@ export default function MultiplicationSession() {
     clearAutoTimer();
     clearTargetFeedbackTimer();
     timer.stop();
+    soundPlayerRef.current?.stop();
   }, [clearAutoTimer, clearLocateTimers, clearTargetFeedbackTimer, timer.stop]);
 
   if (!validState || !current) return null;
@@ -275,6 +295,10 @@ export default function MultiplicationSession() {
     setSubmittedValue(value);
     setAnsweredCells((previous) => recordAnsweredCell(previous, current, value));
     const correct = value === current.answer;
+    if (soundEnabled) {
+      if (correct) soundPlayerRef.current?.playCorrect();
+      else soundPlayerRef.current?.playWrong();
+    }
     setPhase(correct ? PHASES.FEEDBACK_CORRECT : PHASES.FEEDBACK_WRONG);
     setLocateStage('feedback');
     if (!usesChoices) {
@@ -312,6 +336,7 @@ export default function MultiplicationSession() {
     clearAutoTimer();
     clearLocateTimers();
     clearTargetFeedbackTimer();
+    soundPlayerRef.current?.stop();
     if (isLast) {
       if (resultLockRef.current) return;
       resultLockRef.current = true;
@@ -374,6 +399,7 @@ export default function MultiplicationSession() {
     clearAutoTimer();
     clearTargetFeedbackTimer();
     timer.stop();
+    soundPlayerRef.current?.stop();
     exitSourceRef.current = null;
     focusRestorePhaseRef.current = null;
     blocker.proceed?.();
@@ -427,8 +453,24 @@ export default function MultiplicationSession() {
       </section>
 
       <Card className="multiplication-answer-panel">
-        <div className="multiplication-session-meta">
-          第 {currentIndex + 1}/{questions.length} 题 · {phase === PHASES.LOCATING ? '定位中' : `作答 ${timer.formatted}`}
+        <div className="multiplication-session-header">
+          <div className="multiplication-session-meta">
+            第 {currentIndex + 1}/{questions.length} 题 · {phase === PHASES.LOCATING ? '定位中' : `作答 ${timer.formatted}`}
+          </div>
+          <Button
+            type="text"
+            size="small"
+            className="multiplication-sound-toggle"
+            icon={soundEnabled ? <SoundFilled /> : <AudioMutedOutlined />}
+            aria-label={soundEnabled ? '关闭答题音效' : '开启答题音效'}
+            aria-pressed={soundEnabled}
+            onClick={() => {
+              const nextEnabled = !soundEnabled;
+              if (!nextEnabled) soundPlayerRef.current?.stop();
+              setSoundEnabled(nextEnabled);
+              saveMultiplicationSoundEnabled(nextEnabled);
+            }}
+          />
         </div>
         <Typography.Title level={2} className="multiplication-formula">
           {current.a} × {current.b} = ?

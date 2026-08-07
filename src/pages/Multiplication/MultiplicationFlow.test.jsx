@@ -73,6 +73,7 @@ describe('九九乘法最小闭环', () => {
   });
 
   beforeEach(() => {
+    localStorage.clear();
     window.matchMedia = vi.fn().mockImplementation((query) => ({
       matches: query === '(prefers-reduced-motion: reduce)',
       media: query,
@@ -83,6 +84,8 @@ describe('九九乘法最小闭环', () => {
 
   afterEach(() => {
     vi.useRealTimers();
+    delete window.AudioContext;
+    delete window.webkitAudioContext;
   });
 
   it('作答前矩阵目标格不泄露答案，首次选择后锁定并累计开图', () => {
@@ -293,6 +296,67 @@ describe('九九乘法最小闭环', () => {
     fireEvent.keyDown(input, { key: 'Enter' });
     expect(screen.getByText('请输入有效的正整数')).toBeInTheDocument();
     expect(screen.queryByText(/回答正确|正确答案：/)).not.toBeInTheDocument();
+  });
+
+  it('音效默认开启，可静音并跨答题页保留选择', () => {
+    const { unmount } = renderSession();
+    const toggle = screen.getByRole('button', { name: '关闭答题音效' });
+    expect(toggle).toHaveAttribute('aria-pressed', 'true');
+    fireEvent.click(toggle);
+    expect(screen.getByRole('button', { name: '开启答题音效' })).toHaveAttribute('aria-pressed', 'false');
+    expect(localStorage.getItem('multiplication-sound-enabled')).toBe('false');
+
+    unmount();
+    renderSession();
+    expect(screen.getByRole('button', { name: '开启答题音效' })).toHaveAttribute('aria-pressed', 'false');
+    fireEvent.click(screen.getByRole('button', { name: '开启答题音效' }));
+    expect(screen.getByRole('button', { name: '关闭答题音效' })).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  it('有效答案只播放一次对应结果音，无效输入和反馈期重复操作不播放', () => {
+    const frequencies = [];
+    const close = vi.fn().mockResolvedValue(undefined);
+    class AudioContextMock {
+      constructor() {
+        this.currentTime = 0;
+        this.state = 'running';
+        this.destination = {};
+        this.close = close;
+      }
+
+      createOscillator() {
+        return {
+          frequency: { setValueAtTime: (frequency) => frequencies.push(frequency) },
+          connect: vi.fn(), disconnect: vi.fn(), start: vi.fn(), stop: vi.fn(), addEventListener: vi.fn(),
+        };
+      }
+
+      createGain() {
+        return {
+          gain: { setValueAtTime: vi.fn(), exponentialRampToValueAtTime: vi.fn() },
+          connect: vi.fn(), disconnect: vi.fn(),
+        };
+      }
+    }
+    window.AudioContext = AudioContextMock;
+
+    const { unmount } = renderSession(createSessionState('medium'));
+    let input = screen.getByRole('textbox', { name: '4乘4的答案' });
+    fireEvent.change(input, { target: { value: '0' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+    expect(frequencies).toEqual([]);
+    fireEvent.change(input, { target: { value: '16' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+    fireEvent.keyDown(input, { key: 'Enter' });
+    expect(frequencies).toEqual([659.25, 783.99]);
+
+    unmount();
+    expect(close).toHaveBeenCalledTimes(1);
+    renderSession(createSessionState('hard'));
+    input = screen.getByRole('textbox', { name: '4乘4的答案' });
+    fireEvent.change(input, { target: { value: '15' } });
+    fireEvent.click(screen.getByRole('button', { name: '提交答案' }));
+    expect(frequencies).toEqual([659.25, 783.99, 246.94]);
   });
 
   it('超长数字不会进入提交状态或导致页面崩溃', () => {
