@@ -62,4 +62,4 @@ HashRouter（`index.jsx`），所有路径相对于 `/#/`：
 
 ## 版本计划
 
-v2.0–v2.6.0 已完成并发布。v2.6.0“九九乘法闯关”八个步骤全部完成；后续版本待重新规划。阶段性实施记录见 [STEP.md](./STEP.md)，详细规格见 [docs/v2.6-九九乘法闯关实施计划.md](./docs/v2.6-九九乘法闯关实施计划.md)，验收证据见 [docs/v2.6-九九乘法闯关测试与体验验收.md](./docs/v2.6-九九乘法闯关测试与体验验收.md)，发布结果见 [docs/v2.6.0-release-checklist.md](./docs/v2.6.0-release-checklist.md)。
+v2.0–v2.6.0 已完成并发布。v2.6.0“九九乘法闯关”八个步骤全部完成；下一规划版本为 v2.7“九九乘法口诀背诵”，当前步骤 1“产品规格确认”已完成，步骤 2“UE 页面流程设计”为下一步。阶段记录见 [STEP.md](./STEP.md)，v2.7 规格见 [docs/v2.7-九九乘法口诀背诵实施计划.md](./docs/v2.7-九九乘法口诀背诵实施计划.md)，v2.6 发布结果见 [docs/v2.6.0-release-checklist.md](./docs/v2.6.0-release-checklist.md)。
