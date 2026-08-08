@@ -1,0 +1,426 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>v2.7 九九乘法口诀背诵 · 低保真原型</title>
+  <style>
+    :root { color-scheme: light; font-family: system-ui, -apple-system, "Microsoft YaHei", sans-serif; color: #202020; background: #ececec; }
+    * { box-sizing: border-box; }
+    body { margin: 0; }
+    button, select { font: inherit; }
+    button { cursor: pointer; }
+    button:disabled { cursor: not-allowed; }
+    .review { position: sticky; top: 0; z-index: 30; border-bottom: 2px dashed #777; background: #f7f7f7; padding: 10px 14px; }
+    .review strong { margin-right: 12px; }
+    .review-row { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+    .review label { display: inline-flex; align-items: center; gap: 5px; font-size: 13px; }
+    .review button, .review select { min-height: 34px; border: 1px solid #777; border-radius: 5px; background: #fff; padding: 5px 9px; }
+    .review-note { margin: 6px 0 0; color: #555; font-size: 12px; }
+    .review.collapsed { padding-block: 5px; }
+    .review.collapsed .review-row > :not(strong):not(#toggleReview), .review.collapsed .review-note { display: none; }
+    .stage { padding: 18px; overflow-x: auto; }
+    .shell { width: min(100%, 1400px); min-height: 760px; margin: auto; background: #fff; border: 1px solid #999; box-shadow: 0 3px 14px #0002; }
+    .shell[data-preview="768"] { width: 768px; }
+    .shell[data-preview="1024"] { width: 1024px; }
+    .shell[data-preview="1440"] { width: 1400px; }
+    .app-header { min-height: 64px; padding: 0 24px; display: flex; align-items: center; gap: 30px; color: #fff; background: #333; }
+    .brand { font-weight: 750; white-space: nowrap; }
+    .nav { display: flex; gap: 6px; margin-left: auto; }
+    .nav button { border: 0; border-bottom: 3px solid transparent; background: transparent; color: #fff; min-height: 44px; padding: 0 12px; }
+    .nav button[aria-current="page"] { border-bottom-color: #fff; font-weight: 750; }
+    main { padding: 14px 18px 18px; }
+    h1, h2, h3, p { margin-top: 0; }
+    .muted { color: #666; }
+    .panel { border: 1px solid #999; border-radius: 10px; padding: 18px; background: #fff; }
+    .tabs { display: flex; border-bottom: 1px solid #999; margin-bottom: 18px; }
+    .tab { flex: 1; min-height: 48px; border: 0; border-bottom: 4px solid transparent; background: #f4f4f4; font-weight: 700; }
+    .tab[aria-selected="true"] { border-bottom-color: #222; background: #fff; }
+    .options { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 12px 0 20px; }
+    .option { min-height: 90px; border: 2px solid #aaa; border-radius: 8px; background: #fff; padding: 12px; text-align: left; }
+    .option.selected { border-color: #222; box-shadow: inset 0 0 0 1px #222; }
+    .count-row, .actions, .mode-switch { display: flex; gap: 10px; flex-wrap: wrap; }
+    .btn { min-height: 42px; border: 1px solid #555; border-radius: 7px; background: #fff; padding: 8px 16px; font-weight: 650; }
+    .btn.primary { background: #222; color: #fff; }
+    .btn.danger { border-color: #555; background: #555; color: #fff; }
+    .btn[aria-pressed="true"] { box-shadow: inset 0 0 0 2px #222; background: #ddd; }
+    .progress-card { display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: center; }
+    progress { width: 100%; height: 16px; }
+    .recite-command { position: sticky; top: 0; z-index: 20; border: 1px solid #777; border-radius: 9px; background: #fff; margin-bottom: 10px; box-shadow: 0 2px 5px #0002; }
+    .command-row { height: 48px; padding: 5px 7px; display: flex; align-items: center; gap: 7px; overflow: hidden; }
+    .command-row .spacer { flex: 1; }
+    .command-row .btn { min-height: 36px; padding: 5px 10px; white-space: nowrap; }
+    .mode-switch { flex-wrap: nowrap; gap: 4px; }
+    .mode-switch .btn { min-width: 78px; }
+    .progress-copy { white-space: nowrap; }
+    .phrase-summary { flex: 1 1 220px; min-width: 120px; overflow: hidden; text-overflow: ellipsis; font-size: 20px; font-weight: 800; white-space: nowrap; }
+    .phrase-summary .separator { color: #777; padding-inline: 4px; }
+    .command-actions { display: flex; gap: 5px; flex: none; }
+    .command-progress { display: block; width: 100%; height: 3px; border: 0; }
+    .compact-label { display: none; }
+    .status-line { min-height: 24px; padding: 4px 9px; border-left: 4px solid #777; background: #f3f3f3; margin: 0 0 8px; font-size: 13px; }
+    .tables { display: grid; grid-template-columns: minmax(440px, 1fr) minmax(560px, 1.18fr); gap: 12px; align-items: start; }
+    .tables.stack { grid-template-columns: 1fr; }
+    .table-panel { border: 1px solid #888; border-radius: 9px; padding: 7px; min-width: 0; background: #fafafa; }
+    .table-label { min-height: 25px; padding: 0 2px 5px; display: flex; align-items: center; gap: 8px; font-size: 12px; color: #666; }
+    .table-label strong { color: #222; font-size: 14px; white-space: nowrap; }
+    .table-label span { margin-left: auto; text-align: right; }
+    .matrix { display: grid; grid-template-columns: repeat(10, 1fr); border: 1px solid #777; background: #aaa; gap: 1px; }
+    .mcell { position: relative; aspect-ratio: 1; min-width: 0; border: 0; background: #fff; display: grid; place-items: center; font-weight: 750; padding: 1px; }
+    .mcell.header { background: #e8e8e8; cursor: default; }
+    .mcell.available::after { content: "可选"; font-size: 9px; color: #777; }
+    .mcell.available:focus { outline: 3px solid #222; outline-offset: -3px; }
+    .mcell.current { outline: 4px double #111; outline-offset: -4px; background: repeating-linear-gradient(135deg,#fff,#fff 5px,#ddd 5px,#ddd 10px); }
+    .mcell.related { outline: 2px dashed #444; outline-offset: -3px; }
+    .mcell.done { background: #ddd; }
+    .mcell.done::after { content: "✓"; position: absolute; right: 2px; bottom: 0; font-size: 10px; }
+    .phrase-grid { display: grid; grid-template-columns: repeat(9, minmax(0,1fr)); border: 1px solid #777; background: #aaa; gap: 1px; }
+    .pcell, .phrase-header { min-height: 52px; background: #fff; display: flex; align-items: center; justify-content: center; text-align: center; padding: 3px; font-size: 11px; line-height: 1.25; word-break: keep-all; }
+    .phrase-header { background: #e8e8e8; font-weight: 750; }
+    .pcell.empty { background: #f3f3f3; }
+    .pcell.pending { color: #555; }
+    .pcell.current { outline: 4px double #111; outline-offset: -4px; background: repeating-linear-gradient(135deg,#fff,#fff 5px,#ddd 5px,#ddd 10px); font-weight: 800; }
+    .pcell.done, .phrase-header.done { background: #ddd; font-weight: 700; }
+    .modal-backdrop { position: fixed; inset: 0; z-index: 50; background: #0007; display: grid; place-items: center; padding: 20px; }
+    .modal { width: min(420px,100%); border: 2px solid #333; border-radius: 10px; background: #fff; padding: 22px; }
+    .hidden { display: none !important; }
+    .reduce-motion *, .reduce-motion *::before, .reduce-motion *::after { scroll-behavior: auto !important; transition: none !important; animation: none !important; }
+    .storage-warning { border-left-color: #222; font-weight: 700; }
+    .shell[data-preview="768"] .brand .full { display: none; }
+    .shell[data-preview="768"] .tables { grid-template-columns: 1fr; }
+    .shell[data-preview="768"] .nav button { padding: 0 7px; font-size: 13px; }
+    .shell[data-preview="768"] main { padding: 10px; }
+    .shell[data-preview="768"] .command-row { gap: 4px; padding-inline: 4px; }
+    .shell[data-preview="768"] .command-row .btn { min-height: 34px; padding-inline: 7px; font-size: 13px; }
+    .shell[data-preview="768"] .mode-switch { gap: 2px; }
+    .shell[data-preview="768"] .mode-switch .btn { min-width: 0; }
+    .shell[data-preview="768"] .phrase-summary { flex-basis: 125px; min-width: 100px; font-size: 16px; }
+    .shell[data-preview="768"] .command-actions { gap: 2px; }
+    .shell[data-preview="768"] .progress-copy { font-size: 13px; }
+    .shell[data-preview="768"] .wide-label { display: none; }
+    .shell[data-preview="768"] .compact-label { display: inline; }
+    .shell[data-preview="1024"][data-layout="stack"] .tables { grid-template-columns: 1fr; }
+    .shell[data-preview="1024"][data-layout="stack"] .table-panel:first-child { width: min(100%, 650px); justify-self: center; }
+    .shell[data-preview="1024"][data-layout="side"] .tables { grid-template-columns: minmax(390px,.9fr) minmax(470px,1.1fr); }
+    .shell[data-preview="1024"][data-layout="side"] .pcell { min-height: 48px; font-size: 9px; }
+    .shell[data-preview="1440"] .tables { align-items: start; }
+    .shell[data-preview="1440"] .table-panel { display: flex; flex-direction: column; height: 573px; min-height: 573px; max-height: 573px; overflow: hidden; }
+    .shell[data-preview="1440"] .matrix, .shell[data-preview="1440"] .phrase-grid { flex: 0 0 532px; height: 532px; min-height: 0; max-height: 532px; overflow: hidden; grid-template-rows: repeat(10, minmax(0, 1fr)); grid-auto-rows: minmax(0, 1fr); }
+    .shell[data-preview="1440"] .matrix > *, .shell[data-preview="1440"] .phrase-grid > * { min-height: 0; min-block-size: 0; overflow: hidden; }
+    .shell[data-preview="1440"] .mcell { aspect-ratio: auto; }
+    @media (max-width: 820px) { .stage { padding: 0; } }
+  </style>
+</head>
+<body>
+  <section class="review" aria-label="原型评审工具">
+    <div class="review-row">
+      <strong>评审工具（不进入产品）</strong>
+      <button id="toggleReview" aria-expanded="true">收起工具条</button>
+      <label>预览宽度
+        <select id="previewSelect"><option value="768">768</option><option value="1024" selected>1024</option><option value="1440">1440</option></select>
+      </label>
+      <label>关键状态
+        <select id="fixtureSelect">
+          <option value="challenge" selected>闯关设置</option><option value="recitation">背诵设置·无会话</option>
+          <option value="sequential">顺序背</option><option value="custom">自定义背</option>
+          <option value="mixed">混合进度 12/45</option><option value="near">44/45</option><option value="complete">45/45</option>
+          <option value="speaking">正在领读</option><option value="speech-off">语音不可用</option>
+          <option value="storage-error">存储失败</option><option value="corrupt">损坏数据回退</option><option value="reset">重置确认</option>
+        </select>
+      </label>
+      <label>1024 布局
+        <select id="layoutSelect"><option value="side">左右并排</option><option value="stack" selected>上下排列</option></select>
+      </label>
+      <label><input id="reduceToggle" type="checkbox"> 减少动态效果</label>
+      <button id="clearDemo">清除演示存储</button>
+    </div>
+    <p class="review-note">正常体验可直接操作；评审状态只用于快速查看边界场景。原型存储键：<code>v2.7-recitation-low-fi-session</code></p>
+  </section>
+
+  <div class="stage">
+    <div class="shell" id="shell" data-preview="1024" data-layout="stack">
+      <header class="app-header">
+        <div class="brand"><span class="full">那年那数那些事</span><span class="short">九九乘法</span></div>
+        <nav class="nav" aria-label="主导航">
+          <button>首页</button><button>错题列表</button><button>计算训练</button><button aria-current="page" id="navMultiplication">九九乘法</button>
+        </nav>
+      </header>
+      <main id="app"></main>
+    </div>
+  </div>
+
+  <div id="modalRoot"></div>
+  <script>
+    (() => {
+      const STORAGE_KEY = 'v2.7-recitation-low-fi-session';
+      const cn = ['', '一','二','三','四','五','六','七','八','九'];
+      const resultText = value => {
+        if (value < 10) return cn[value];
+        const tens = Math.floor(value / 10), ones = value % 10;
+        return `${tens === 1 ? '一' : cn[tens]}十${ones ? cn[ones] : ''}`;
+      };
+      const phrases = [];
+      for (let n = 1; n <= 9; n++) for (let k = 1; k <= n; k++) {
+        const product = k * n;
+        phrases.push({ id: `${k}×${n}`, k, n, product, text: `${cn[k]}${cn[n]}${product < 10 ? '得' : ''}${resultText(product)}` });
+      }
+      const phraseById = new Map(phrases.map(p => [p.id, p]));
+      const canonicalId = (a,b) => `${Math.min(a,b)}×${Math.max(a,b)}`;
+      const emptySession = () => ({ schemaVersion: 1, orderingMode: 'sequential', currentPhraseId: '1×1', selectedCoordinate: null, completedPhraseIds: [], updatedAt: new Date().toISOString() });
+      const state = { screen: 'settings', tab: 'challenge', session: null, current: null, speaking: false, speechAvailable: 'speechSynthesis' in window, storageError: false, modal: false, fixture: '' };
+      let speechTimer = null;
+
+      function normalizeSession(raw) {
+        if (!raw || raw.schemaVersion !== 1 || !['sequential','custom'].includes(raw.orderingMode) || !Array.isArray(raw.completedPhraseIds)) return null;
+        const completed = [...new Set(raw.completedPhraseIds)].filter(id => phraseById.has(id));
+        if (completed.length !== raw.completedPhraseIds.length) return null;
+        const current = raw.currentPhraseId == null || phraseById.has(raw.currentPhraseId) ? raw.currentPhraseId : null;
+        return { ...raw, currentPhraseId: current, completedPhraseIds: completed };
+      }
+      function loadSession() { try { return normalizeSession(JSON.parse(localStorage.getItem(STORAGE_KEY))); } catch { return null; } }
+      function saveSession() {
+        if (!state.session) return;
+        state.session.updatedAt = new Date().toISOString();
+        try {
+          if (state.fixture === 'storage-error') throw new DOMException('模拟空间不足','QuotaExceededError');
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(state.session));
+        } catch { state.storageError = true; }
+      }
+      function cancelSpeech() {
+        clearTimeout(speechTimer); speechTimer = null;
+        try { window.speechSynthesis?.cancel(); } catch {}
+        state.speaking = false;
+      }
+      function beginSpeech() {
+        cancelSpeech();
+        if (!state.current) return render();
+        if (!state.speechAvailable) { state.speaking = false; return render(); }
+        state.speaking = true; render();
+        const finish = () => { if (!state.speaking) return; state.speaking = false; render(); focusConfirm(); };
+        speechTimer = setTimeout(finish, 1900);
+        try {
+          const utterance = new SpeechSynthesisUtterance(state.current.phrase.text);
+          utterance.lang = 'zh-CN'; utterance.rate = .85; utterance.onend = finish; utterance.onerror = finish;
+          window.speechSynthesis.cancel(); window.speechSynthesis.speak(utterance);
+        } catch { finish(); }
+      }
+      function focusConfirm() { requestAnimationFrame(() => document.getElementById('confirmPhrase')?.focus()); }
+      function firstIncomplete() { const done = new Set(state.session?.completedPhraseIds || []); return phrases.find(p => !done.has(p.id)) || null; }
+      function setCurrent(phrase, coordinate = null, speak = true) {
+        state.current = phrase ? { phrase, coordinate: coordinate || { a: phrase.k, b: phrase.n } } : null;
+        if (state.session) { state.session.currentPhraseId = phrase?.id || null; state.session.selectedCoordinate = coordinate; saveSession(); }
+        if (speak && phrase) beginSpeech(); else render();
+      }
+      function startSession() {
+        state.session = emptySession(); state.screen = 'recitation'; state.storageError = false; history.replaceState(null,'','?mode=recitation&page=recitation'); saveSession(); setCurrent(phrases[0]);
+      }
+      function resumeSession() {
+        state.session = loadSession();
+        if (!state.session) { state.tab = 'recitation'; state.screen = 'settings'; state.fixture = 'corrupt'; return render(); }
+        state.screen = 'recitation'; history.replaceState(null,'','?mode=recitation&page=recitation');
+        if (state.session.completedPhraseIds.length === 45) { state.current = null; return render(); }
+        if (state.session.orderingMode === 'sequential') return setCurrent(firstIncomplete());
+        const coordinate = state.session.selectedCoordinate;
+        const id = coordinate && canonicalId(coordinate.a, coordinate.b);
+        if (id && !state.session.completedPhraseIds.includes(id)) return setCurrent(phraseById.get(id), coordinate);
+        setCurrent(null, null, false);
+      }
+      function switchMode(mode) {
+        cancelSpeech();
+        state.session.orderingMode = mode; state.session.selectedCoordinate = null; state.session.currentPhraseId = null; saveSession();
+        if (mode === 'sequential') setCurrent(firstIncomplete()); else setCurrent(null, null, false);
+      }
+      function selectCoordinate(a,b) {
+        if (state.session.orderingMode !== 'custom') return;
+        const id = canonicalId(a,b); if (state.session.completedPhraseIds.includes(id)) return;
+        setCurrent(phraseById.get(id), { a,b });
+      }
+      function confirmPhrase() {
+        if (!state.current || state.speaking) return;
+        const id = state.current.phrase.id;
+        if (state.session.completedPhraseIds.includes(id)) return;
+        state.session.completedPhraseIds = [...state.session.completedPhraseIds, id];
+        state.session.currentPhraseId = null; state.session.selectedCoordinate = null; saveSession();
+        const mode = state.session.orderingMode; state.current = null; render();
+        if (state.session.completedPhraseIds.length === 45) return;
+        if (mode === 'sequential') setTimeout(() => setCurrent(firstIncomplete()), 80);
+        else setTimeout(() => { render(); focusFirstAvailable(); }, 80);
+      }
+      function focusFirstAvailable() { document.querySelector('.mcell.available')?.focus(); }
+      function resetSession() { cancelSpeech(); state.modal = false; state.session = emptySession(); saveSession(); state.screen = 'recitation'; setCurrent(phrases[0]); }
+      function openReset() { state.modal = true; renderModal(); }
+      function closeReset() { state.modal = false; renderModal(); document.getElementById('resetBtn')?.focus(); }
+
+      function renderCommandBar(complete) {
+        const count = state.session?.completedPhraseIds.length || 0;
+        const mode = state.session.orderingMode;
+        let subject;
+        let speechControl;
+        let confirmDisabled = '';
+        if (complete) {
+          subject = `45句全部背完<span class="separator">·</span>两张表已展开`;
+          speechControl = `<button class="btn" disabled>再听一遍</button>`;
+          confirmDisabled = 'disabled';
+        } else if (!state.current) {
+          subject = `请从乘法表选择未背口诀`;
+          speechControl = `<button class="btn" disabled>再听一遍</button>`;
+          confirmDisabled = 'disabled';
+        } else {
+          const { phrase, coordinate } = state.current;
+          const formula = `${coordinate.a} × ${coordinate.b} = ${phrase.product}`;
+          subject = `${formula}<span class="separator">·</span>${phrase.text}`;
+          speechControl = !state.speechAvailable
+            ? `<button class="btn" disabled>语音不可用</button>`
+            : state.speaking
+              ? `<button class="btn" id="stopSpeech"><span class="wide-label">停止领读</span><span class="compact-label">停止</span></button>`
+              : `<button class="btn" id="replaySpeech">再听一遍</button>`;
+          confirmDisabled = state.speaking ? 'disabled' : '';
+        }
+        return `<section class="recite-command" aria-label="背诵控制区"><div class="command-row"><button class="btn" id="backSettings">← <span class="wide-label">背诵设置</span><span class="compact-label">返回</span></button><div class="mode-switch" aria-label="背诵方式"><button class="btn" data-mode="sequential" aria-pressed="${mode==='sequential'}">顺序背</button><button class="btn" data-mode="custom" aria-pressed="${mode==='custom'}">自定义背</button></div><div class="phrase-summary" title="${subject.replace(/<[^>]+>/g,'')}">${subject}</div><div class="command-actions">${speechControl}<button class="btn primary" id="confirmPhrase" ${confirmDisabled}>我背完了</button></div><strong class="progress-copy">${count}/45</strong><button class="btn" id="resetBtn"><span class="wide-label">重新开始</span><span class="compact-label">重置</span></button></div><progress class="command-progress" value="${count}" max="45" aria-label="已背 ${count} 句，共45句"></progress></section>`;
+      }
+      function renderSettings() {
+        const sess = loadSession(); const count = sess?.completedPhraseIds.length || 0;
+        const message = state.fixture === 'corrupt' ? `<div class="status-line">演示：检测到损坏会话，已安全回到背诵设置，请重新开始。</div>` : '';
+        return `<h1>九九乘法</h1><p class="muted">做题闯关，或者跟着语音背熟45句乘法口诀。</p>${message}
+          <div class="tabs" role="tablist"><button class="tab" role="tab" data-tab="challenge" aria-selected="${state.tab==='challenge'}">闯关</button><button class="tab" role="tab" data-tab="recitation" aria-selected="${state.tab==='recitation'}">背诵</button></div>
+          <section class="panel" role="tabpanel">${state.tab === 'challenge' ? renderChallengeSettings() : renderRecitationSettings(sess,count)}</section>`;
+      }
+      function renderChallengeSettings() {
+        return `<h2>闯关设置</h2><p class="muted">沿着乘法矩阵找到答案，一题一题点亮九九乘法表。</p><h3>难度</h3><div class="options"><button class="option selected"><b>简单</b><br><small>整行整列提示 · 四选一</small></button><button class="option"><b>提升</b><br><small>相邻提示 · 自己填写</small></button><button class="option"><b>挑战</b><br><small>隐藏答案 · 自己填写</small></button></div><h3>题目数量</h3><div class="count-row"><button class="btn" aria-pressed="true">10题</button><button class="btn">20题</button><button class="btn">50题</button><button class="btn">81题</button></div><p></p><button class="btn primary">开始闯关</button>`;
+      }
+      function renderRecitationSettings(sess,count) {
+        if (!sess) return `<h2>口诀背诵</h2><p>按顺序背，或从乘法表自由选择。背完一句，点亮相关算式。</p><div class="progress-card"><div><strong>还没有开始</strong><br><span class="muted">进度 0/45</span></div><button class="btn primary" id="startRecitation">开始背诵</button></div>`;
+        const complete = count === 45;
+        return `<h2>口诀背诵</h2><p>顺序背和自定义背共享同一份进度。</p><div class="progress-card"><div><strong>${complete ? '整张口诀表已经背完' : `已背 ${count}/45 句`}</strong><progress value="${count}" max="45"></progress><br><span class="muted">上次方式：${sess.orderingMode === 'custom' ? '自定义背' : '顺序背'}</span></div><div class="actions"><button class="btn primary" id="resumeRecitation">${complete ? '查看完成结果' : '继续背诵'}</button><button class="btn" id="resetFromSettings">重新开始</button></div></div>`;
+      }
+      function renderMatrix() {
+        const done = new Set(state.session.completedPhraseIds); const current = state.current;
+        let assignedTabStop = false;
+        let html = `<div class="matrix" role="grid" aria-label="九九乘法表"><div class="mcell header">×</div>`;
+        for (let b=1;b<=9;b++) html += `<div class="mcell header" role="columnheader">${b}</div>`;
+        for (let a=1;a<=9;a++) {
+          html += `<div class="mcell header" role="rowheader">${a}</div>`;
+          for (let b=1;b<=9;b++) {
+            const id = canonicalId(a,b), isDone = done.has(id), isCurrent = current && current.coordinate.a===a && current.coordinate.b===b;
+            const isRelated = current && !isCurrent && current.coordinate.a===b && current.coordinate.b===a;
+            const selectable = state.session.orderingMode==='custom' && !isDone && !current;
+            const tabIndex = selectable && !assignedTabStop ? 0 : -1;
+            if (selectable && !assignedTabStop) assignedTabStop = true;
+            const cls = `mcell ${isDone?'done':''} ${isCurrent?'current':''} ${isRelated?'related':''} ${selectable?'available':''}`;
+            const label = isDone ? `${a}乘${b}等于${a*b}，已完成` : selectable ? `${a}乘${b}，未完成，可选择` : isCurrent ? `${a}乘${b}，当前口诀` : `${a}乘${b}，未完成`;
+            html += `<button class="${cls}" role="gridcell" data-a="${a}" data-b="${b}" aria-label="${label}" tabindex="${tabIndex}" ${selectable?'':'disabled'}>${isDone?a*b:(isCurrent?'当前':'')}</button>`;
+          }
+        }
+        return html + '</div>';
+      }
+      function renderPhraseGrid() {
+        const done = new Set(state.session.completedPhraseIds), currentId = state.current?.phrase.id;
+        let html = `<div class="phrase-grid" role="grid" aria-label="45句口诀表">`;
+        for (let n=1;n<=9;n++) {
+          const groupDone = Array.from({length:n},(_,i)=>`${i+1}×${n}`).every(id=>done.has(id));
+          html += `<div class="phrase-header ${groupDone?'done':''}" role="columnheader" aria-label="第${cn[n]}组，${groupDone?'已背完':'未背完'}">${cn[n]}</div>`;
+        }
+        for (let n=1;n<=9;n++) for (let k=1;k<=9;k++) {
+          if (k>n) { html += `<div class="pcell empty" aria-hidden="true"></div>`; continue; }
+          const p = phraseById.get(`${k}×${n}`), isDone=done.has(p.id), isCurrent=currentId===p.id;
+          html += `<div class="pcell ${isDone?'done':isCurrent?'current':'pending'}" role="gridcell" aria-label="${isDone?p.text+'，已完成':isCurrent?p.text+'，正在背':cn[k]+cn[n]+'，未完成'}">${isDone||isCurrent?p.text:`${cn[k]}${cn[n]} ···`}</div>`;
+        }
+        return html + '</div>';
+      }
+      function renderRecitation() {
+        if (!state.session) return '';
+        const count = state.session.completedPhraseIds.length, complete = count===45;
+        const warning = state.storageError ? `<div class="status-line storage-warning">本次可以继续，但演示存储失败，离开后可能无法恢复。</div>` : '';
+        const layout = document.getElementById('layoutSelect')?.value || 'side';
+        const stack = shell.dataset.preview==='768' || (shell.dataset.preview==='1024' && layout==='stack');
+        const matrixHint = state.session.orderingMode==='custom'&&!state.current ? '请选择一个未完成格' : '完成后展开对称算式';
+        return `${renderCommandBar(complete)}${warning}<section class="tables ${stack?'stack':''}"><section class="table-panel" aria-labelledby="matrixTitle"><div class="table-label"><strong id="matrixTitle">乘法表</strong><span>${matrixHint}</span></div>${renderMatrix()}</section><section class="table-panel" aria-labelledby="phraseTableTitle"><div class="table-label"><strong id="phraseTableTitle">45句口诀表</strong><span>未背 / 当前 / 已背</span></div>${renderPhraseGrid()}</section></section>`;
+      }
+      function render() {
+        app.innerHTML = state.screen==='settings' ? renderSettings() : renderRecitation();
+        bind(); renderModal();
+      }
+      function renderModal() {
+        modalRoot.innerHTML = state.modal ? `<div class="modal-backdrop"><section class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle"><h2 id="modalTitle">重新开始背诵？</h2><p>已完成的口诀会全部清空，并从“一一得一”重新开始。</p><div class="actions"><button class="btn" id="cancelReset" autofocus>继续保留</button><button class="btn danger" id="confirmReset">清空并重新开始</button></div></section></div>` : '';
+        document.getElementById('cancelReset')?.focus();
+        document.getElementById('cancelReset')?.addEventListener('click', closeReset);
+        document.getElementById('confirmReset')?.addEventListener('click', resetSession);
+      }
+      function bind() {
+        document.querySelectorAll('[data-tab]').forEach(btn => btn.onclick = () => { state.tab=btn.dataset.tab; history.replaceState(null,'',`?mode=${state.tab}`); render(); });
+        document.getElementById('startRecitation')?.addEventListener('click', startSession);
+        document.getElementById('resumeRecitation')?.addEventListener('click', resumeSession);
+        document.getElementById('resetFromSettings')?.addEventListener('click', openReset);
+        document.getElementById('resetBtn')?.addEventListener('click', openReset);
+        document.getElementById('backSettings')?.addEventListener('click', () => { cancelSpeech(); state.screen='settings'; state.tab='recitation'; history.replaceState(null,'','?mode=recitation'); render(); });
+        document.querySelectorAll('[data-mode]').forEach(btn => btn.onclick=()=>switchMode(btn.dataset.mode));
+        document.querySelectorAll('.mcell.available').forEach(btn => btn.onclick=()=>selectCoordinate(+btn.dataset.a,+btn.dataset.b));
+        document.querySelector('.matrix')?.addEventListener('keydown', event => {
+          const target = event.target.closest('.mcell[data-a][data-b]');
+          if (!target || !['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(event.key)) return;
+          event.preventDefault();
+          const delta = { ArrowLeft:[0,-1], ArrowRight:[0,1], ArrowUp:[-1,0], ArrowDown:[1,0] }[event.key];
+          let a=+target.dataset.a, b=+target.dataset.b;
+          for (let i=0;i<9;i++) {
+            a+=delta[0]; b+=delta[1];
+            if (a<1||a>9||b<1||b>9) break;
+            const next=document.querySelector(`.mcell[data-a="${a}"][data-b="${b}"]`);
+            if (next && !next.disabled) {
+              document.querySelectorAll('.mcell.available').forEach(cell => cell.tabIndex=-1);
+              next.tabIndex=0; next.focus(); break;
+            }
+          }
+        });
+        document.getElementById('stopSpeech')?.addEventListener('click', () => { cancelSpeech(); render(); focusConfirm(); });
+        document.getElementById('replaySpeech')?.addEventListener('click', beginSpeech);
+        document.getElementById('confirmPhrase')?.addEventListener('click', confirmPhrase);
+      }
+      function fixtureCompleted(count) { return phrases.slice(0,count).map(p=>p.id); }
+      function applyFixture(name) {
+        cancelSpeech(); state.fixture=name; state.storageError=false; state.speechAvailable='speechSynthesis' in window; state.modal=false;
+        if (name==='challenge' || name==='recitation' || name==='corrupt') {
+          state.screen='settings'; state.tab=name==='challenge'?'challenge':'recitation'; state.session=null; state.current=null;
+          if (name==='corrupt') localStorage.setItem(STORAGE_KEY,'{"schemaVersion":99,"bad":true}');
+          else if (name==='recitation') localStorage.removeItem(STORAGE_KEY);
+          return render();
+        }
+        const count = name==='mixed'?12:name==='near'?44:name==='complete'?45:0;
+        state.session=emptySession(); state.session.completedPhraseIds=fixtureCompleted(count); state.screen='recitation';
+        state.session.orderingMode = name==='custom'?'custom':'sequential';
+        if (name==='speech-off') state.speechAvailable=false;
+        if (name==='storage-error') state.storageError=true;
+        saveSession();
+        if (count===45) { state.current=null; return render(); }
+        if (name==='custom') { state.current=null; return render(); }
+        const p=firstIncomplete(); state.current={phrase:p,coordinate:{a:p.k,b:p.n}};
+        if (name==='speaking') { state.speaking=true; render(); }
+        else render();
+        if (name==='reset') { state.modal=true; renderModal(); }
+      }
+
+      previewSelect.onchange = () => { shell.dataset.preview=previewSelect.value; render(); };
+      layoutSelect.onchange = () => { shell.dataset.layout=layoutSelect.value; render(); };
+      fixtureSelect.onchange = () => applyFixture(fixtureSelect.value);
+      reduceToggle.onchange = () => shell.classList.toggle('reduce-motion',reduceToggle.checked);
+      clearDemo.onclick = () => { localStorage.removeItem(STORAGE_KEY); applyFixture('recitation'); fixtureSelect.value='recitation'; };
+      toggleReview.onclick = () => {
+        const collapsed = document.querySelector('.review').classList.toggle('collapsed');
+        toggleReview.textContent = collapsed ? '展开工具条' : '收起工具条';
+        toggleReview.setAttribute('aria-expanded', String(!collapsed));
+      };
+      navMultiplication.onclick = () => { const fromRecitation=state.screen==='recitation'; cancelSpeech(); state.screen='settings'; state.tab=fromRecitation?'recitation':'challenge'; history.replaceState(null,'',`?mode=${state.tab}`); render(); };
+
+      const params = new URLSearchParams(location.search);
+      const requested = params.get('mode');
+      state.tab = requested === 'recitation' ? 'recitation' : 'challenge';
+      if (params.get('page') === 'recitation') {
+        state.session = loadSession();
+        if (state.session) resumeSession();
+        else { state.screen='settings'; state.tab='recitation'; state.fixture='corrupt'; render(); }
+      } else {
+        state.screen='settings'; render();
+      }
+    })();
+  </script>
+</body>
+</html>
