@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>v2.7 九九乘法口诀背诵 · UI视觉原型</title>
+  <style>
+    html, body, iframe { width: 100%; height: 100%; margin: 0; border: 0; }
+    body { overflow: hidden; background: #eef3f8; }
+  </style>
+</head>
+<body>
+  <iframe id="prototype" src="./v2.7-recitation-low-fi.html?visual=high-fi-v1" title="v2.7 九九乘法口诀背诵UI视觉原型"></iframe>
+  <script>
+    const frame = document.querySelector('#prototype');
+    frame.addEventListener('load', () => {
+      const doc = frame.contentDocument;
+      doc.title = 'v2.7 九九乘法口诀背诵 · UI视觉原型';
+      doc.querySelector('.review-note').textContent = '高保真评审工具仅用于切换视口与状态，不属于正式产品界面。Chrome自动检查；Firefox请复核双表行线。';
+
+      const preview = doc.querySelector('#previewSelect');
+      const wide = doc.createElement('option');
+      wide.value = '1920';
+      wide.textContent = '1920';
+      preview.appendChild(wide);
+
+      const theme = doc.createElement('style');
+      theme.textContent = `
+        :root {
+          --brand: #1677ff;
+          --brand-strong: #0958d9;
+          --brand-soft: #e6f4ff;
+          --learned: #0f766e;
+          --learned-accent: #14b8a6;
+          --learned-soft: #e8f7f4;
+          --learned-soft-strong: #d5f2ec;
+          --ink: #1f2937;
+          --muted-ink: #526173;
+          --weak-ink: #7b8794;
+          --line: #cdd8e3;
+          --line-strong: #9fb1c2;
+          --surface: #fff;
+          --paper: #fbfdfd;
+          --page: #f3f7fa;
+          color: var(--ink);
+          background: var(--page);
+        }
+        body {
+          background:
+            linear-gradient(rgb(15 118 110 / 2.5%) 1px, transparent 1px),
+            linear-gradient(90deg, rgb(22 119 255 / 2.5%) 1px, transparent 1px),
+            var(--page);
+          background-size: 24px 24px;
+        }
+        button, select { transition: transform 140ms ease, box-shadow 180ms ease, border-color 180ms ease, background 180ms ease; }
+        button:hover:not(:disabled) { transform: translateY(-1px); }
+        button:active:not(:disabled) { transform: scale(.98); }
+        button:focus-visible, select:focus-visible { outline: 3px solid rgb(22 119 255 / 32%); outline-offset: 2px; }
+        .review { border: 0; border-bottom: 1px solid #c7d3df; background: #eaf0f6; box-shadow: 0 2px 8px rgb(31 35 41 / 8%); }
+        .review strong { color: #34495e; }
+        .review button, .review select { border-color: #b8c6d3; border-radius: 8px; color: #34495e; }
+        .stage { padding: 16px; }
+        .shell { border: 0; border-radius: 16px; overflow: hidden; background: rgb(255 255 255 / 96%); box-shadow: 0 12px 36px rgb(31 35 41 / 14%); }
+        .shell[data-preview="1920"] { width: 1400px; }
+        .app-header { border: 0; background: linear-gradient(100deg, #102a43, #164e87); box-shadow: 0 2px 10px rgb(16 42 67 / 22%); }
+        .brand { letter-spacing: .02em; }
+        .nav button { border-radius: 8px 8px 0 0; }
+        .nav button:hover { background: rgb(255 255 255 / 10%); }
+        .nav button[aria-current="page"] { border-bottom-color: #69b1ff; background: rgb(255 255 255 / 12%); }
+        main { background: rgb(255 255 255 / 38%); }
+        .panel, .progress-card { border-color: #e1e8ef; border-radius: 12px; box-shadow: 0 8px 24px rgb(31 35 41 / 7%); }
+        .tabs { border-color: var(--line); }
+        .tab { color: var(--muted-ink); background: #f4f7fa; }
+        .tab[aria-selected="true"] { border-bottom-color: var(--brand); color: var(--brand-strong); background: #fff; }
+        .option, .btn { border-color: var(--line-strong); border-radius: 8px; color: var(--ink); box-shadow: 0 2px 5px rgb(31 35 41 / 5%); }
+        .option.selected, .btn[aria-pressed="true"] { border-color: var(--brand); background: var(--brand-soft); color: var(--brand-strong); box-shadow: 0 0 0 3px rgb(22 119 255 / 12%); }
+        .btn.primary { border-color: var(--brand-strong); background: linear-gradient(180deg, #4096ff, var(--brand)); color: #fff; box-shadow: 0 4px 10px rgb(22 119 255 / 24%); }
+        .btn.danger { border-color: #b42318; background: #b42318; color: #fff; }
+        .btn:disabled { color: #9aa5b1; background: #eef2f5; box-shadow: none; opacity: 1; }
+        progress { accent-color: var(--brand); }
+        .recite-command { border-color: #d6e0e8; border-radius: 12px; box-shadow: 0 7px 20px rgb(31 35 41 / 10%); }
+        .phrase-summary { color: #123b58; font-variant-numeric: tabular-nums; animation: phrase-in 220ms ease-out; }
+        .phrase-summary .separator { color: var(--learned-accent); }
+        .command-progress { accent-color: var(--brand); }
+        .storage-warning { border-left-color: #ad6800; color: #873800; background: #fff7e6; }
+        .tables { gap: 14px; }
+        .table-panel { border-color: #d6e0e8; border-radius: 14px; background: rgb(255 255 255 / 96%); box-shadow: 0 8px 24px rgb(31 35 41 / 8%); }
+        .table-label { color: var(--muted-ink); }
+        .table-label strong { color: #24435c; letter-spacing: .03em; }
+        .matrix, .phrase-grid { border-color: #aebdca; border-radius: 10px; background: #d6e0e8; overflow: hidden; }
+        .mcell, .pcell, .phrase-header { color: #34495e; background: var(--paper); }
+        .mcell.header, .phrase-header { color: #24435c; background: #edf4fa; }
+        .mcell.available { background: #fff; color: var(--brand-strong); }
+        .mcell.available::after { content: "可选"; color: var(--brand-strong); font-weight: 700; }
+        .mcell.available:hover { background: var(--brand-soft); box-shadow: inset 0 0 0 2px #69b1ff; }
+        .mcell.available:focus { outline-color: var(--brand-strong); }
+        .mcell.current, .pcell.current { outline: 3px double var(--brand-strong); background: repeating-linear-gradient(135deg, #fff, #fff 6px, var(--brand-soft) 6px, var(--brand-soft) 12px); color: var(--brand-strong); box-shadow: inset 0 0 0 2px #fff; }
+        .mcell.related { outline: 2px dashed var(--learned); background: color-mix(in srgb, var(--learned-soft) 68%, white); }
+        .mcell.done { background: var(--learned-soft); color: var(--learned); }
+        .mcell.done::after { color: var(--learned); font-weight: 900; }
+        .pcell.pending { color: #66788a; background: #fff; }
+        .pcell.empty { background: #f5f8fa; }
+        .pcell.done, .phrase-header.done { color: var(--learned); background: var(--learned-soft-strong); font-weight: 750; }
+        .modal-backdrop { backdrop-filter: blur(3px); background: rgb(16 42 67 / 42%); }
+        .modal { border: 0; border-radius: 14px; box-shadow: 0 18px 48px rgb(0 0 0 / 24%); }
+        .newly-learned { animation: learned-open 240ms ease-out; }
+        .complete-glow .table-panel { animation: complete-glow 680ms ease-out; }
+        .shell[data-preview="1920"] .tables { align-items: start; }
+        .shell[data-preview="1920"] .table-panel { display: flex; flex-direction: column; height: 573px; min-height: 573px; max-height: 573px; overflow: hidden; }
+        .shell[data-preview="1920"] .matrix, .shell[data-preview="1920"] .phrase-grid { flex: 0 0 532px; height: 532px; min-height: 0; max-height: 532px; overflow: hidden; grid-template-rows: repeat(10, minmax(0,1fr)); grid-auto-rows: minmax(0,1fr); }
+        .shell[data-preview="1920"] .matrix > *, .shell[data-preview="1920"] .phrase-grid > * { min-height: 0; min-block-size: 0; overflow: hidden; }
+        .shell[data-preview="1920"] .mcell { aspect-ratio: auto; }
+        @keyframes phrase-in { from { opacity: .55; transform: translateY(2px); } to { opacity: 1; transform: none; } }
+        @keyframes learned-open { 0% { transform: scale(.94); background: #fff; } 65% { transform: scale(1.025); } 100% { transform: none; } }
+        @keyframes complete-glow { 45% { border-color: var(--learned-accent); box-shadow: 0 0 0 4px rgb(20 184 166 / 14%), 0 12px 32px rgb(15 118 110 / 16%); } }
+        @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+      `;
+      doc.head.appendChild(theme);
+
+      const shell = doc.querySelector('#shell');
+      const known = new Set();
+      let completionPlayed = false;
+      function syncVisualState() {
+        doc.querySelectorAll('.pcell.done, .mcell.done').forEach((cell) => {
+          const key = `${cell.classList.contains('pcell') ? 'p' : 'm'}:${cell.getAttribute('aria-label')}`;
+          if (!known.has(key)) cell.classList.add('newly-learned');
+          known.add(key);
+        });
+        const complete = doc.querySelectorAll('.pcell.done').length === 45;
+        if (complete && !completionPlayed) {
+          shell.classList.add('complete-glow');
+          completionPlayed = true;
+        } else if (!complete) {
+          shell.classList.remove('complete-glow');
+          completionPlayed = false;
+        }
+      }
+      function scheduleVisualSync() {
+        doc.defaultView.requestAnimationFrame(syncVisualState);
+        doc.defaultView.setTimeout(syncVisualState, 160);
+      }
+      doc.addEventListener('click', scheduleVisualSync, true);
+      doc.addEventListener('change', scheduleVisualSync, true);
+      doc.addEventListener('keydown', scheduleVisualSync, true);
+      scheduleVisualSync();
+    });
+  </script>
+</body>
+</html>
