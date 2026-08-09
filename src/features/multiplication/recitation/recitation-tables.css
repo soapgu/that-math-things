@@ -1,0 +1,23 @@
+.recitation-table-panel { box-sizing: border-box; min-width: 0; height: 573px; padding: 8px; overflow: hidden; border: 1px solid #b8c8d4; border-radius: 14px; background: #fff; }
+.recitation-panel-label { display: flex; height: 24px; align-items: center; justify-content: space-between; color: #617080; font-size: 13px; }
+.recitation-panel-label strong { color: #1f2d3d; font-size: 16px; }
+.recitation-grid { box-sizing: border-box; display: grid; height: 532px; min-height: 532px; max-height: 532px; grid-template-rows: repeat(10, minmax(0, 1fr)); overflow: hidden; border: 1px solid #aab8c4; }
+.recitation-grid-row { display: grid; min-height: 0; grid-template-columns: repeat(10, minmax(0, 1fr)); }
+.phrase-grid .recitation-grid-row { grid-template-columns: repeat(9, minmax(0, 1fr)); }
+.recitation-cell { position: relative; display: grid; min-width: 0; min-height: 0; place-items: center; overflow: hidden; border: 0; border-right: 1px solid #cad4dc; border-bottom: 1px solid #cad4dc; background: #fff; color: #263746; font: inherit; font-size: 14px; }
+.table-header, .phrase-header { background: #edf3f7; font-weight: 700; }
+.matrix-cell[data-state="done"], .phrase-cell[data-state="done"], .phrase-header[data-state="done"] { background: #d5f2ec; color: #0f766e; font-weight: 700; }
+.matrix-cell[data-state="current"], .phrase-cell[data-state="current"] { outline: 3px double #1677ff; outline-offset: -4px; background: #e6f4ff; color: #0958d9; font-weight: 700; }
+.matrix-cell[data-state="related"] { outline: 2px dashed #0f766e; outline-offset: -4px; }
+.matrix-cell-control { width: 100%; height: 100%; min-height: 0; padding: 0; border: 0; border-radius: 0; background: transparent; color: inherit; cursor: pointer; font: inherit; }
+.matrix-cell:has(.matrix-cell-control:hover), .matrix-cell:has(.matrix-cell-control:focus-visible) { z-index: 1; outline: 3px solid #1677ff; outline-offset: -4px; background: #f0f7ff; }
+.matrix-cell-control:focus-visible { outline: none; }
+.learned-check { position: absolute; right: 5px; bottom: 3px; font-size: 12px; }
+.phrase-cell { padding: 2px; white-space: nowrap; text-overflow: ellipsis; }
+.phrase-cell[data-state="placeholder"] { background: #fafafa; }
+@media (max-width: 1199px) {
+  .recitation-table-panel { height: auto; }
+  .recitation-grid { width: min(100%, 620px); height: auto; min-height: 0; max-height: none; margin-inline: auto; aspect-ratio: 1; }
+  .phrase-grid { aspect-ratio: auto; height: 532px; }
+}
+@media (prefers-reduced-motion: reduce) { .recitation-cell { transition: none !important; animation: none !important; } }

@@ -1,3 +1,7 @@
+import { getCellKey } from './coordinates';
+
+export { getCellKey } from './coordinates';
+
 /**
  * 九九乘法闯关的领域模型。
  *
@@ -174,22 +178,6 @@ export function generateMultiplicationQuestions(count, rng = Math.random) {
   return shuffleWithRng(coordinateIds, rng)
     .slice(0, count)
     .map(questionFromCoordinateId);
-}
-
-/**
- * 生成有序乘法坐标的稳定键。
- *
- * 使用乘号而不是排序后的因数组合，因此 3×4 与 4×3 是两个独立格子。
- *
- * @param {number} a 行因数
- * @param {number} b 列因数
- * @returns {string} 例如 "3×4"
- */
-export function getCellKey(a, b) {
-  if (!Number.isInteger(a) || !Number.isInteger(b) || a < 1 || a > 9 || b < 1 || b > 9) {
-    throw new RangeError('乘法格坐标必须是 1–9 的整数');
-  }
-  return `${a}×${b}`;
 }
 
 /**
