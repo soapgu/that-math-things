@@ -58,9 +58,9 @@ describe('recitation technical prototype', () => {
     fireEvent.click(firstCoordinate);
     const cancel = window.speechSynthesis.cancel;
     const callsBeforeRepeat = cancel.mock.calls.length;
-    fireEvent.click(firstCoordinate);
+    fireEvent.click(screen.getByRole('button', { name: '1乘2，当前口诀，可选择' }));
     expect(cancel).toHaveBeenCalledTimes(callsBeforeRepeat);
-    fireEvent.click(screen.getByRole('button', { name: '2乘1，未背，可选择' }));
+    fireEvent.click(screen.getByRole('button', { name: '2乘1，交换律关联，可选择' }));
     expect(screen.getByText('2 × 1 = 2 · 一二得二')).toBeInTheDocument();
     expect(spoken.at(-1).text).toBe('一二得二');
     expect(screen.getByRole('button', { name: '停止领读' })).toBeEnabled();

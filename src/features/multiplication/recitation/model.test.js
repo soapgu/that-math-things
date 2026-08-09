@@ -80,6 +80,8 @@ describe('recitation model', () => {
     const matrix = buildRecitationMatrixView(session);
     expect(matrix.filter(({ state }) => state === 'current').map(({ key }) => key)).toEqual(['3×4']);
     expect(matrix.filter(({ state }) => state === 'related').map(({ key }) => key)).toEqual(['4×3']);
+    expect(matrix.find(({ key }) => key === '3×4').ariaLabel).toBe('3乘4，当前口诀');
+    expect(matrix.find(({ key }) => key === '4×3').ariaLabel).toBe('4乘3，交换律关联');
   });
 
   it('派生表格状态且不泄露未背乘积', () => {

@@ -26,6 +26,14 @@ describe('recitation tables', () => {
     expect(control.parentElement).toHaveAttribute('role', 'gridcell');
   });
 
+  it('自定义当前格和交换律关联格具有准确辅助名称', () => {
+    let session = switchRecitationMode(createEmptyRecitationSession(), ORDERING_MODES.CUSTOM);
+    session = selectRecitationCoordinate(session, { a: 9, b: 1 });
+    render(<RecitationMultiplicationTable session={session} />);
+    expect(screen.getByRole('button', { name: '9乘1，当前口诀，可选择' }).parentElement).toHaveAttribute('data-state', 'current');
+    expect(screen.getByRole('button', { name: '1乘9，交换律关联，可选择' }).parentElement).toHaveAttribute('data-state', 'related');
+  });
+
   it('完成口诀后显示结果和分组完成反馈', () => {
     const session = completeCurrentPhrase(createEmptyRecitationSession());
     render(<><RecitationMultiplicationTable session={session} /><PhraseTable session={session} /></>);

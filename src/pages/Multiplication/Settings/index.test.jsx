@@ -131,17 +131,18 @@ describe('MultiplicationSettings', () => {
     setItem.mockRestore();
   });
 
-  it('第一轮继续技术原型的自定义会话时安全切回顺序背', async () => {
+  it('自定义会话显示真实方式并保持模式继续背诵', async () => {
     let session = switchRecitationMode(createEmptyRecitationSession(), ORDERING_MODES.CUSTOM);
     session = selectRecitationCoordinate(session, { a: 9, b: 1 });
     saveRecitationSession(session);
     renderSettings('/multiplication?mode=recitation');
+    expect(screen.getByText('上次方式：自定义背')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: /继续背诵/ }));
     await waitFor(() => expect(screen.getByTestId('session-state')).toBeInTheDocument());
     expect(JSON.parse(screen.getByTestId('session-state').textContent).recitationSession).toMatchObject({
-      orderingMode: 'sequential',
-      currentPhraseId: '1×1',
-      selectedCoordinate: null,
+      orderingMode: 'custom',
+      currentPhraseId: '1×9',
+      selectedCoordinate: { a: 9, b: 1 },
     });
   });
 });

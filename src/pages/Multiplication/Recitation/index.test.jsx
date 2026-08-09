@@ -3,9 +3,12 @@ import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import MultiplicationRecitation from '.';
 import {
+  ORDERING_MODES,
   RECITATION_PHRASES,
   completeCurrentPhrase,
   createEmptyRecitationSession,
+  selectRecitationCoordinate,
+  switchRecitationMode,
 } from '../../../features/multiplication/recitation/model';
 import { loadRecitationSession, saveRecitationSession } from '../../../features/multiplication/recitation/storage';
 
@@ -38,7 +41,7 @@ function createSequentialProgress(count) {
   return session;
 }
 
-describe('MultiplicationRecitation 完整顺序背', () => {
+describe('MultiplicationRecitation 顺序背与自定义背', () => {
   let spoken;
 
   beforeEach(() => {
@@ -112,6 +115,108 @@ describe('MultiplicationRecitation 完整顺序背', () => {
     expect(await screen.findByText('1/45')).toBeInTheDocument();
     expect(screen.getByRole('status')).toHaveTextContent('进度暂时无法保存，本次仍可继续背诵。');
     setItem.mockRestore();
+  });
+
+  it('切到自定义背后等待选择，并把模式立即保存', () => {
+    const session = createEmptyRecitationSession();
+    renderRecitation({ state: { recitationSession: session } });
+    fireEvent.click(screen.getByRole('button', { name: '自定义背' }));
+    expect(screen.getByText('请从乘法表选择未背口诀')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '再听一遍' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: '我背完了' })).toBeDisabled();
+    expect(loadRecitationSession().session).toMatchObject({
+      orderingMode: 'custom',
+      currentPhraseId: null,
+      selectedCoordinate: null,
+      completedPhraseIds: [],
+    });
+  });
+
+  it('模式切换保存失败时保留内存模式并显示提示', async () => {
+    const session = createEmptyRecitationSession();
+    renderRecitation({ state: { recitationSession: session } });
+    const setItem = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new Error('blocked'); });
+    fireEvent.click(screen.getByRole('button', { name: '自定义背' }));
+    expect(screen.getByRole('button', { name: '自定义背' })).toHaveAttribute('aria-pressed', 'true');
+    expect(await screen.findByRole('status')).toHaveTextContent('进度暂时无法保存，本次仍可继续背诵。');
+    setItem.mockRestore();
+  });
+
+  it('自定义点击保留9×1方向、统一领读并完成两个交换律格', () => {
+    const session = switchRecitationMode(createEmptyRecitationSession(), ORDERING_MODES.CUSTOM);
+    const { container } = renderRecitation({ state: { recitationSession: session } });
+    fireEvent.click(screen.getByRole('button', { name: '9乘1，未背，可选择' }));
+    expect(screen.getByText('9 × 1 = 9 · 一九得九')).toBeInTheDocument();
+    expect(spoken.at(-1).text).toBe('一九得九');
+    expect(screen.getByRole('button', { name: '9乘1，当前口诀，可选择' }).parentElement).toHaveAttribute('data-state', 'current');
+    expect(screen.getByRole('button', { name: '1乘9，交换律关联，可选择' }).parentElement).toHaveAttribute('data-state', 'related');
+    act(() => spoken.at(-1).onend());
+    fireEvent.click(screen.getByRole('button', { name: '我背完了' }));
+    expect(screen.getByText('请从乘法表选择未背口诀')).toBeInTheDocument();
+    expect(screen.getByLabelText('9乘1等于9，已背')).toBeInTheDocument();
+    expect(screen.getByLabelText('1乘9等于9，已背')).toBeInTheDocument();
+    expect(container.querySelectorAll('.matrix-cell[data-state="done"]')).toHaveLength(2);
+  });
+
+  it('重复当前坐标不重播，切换交换律方向会更新方向并重播', () => {
+    const session = switchRecitationMode(createEmptyRecitationSession(), ORDERING_MODES.CUSTOM);
+    renderRecitation({ state: { recitationSession: session } });
+    const reversed = screen.getByRole('button', { name: '9乘1，未背，可选择' });
+    fireEvent.click(reversed);
+    const spokenAfterSelection = spoken.length;
+    fireEvent.click(screen.getByRole('button', { name: '9乘1，当前口诀，可选择' }));
+    expect(spoken).toHaveLength(spokenAfterSelection);
+    fireEvent.click(screen.getByRole('button', { name: '1乘9，交换律关联，可选择' }));
+    expect(screen.getByText('1 × 9 = 9 · 一九得九')).toBeInTheDocument();
+    expect(spoken).toHaveLength(spokenAfterSelection + 1);
+    expect(spoken.at(-1).text).toBe('一九得九');
+  });
+
+  it('自定义平方口诀只展开一个对角格', () => {
+    const session = switchRecitationMode(createEmptyRecitationSession(), ORDERING_MODES.CUSTOM);
+    const { container } = renderRecitation({ state: { recitationSession: session } });
+    fireEvent.click(screen.getByRole('button', { name: '2乘2，未背，可选择' }));
+    act(() => spoken.at(-1).onend());
+    fireEvent.click(screen.getByRole('button', { name: '我背完了' }));
+    expect(screen.getByLabelText('2乘2等于4，已背')).toBeInTheDocument();
+    expect(container.querySelectorAll('.matrix-cell[data-state="done"]')).toHaveLength(1);
+  });
+
+  it('未确认的自定义选择切回顺序背时不计入进度', () => {
+    const session = switchRecitationMode(createEmptyRecitationSession(), ORDERING_MODES.CUSTOM);
+    renderRecitation({ state: { recitationSession: session } });
+    fireEvent.click(screen.getByRole('button', { name: '9乘1，未背，可选择' }));
+    fireEvent.click(screen.getByRole('button', { name: '顺序背' }));
+    expect(screen.getByText('0/45')).toBeInTheDocument();
+    expect(screen.getByText('1 × 1 = 1 · 一一得一')).toBeInTheDocument();
+    expect(loadRecitationSession().session.completedPhraseIds).toEqual([]);
+  });
+
+  it('自定义完成后切回顺序背并定位最早未完成句', () => {
+    let session = switchRecitationMode(createEmptyRecitationSession(), ORDERING_MODES.CUSTOM);
+    session = selectRecitationCoordinate(session, { a: 9, b: 1 });
+    renderRecitation({ state: { recitationSession: session } });
+    act(() => spoken.at(-1).onend());
+    fireEvent.click(screen.getByRole('button', { name: '我背完了' }));
+    expect(screen.getByText('1/45')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: '顺序背' }));
+    expect(screen.getByText('1 × 1 = 1 · 一一得一')).toBeInTheDocument();
+    expect(spoken.at(-1).text).toBe('一一得一');
+    expect(loadRecitationSession().session).toMatchObject({
+      orderingMode: 'sequential',
+      currentPhraseId: '1×1',
+      completedPhraseIds: ['1×9'],
+    });
+  });
+
+  it('刷新恢复自定义选择方向并重新领读', () => {
+    let session = switchRecitationMode(createEmptyRecitationSession('2026-01-01T00:00:00.000Z'), ORDERING_MODES.CUSTOM, '2026-01-01T00:00:01.000Z');
+    session = selectRecitationCoordinate(session, { a: 9, b: 1 }, '2026-01-01T00:00:02.000Z');
+    saveRecitationSession(session);
+    renderRecitation();
+    expect(screen.getByText('9 × 1 = 9 · 一九得九')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '自定义背' })).toHaveAttribute('aria-pressed', 'true');
+    expect(spoken.at(-1).text).toBe('一九得九');
   });
 
   it('普通口诀展开两个交换律格，平方口诀只展开一个格', () => {

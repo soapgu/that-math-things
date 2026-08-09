@@ -273,7 +273,10 @@ export function buildRecitationMatrixView(session) {
       const selectable = current.orderingMode === ORDERING_MODES.CUSTOM && !done;
       const cell = { key: getCellKey(a, b), a, b, phraseId, state, selectable };
       if (done) cell.value = getProduct(a, b);
-      cell.ariaLabel = done ? `${a}乘${b}等于${cell.value}，已背` : selectable ? `${a}乘${b}，未背，可选择` : `${a}乘${b}，未背`;
+      if (done) cell.ariaLabel = `${a}乘${b}等于${cell.value}，已背`;
+      else if (state === 'current') cell.ariaLabel = `${a}乘${b}，当前口诀${selectable ? '，可选择' : ''}`;
+      else if (state === 'related') cell.ariaLabel = `${a}乘${b}，交换律关联${selectable ? '，可选择' : ''}`;
+      else cell.ariaLabel = `${a}乘${b}，未背${selectable ? '，可选择' : ''}`;
       return Object.freeze(cell);
     })
   )).flat());

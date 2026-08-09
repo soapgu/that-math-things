@@ -5,8 +5,10 @@ import RecitationMultiplicationTable from '../../../features/multiplication/reci
 import {
   ORDERING_MODES,
   completeCurrentPhrase,
+  createPhraseId,
   getPhraseById,
   isValidRecitationSession,
+  selectRecitationCoordinate,
   switchRecitationMode,
 } from '../../../features/multiplication/recitation/model';
 import { createRecitationSpeechController } from '../../../features/multiplication/recitation/speech';
@@ -23,8 +25,7 @@ function resolveInitialSession(locationState) {
   const session = routeSession && (!storedSession || routeSession.updatedAt > storedSession.updatedAt)
     ? routeSession
     : storedSession;
-  if (!session || session.orderingMode === ORDERING_MODES.SEQUENTIAL) return session;
-  return switchRecitationMode(session, ORDERING_MODES.SEQUENTIAL);
+  return session;
 }
 
 export default function MultiplicationRecitation() {
@@ -46,6 +47,7 @@ export default function MultiplicationRecitation() {
   }, []);
 
   const phrase = session?.currentPhraseId ? getPhraseById(session.currentPhraseId) : null;
+  const displayedCoordinate = session?.selectedCoordinate ?? (phrase ? { a: phrase.a, b: phrase.b } : null);
 
   const speak = () => {
     if (!phrase) return;
@@ -58,7 +60,11 @@ export default function MultiplicationRecitation() {
   };
 
   useEffect(() => {
-    if (!phrase) return undefined;
+    if (!phrase) {
+      speech.current?.cancel();
+      setSpeechState('idle');
+      return undefined;
+    }
     setSpeechState('speaking');
     speech.current?.speak(phrase.text, {
       onEnd: () => setSpeechState('ready'),
@@ -66,7 +72,7 @@ export default function MultiplicationRecitation() {
       onUnavailable: () => setSpeechState('unavailable'),
     });
     return () => speech.current?.cancel();
-  }, [session?.currentPhraseId]);
+  }, [session?.currentPhraseId, session?.orderingMode, session?.selectedCoordinate?.a, session?.selectedCoordinate?.b]);
 
   if (!session) return null;
 
@@ -75,14 +81,34 @@ export default function MultiplicationRecitation() {
     setSpeechState('ready');
   };
 
+  const persistSession = (nextSession) => {
+    const result = saveRecitationSession(nextSession);
+    setStorageWarning(result.ok ? null : '进度暂时无法保存，本次仍可继续背诵。');
+    setSession(nextSession);
+  };
+
+  const changeMode = (mode) => {
+    if (session.orderingMode === mode) return;
+    speech.current?.cancel();
+    setSpeechState('idle');
+    persistSession(switchRecitationMode(session, mode));
+  };
+
+  const select = (coordinate) => {
+    if (session.currentPhraseId === createPhraseId(coordinate.a, coordinate.b)
+      && session.selectedCoordinate?.a === coordinate.a
+      && session.selectedCoordinate?.b === coordinate.b) return;
+    speech.current?.cancel();
+    setSpeechState('idle');
+    persistSession(selectRecitationCoordinate(session, coordinate));
+  };
+
   const confirm = () => {
     if (!phrase || speechState === 'speaking') return;
     const nextSession = completeCurrentPhrase(session, undefined, phrase.id);
     if (nextSession === session) return;
     speech.current?.cancel();
-    const result = saveRecitationSession(nextSession);
-    setStorageWarning(result.ok ? null : '进度暂时无法保存，本次仍可继续背诵。');
-    setSession(nextSession);
+    persistSession(nextSession);
   };
 
   const leave = () => {
@@ -97,11 +123,13 @@ export default function MultiplicationRecitation() {
       <div className="recitation-command-bar">
         <button type="button" onClick={leave}>← 背诵设置</button>
         <div className="recitation-mode-switch" aria-label="背诵方式">
-          <button type="button" aria-pressed={session.orderingMode === ORDERING_MODES.SEQUENTIAL}>顺序背</button>
-          <button type="button" disabled title="将在后续轮次开放">自定义背</button>
+          <button type="button" aria-pressed={session.orderingMode === ORDERING_MODES.SEQUENTIAL} onClick={() => changeMode(ORDERING_MODES.SEQUENTIAL)}>顺序背</button>
+          <button type="button" aria-pressed={session.orderingMode === ORDERING_MODES.CUSTOM} onClick={() => changeMode(ORDERING_MODES.CUSTOM)}>自定义背</button>
         </div>
         <strong className="recitation-current-phrase">
-          {phrase ? `${phrase.a} × ${phrase.b} = ${phrase.product} · ${phrase.text}` : '45句全部背完 · 两张表已展开'}
+          {phrase && displayedCoordinate
+            ? `${displayedCoordinate.a} × ${displayedCoordinate.b} = ${phrase.product} · ${phrase.text}`
+            : completed === 45 ? '45句全部背完 · 两张表已展开' : '请从乘法表选择未背口诀'}
         </strong>
         <button
           type="button"
@@ -116,7 +144,7 @@ export default function MultiplicationRecitation() {
       </div>
       {storageWarning ? <div className="recitation-storage-warning" role="status">{storageWarning}</div> : null}
       <div className="recitation-production-tables">
-        <RecitationMultiplicationTable session={session} />
+        <RecitationMultiplicationTable session={session} onSelect={select} />
         <PhraseTable session={session} />
       </div>
     </main>

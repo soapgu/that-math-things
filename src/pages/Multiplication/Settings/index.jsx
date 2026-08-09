@@ -9,10 +9,8 @@ import {
   QUESTION_COUNTS,
 } from '../../../features/multiplication/model';
 import {
-  ORDERING_MODES,
   createEmptyRecitationSession,
   isRecitationComplete,
-  switchRecitationMode,
 } from '../../../features/multiplication/recitation/model';
 import { loadRecitationSession, saveRecitationSession } from '../../../features/multiplication/recitation/storage';
 import './settings.css';
@@ -94,10 +92,7 @@ function RecitationSettings() {
   const complete = hasSession && isRecitationComplete(session);
 
   const handleEnter = () => {
-    const sourceSession = hasSession ? session : createEmptyRecitationSession();
-    const nextSession = sourceSession.orderingMode === ORDERING_MODES.SEQUENTIAL
-      ? sourceSession
-      : switchRecitationMode(sourceSession, ORDERING_MODES.SEQUENTIAL);
+    const nextSession = hasSession ? session : createEmptyRecitationSession();
     const saveResult = saveRecitationSession(nextSession);
     navigate('/multiplication/recitation', {
       state: {
@@ -118,7 +113,7 @@ function RecitationSettings() {
         <Progress percent={Math.round(completed / 45 * 100)} showInfo={false} />
         {hasSession ? (
           <span className="recitation-settings-session-meta">
-            {complete ? '整张口诀表已经背完' : '上次方式：顺序背'}
+            {complete ? '整张口诀表已经背完' : `上次方式：${session.orderingMode === 'custom' ? '自定义背' : '顺序背'}`}
           </span>
         ) : null}
       </div>
