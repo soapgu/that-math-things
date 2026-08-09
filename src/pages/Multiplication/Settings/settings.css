@@ -30,6 +30,17 @@
   font-size: 13px;
 }
 
+.recitation-settings-warning {
+  margin: 0 0 16px;
+  padding: 8px 12px;
+  border: 1px solid #d7a23a;
+  border-radius: 8px;
+  background: #fffbe6;
+  color: #614700;
+}
+
+.recitation-settings-reset { margin-top: 10px; }
+
 .multiplication-difficulty-options {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));

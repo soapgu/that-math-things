@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { buildRecitationMatrixView } from './model';
 import './recitation-tables.css';
 
-export default function RecitationMultiplicationTable({ session, onSelect }) {
+export default function RecitationMultiplicationTable({ session, onSelect, focusRequest, animatePhraseId }) {
   const cells = buildRecitationMatrixView(session);
   const selectableCells = cells.filter(({ selectable }) => selectable);
   const preferredFocusKey = selectableCells.find(({ a, b }) => (
@@ -14,6 +14,19 @@ export default function RecitationMultiplicationTable({ session, onSelect }) {
   useEffect(() => {
     if (!selectableCells.some(({ key }) => key === focusKey)) setFocusKey(preferredFocusKey);
   }, [focusKey, preferredFocusKey, selectableCells]);
+
+  useEffect(() => {
+    if (!focusRequest || selectableCells.length === 0) return;
+    let target = selectableCells[0];
+    if (focusRequest.after) {
+      const afterIndex = cells.findIndex(({ a, b }) => a === focusRequest.after.a && b === focusRequest.after.b);
+      target = cells.slice(afterIndex + 1).find(({ selectable }) => selectable)
+        ?? cells.slice(0, afterIndex + 1).find(({ selectable }) => selectable)
+        ?? target;
+    }
+    setFocusKey(target.key);
+    window.requestAnimationFrame(() => controls.current.get(target.key)?.focus());
+  }, [focusRequest]);
 
   const moveFocus = (cell, key) => {
     const directions = {
@@ -52,7 +65,7 @@ export default function RecitationMultiplicationTable({ session, onSelect }) {
             {cells.slice(rowIndex * 9, rowIndex * 9 + 9).map((cell) => {
               const content = cell.state === 'done' ? <><span>{cell.value}</span><span className="learned-check" aria-hidden="true">✓</span></> : cell.state === 'current' ? '当前' : null;
               return (
-                <div className="recitation-cell matrix-cell" data-state={cell.state} role="gridcell" aria-label={cell.selectable ? undefined : cell.ariaLabel} key={cell.key}>
+                <div className="recitation-cell matrix-cell" data-state={cell.state} data-newly-completed={cell.state === 'done' && cell.phraseId === animatePhraseId ? 'true' : undefined} role="gridcell" aria-label={cell.selectable ? undefined : cell.ariaLabel} key={cell.key}>
                   {cell.selectable ? (
                     <button
                       type="button"

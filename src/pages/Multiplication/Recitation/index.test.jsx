@@ -1,4 +1,6 @@
 import React from 'react';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import MultiplicationRecitation from '.';
@@ -11,6 +13,8 @@ import {
   switchRecitationMode,
 } from '../../../features/multiplication/recitation/model';
 import { loadRecitationSession, saveRecitationSession } from '../../../features/multiplication/recitation/storage';
+
+const recitationStyles = readFileSync(resolve(process.cwd(), 'src/pages/Multiplication/Recitation/recitation.css'), 'utf8');
 
 class MockUtterance {
   constructor(text) { this.text = text; }
@@ -113,7 +117,7 @@ describe('MultiplicationRecitation 顺序背与自定义背', () => {
     const setItem = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new Error('blocked'); });
     fireEvent.click(screen.getByRole('button', { name: '我背完了' }));
     expect(await screen.findByText('1/45')).toBeInTheDocument();
-    expect(screen.getByRole('status')).toHaveTextContent('进度暂时无法保存，本次仍可继续背诵。');
+    expect(screen.getByRole('status')).toHaveTextContent('本次可以继续，但离开后可能无法恢复。');
     setItem.mockRestore();
   });
 
@@ -138,7 +142,7 @@ describe('MultiplicationRecitation 顺序背与自定义背', () => {
     const setItem = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new Error('blocked'); });
     fireEvent.click(screen.getByRole('button', { name: '自定义背' }));
     expect(screen.getByRole('button', { name: '自定义背' })).toHaveAttribute('aria-pressed', 'true');
-    expect(await screen.findByRole('status')).toHaveTextContent('进度暂时无法保存，本次仍可继续背诵。');
+    expect(await screen.findByRole('status')).toHaveTextContent('本次可以继续，但离开后可能无法恢复。');
     setItem.mockRestore();
   });
 
@@ -262,5 +266,104 @@ describe('MultiplicationRecitation 顺序背与自定义背', () => {
       expect(screen.getByText(`${index + 1}/45`)).toBeInTheDocument();
     });
     expect(loadRecitationSession().session.completedPhraseIds).toEqual(RECITATION_PHRASES.map(({ id }) => id));
+  });
+
+  it('页面重新开始可取消保留，并可确认清空后重新领读第一句', async () => {
+    const session = createSequentialProgress(3);
+    renderRecitation({ state: { recitationSession: session } });
+    const trigger = screen.getByRole('button', { name: '重新开始' });
+    fireEvent.click(trigger);
+    const keep = await screen.findByRole('button', { name: '继续保留' });
+    await waitFor(() => expect(keep).toHaveFocus());
+    fireEvent.click(keep);
+    await waitFor(() => expect(trigger).toHaveFocus());
+    expect(screen.getByText('3/45')).toBeInTheDocument();
+
+    fireEvent.click(trigger);
+    fireEvent.click(await screen.findByRole('button', { name: '清空并重新开始' }));
+    expect(screen.getByText('0/45')).toBeInTheDocument();
+    expect(screen.getByText('1 × 1 = 1 · 一一得一')).toHaveFocus();
+    expect(spoken.at(-1).text).toBe('一一得一');
+    expect(loadRecitationSession().session.completedPhraseIds).toEqual([]);
+  });
+
+  it('最后一句只在本次完成转换时触发柔光，恢复完成会话不触发', () => {
+    const session = createSequentialProgress(44);
+    const { container, unmount } = renderRecitation({ state: { recitationSession: session } });
+    act(() => spoken.at(-1).onend());
+    fireEvent.click(screen.getByRole('button', { name: '我背完了' }));
+    expect(container.querySelector('.recitation-production-tables')).toHaveClass('is-completing');
+    expect(container.querySelector('.recitation-live-region')).toHaveTextContent('45句全部背完，乘法表已经全部展开。');
+    unmount();
+
+    const complete = createSequentialProgress(45);
+    saveRecitationSession(complete);
+    const restored = renderRecitation();
+    expect(restored.container.querySelector('.recitation-production-tables')).not.toHaveClass('is-completing');
+  });
+
+  it('语音调用异常时立即降级并允许手动确认', () => {
+    window.speechSynthesis.speak.mockImplementation(() => { throw new Error('speech failed'); });
+    const session = createEmptyRecitationSession();
+    renderRecitation({ state: { recitationSession: session } });
+    expect(screen.getByRole('button', { name: '语音不可用' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: '我背完了' })).toBeEnabled();
+    expect(screen.getByText('语音不可用，可以继续手动背诵。')).toBeInTheDocument();
+  });
+
+  it('自定义确认后将焦点移到按行排列的下一个未完成格', async () => {
+    const session = switchRecitationMode(createEmptyRecitationSession(), ORDERING_MODES.CUSTOM);
+    renderRecitation({ state: { recitationSession: session } });
+    fireEvent.click(screen.getByRole('button', { name: '1乘1，未背，可选择' }));
+    act(() => spoken.at(-1).onend());
+    fireEvent.click(screen.getByRole('button', { name: '我背完了' }));
+    await waitFor(() => expect(screen.getByRole('button', { name: '1乘2，未背，可选择' })).toHaveFocus());
+  });
+
+  it('重置弹窗打开期间语音结束不会把焦点移出弹窗', async () => {
+    const session = createEmptyRecitationSession();
+    renderRecitation({ state: { recitationSession: session } });
+    fireEvent.click(screen.getByRole('button', { name: '重新开始' }));
+    const keep = await screen.findByRole('button', { name: '继续保留' });
+    await waitFor(() => expect(keep).toHaveFocus());
+    act(() => spoken.at(-1).onend());
+    await waitFor(() => expect(keep).toHaveFocus());
+    expect(screen.getByRole('button', { name: '我背完了' })).not.toHaveFocus();
+  });
+
+  it('恢复自定义等待会话时聚焦第一个未完成格', async () => {
+    const session = switchRecitationMode(createEmptyRecitationSession(), ORDERING_MODES.CUSTOM);
+    saveRecitationSession(session);
+    renderRecitation();
+    expect(screen.getByText('请从乘法表选择未背口诀')).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByRole('button', { name: '1乘1，未背，可选择' })).toHaveFocus());
+  });
+
+  it('当前句切换会替换动画节点，减少动态效果样式会关闭动画', () => {
+    const session = createEmptyRecitationSession();
+    renderRecitation({ state: { recitationSession: session } });
+    const firstPhrase = screen.getByText('1 × 1 = 1 · 一一得一');
+    expect(firstPhrase).toHaveClass('recitation-current-phrase');
+    act(() => spoken.at(-1).onend());
+    fireEvent.click(screen.getByRole('button', { name: '我背完了' }));
+    const secondPhrase = screen.getByText('1 × 2 = 2 · 一二得二');
+    expect(secondPhrase).toHaveClass('recitation-current-phrase');
+    expect(secondPhrase).not.toBe(firstPhrase);
+    expect(recitationStyles).toMatch(/prefers-reduced-motion:\s*reduce[\s\S]*\.recitation-current-phrase\s*{\s*animation:\s*none;/);
+  });
+
+  it('重置保存失败保留内存空会话，后续保存成功会清除警告', async () => {
+    const session = createSequentialProgress(3);
+    renderRecitation({ state: { recitationSession: session } });
+    fireEvent.click(screen.getByRole('button', { name: '重新开始' }));
+    const setItem = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new Error('blocked'); });
+    fireEvent.click(await screen.findByRole('button', { name: '清空并重新开始' }));
+    expect(screen.getByText('0/45')).toBeInTheDocument();
+    expect(screen.getByRole('status')).toHaveTextContent('本次可以继续，但离开后可能无法恢复。');
+
+    setItem.mockRestore();
+    fireEvent.click(screen.getByRole('button', { name: '自定义背' }));
+    await waitFor(() => expect(screen.queryByRole('status')).not.toBeInTheDocument());
+    expect(loadRecitationSession().session.orderingMode).toBe(ORDERING_MODES.CUSTOM);
   });
 });

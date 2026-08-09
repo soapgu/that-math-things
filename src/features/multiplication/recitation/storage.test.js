@@ -38,4 +38,9 @@ describe('recitation storage', () => {
     expect(saveRecitationSession(createEmptyRecitationSession(), storage)).toEqual({ ok: false, reason: 'write-failed' });
     expect(clearRecitationSession(storage)).toEqual({ ok: false, reason: 'write-failed' });
   });
+
+  it('读取API不可访问时区分为unavailable', () => {
+    const blockedStorage = { getItem: () => { throw new Error('blocked'); } };
+    expect(loadRecitationSession(blockedStorage)).toMatchObject({ status: 'unavailable' });
+  });
 });

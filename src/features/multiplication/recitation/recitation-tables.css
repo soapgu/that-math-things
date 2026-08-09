@@ -15,6 +15,8 @@
 .learned-check { position: absolute; right: 5px; bottom: 3px; font-size: 12px; }
 .phrase-cell { padding: 2px; white-space: nowrap; text-overflow: ellipsis; }
 .phrase-cell[data-state="placeholder"] { background: #fafafa; }
+.recitation-cell[data-newly-completed="true"] { animation: recitation-cell-reveal 240ms ease-out; }
+@keyframes recitation-cell-reveal { from { opacity: .45; transform: scale(.96); } to { opacity: 1; transform: scale(1); } }
 @media (max-width: 1199px) {
   .recitation-table-panel { height: auto; }
   .recitation-grid { width: min(100%, 620px); height: auto; min-height: 0; max-height: none; margin-inline: auto; aspect-ratio: 1; }

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { CheckCircleFilled, PlayCircleOutlined } from '@ant-design/icons';
 import { Button, Progress, Tabs, Typography } from 'antd';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -11,7 +11,9 @@ import {
 import {
   createEmptyRecitationSession,
   isRecitationComplete,
+  resetRecitationSession,
 } from '../../../features/multiplication/recitation/model';
+import RecitationResetDialog from '../../../features/multiplication/recitation/RecitationResetDialog';
 import { loadRecitationSession, saveRecitationSession } from '../../../features/multiplication/recitation/storage';
 import './settings.css';
 
@@ -90,17 +92,33 @@ function RecitationSettings() {
   const session = hasSession ? loaded.session : createEmptyRecitationSession();
   const completed = session.completedPhraseIds.length;
   const complete = hasSession && isRecitationComplete(session);
+  const [resetOpen, setResetOpen] = useState(false);
+  const resetTriggerRef = useRef(null);
 
-  const handleEnter = () => {
-    const nextSession = hasSession ? session : createEmptyRecitationSession();
+  const enterSession = (nextSession) => {
     const saveResult = saveRecitationSession(nextSession);
     navigate('/multiplication/recitation', {
       state: {
         recitationSession: nextSession,
-        storageWarning: saveResult.ok ? null : '进度暂时无法保存，本次仍可继续背诵。',
+        storageWarning: saveResult.ok ? null : '本次可以继续，但离开后可能无法恢复。',
       },
     });
   };
+
+  const handleEnter = () => {
+    enterSession(hasSession ? session : createEmptyRecitationSession());
+  };
+
+  const handleReset = () => {
+    setResetOpen(false);
+    enterSession(resetRecitationSession());
+  };
+
+  const storageMessage = loaded.status === 'recovered'
+    ? '背诵进度数据异常，已安全恢复为空进度。'
+    : loaded.status === 'unavailable'
+      ? '无法读取本机进度，本次仍可背诵，但离开后可能无法恢复。'
+      : null;
 
   return (
     <section className="multiplication-recitation-settings" aria-labelledby="recitation-settings-title">
@@ -117,9 +135,16 @@ function RecitationSettings() {
           </span>
         ) : null}
       </div>
+      {storageMessage ? <div className="recitation-settings-warning" role="status">{storageMessage}</div> : null}
       <Button type="primary" size="large" block icon={<PlayCircleOutlined />} onClick={handleEnter}>
         {complete ? '查看完成结果' : hasSession ? '继续背诵' : '开始背诵'}
       </Button>
+      {hasSession ? (
+        <Button ref={resetTriggerRef} className="recitation-settings-reset" size="large" block onClick={() => setResetOpen(true)}>
+          重新开始
+        </Button>
+      ) : null}
+      <RecitationResetDialog open={resetOpen} onCancel={() => setResetOpen(false)} onConfirm={handleReset} triggerRef={resetTriggerRef} />
     </section>
   );
 }

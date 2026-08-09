@@ -127,7 +127,7 @@ describe('MultiplicationSettings', () => {
     await waitFor(() => expect(screen.getByTestId('session-state')).toBeInTheDocument());
     const state = JSON.parse(screen.getByTestId('session-state').textContent);
     expect(state.recitationSession.currentPhraseId).toBe('1×1');
-    expect(state.storageWarning).toMatch(/无法保存/);
+    expect(state.storageWarning).toMatch(/离开后可能无法恢复/);
     setItem.mockRestore();
   });
 
@@ -143,6 +143,40 @@ describe('MultiplicationSettings', () => {
       orderingMode: 'custom',
       currentPhraseId: '1×9',
       selectedCoordinate: { a: 9, b: 1 },
+    });
+  });
+
+  it('损坏与不可访问存储显示不同的安全降级提示', () => {
+    localStorage.setItem('multiplication-recitation-session-v1', '{bad');
+    const { unmount } = renderSettings('/multiplication?mode=recitation');
+    expect(screen.getByRole('status')).toHaveTextContent('背诵进度数据异常，已安全恢复为空进度。');
+    unmount();
+
+    localStorage.clear();
+    const getItem = vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => { throw new Error('blocked'); });
+    renderSettings('/multiplication?mode=recitation');
+    expect(screen.getByRole('status')).toHaveTextContent('无法读取本机进度，本次仍可背诵，但离开后可能无法恢复。');
+    getItem.mockRestore();
+  });
+
+  it('重新开始可取消保留，也可确认后直接进入全新顺序会话', async () => {
+    const session = completeCurrentPhrase(createEmptyRecitationSession());
+    saveRecitationSession(session);
+    renderSettings('/multiplication?mode=recitation');
+    const trigger = screen.getByRole('button', { name: '重新开始' });
+    fireEvent.click(trigger);
+    expect(await screen.findByRole('dialog', { name: '重新开始背诵？' })).toBeInTheDocument();
+    const keep = screen.getByRole('button', { name: '继续保留' });
+    await waitFor(() => expect(keep).toHaveFocus());
+    fireEvent.click(keep);
+    await waitFor(() => expect(trigger).toHaveFocus());
+    expect(screen.getByText('已背 1/45 句')).toBeInTheDocument();
+
+    fireEvent.click(trigger);
+    fireEvent.click(await screen.findByRole('button', { name: '清空并重新开始' }));
+    await waitFor(() => expect(screen.getByTestId('session-state')).toBeInTheDocument());
+    expect(JSON.parse(screen.getByTestId('session-state').textContent).recitationSession).toMatchObject({
+      orderingMode: 'sequential', currentPhraseId: '1×1', selectedCoordinate: null, completedPhraseIds: [],
     });
   });
 });

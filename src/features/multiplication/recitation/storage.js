@@ -18,11 +18,21 @@ function getStorage(storage) {
  * status用于区分首次使用、成功恢复、损坏回退和存储不可用。
  */
 export function loadRecitationSession(storage) {
+  let target;
   try {
-    const target = getStorage(storage);
-    if (!target) return { session: createEmptyRecitationSession(), status: 'unavailable' };
-    const raw = target.getItem(RECITATION_STORAGE_KEY);
-    if (raw === null) return { session: createEmptyRecitationSession(), status: 'empty' };
+    target = getStorage(storage);
+  } catch {
+    return { session: createEmptyRecitationSession(), status: 'unavailable' };
+  }
+  if (!target) return { session: createEmptyRecitationSession(), status: 'unavailable' };
+  let raw;
+  try {
+    raw = target.getItem(RECITATION_STORAGE_KEY);
+  } catch {
+    return { session: createEmptyRecitationSession(), status: 'unavailable' };
+  }
+  if (raw === null) return { session: createEmptyRecitationSession(), status: 'empty' };
+  try {
     const parsed = JSON.parse(raw);
     if (!isValidRecitationSession(parsed)) {
       return { session: createEmptyRecitationSession(), status: 'recovered' };

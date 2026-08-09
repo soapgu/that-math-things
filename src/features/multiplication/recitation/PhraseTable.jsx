@@ -1,7 +1,7 @@
 import React from 'react';
 import { buildRecitationTableView } from './model';
 
-export default function PhraseTable({ session }) {
+export default function PhraseTable({ session, animatePhraseId }) {
   const view = buildRecitationTableView(session);
   return (
     <section className="recitation-table-panel" aria-labelledby="phrase-table-title">
@@ -13,7 +13,7 @@ export default function PhraseTable({ session }) {
         {Array.from({ length: 9 }, (_, rowIndex) => (
           <div className="recitation-grid-row" role="row" key={rowIndex}>
             {view.cells.slice(rowIndex * 9, rowIndex * 9 + 9).map((cell) => (
-              <div className="recitation-cell phrase-cell" data-state={cell.kind === 'phrase' ? cell.state : 'placeholder'} role="gridcell" aria-label={cell.kind === 'phrase' ? cell.ariaLabel : undefined} aria-hidden={cell.kind === 'placeholder' ? 'true' : undefined} key={`${cell.row}-${cell.column}`}>
+              <div className="recitation-cell phrase-cell" data-state={cell.kind === 'phrase' ? cell.state : 'placeholder'} data-newly-completed={cell.kind === 'phrase' && cell.state === 'done' && cell.phrase.id === animatePhraseId ? 'true' : undefined} role="gridcell" aria-label={cell.kind === 'phrase' ? cell.ariaLabel : undefined} aria-hidden={cell.kind === 'placeholder' ? 'true' : undefined} key={`${cell.row}-${cell.column}`}>
                 {cell.kind === 'phrase' ? cell.displayText : null}
               </div>
             ))}
