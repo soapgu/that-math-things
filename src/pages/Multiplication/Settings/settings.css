@@ -23,6 +23,13 @@
   font-size: 18px;
 }
 
+.recitation-settings-session-meta {
+  display: block;
+  margin-top: 6px;
+  color: #617080;
+  font-size: 13px;
+}
+
 .multiplication-difficulty-options {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));

@@ -13,7 +13,8 @@ const DIGITS = Object.freeze(['', '一', '二', '三', '四', '五', '六', '七
 
 function productText(value) {
   if (value < 10) return DIGITS[value];
-  if (value === 10) return '十';
+  // 乘法口诀沿用教材固定读法“二五一十”，10不能简写为“十”。
+  if (value === 10) return '一十';
   const tens = Math.floor(value / 10);
   const ones = value % 10;
   return `${tens === 1 ? '' : DIGITS[tens]}十${ones ? DIGITS[ones] : ''}`;
@@ -238,7 +239,13 @@ export function buildRecitationTableView(session) {
         if (columnIndex > rowIndex) return Object.freeze({ kind: 'placeholder', row: rowIndex + 1, column: columnIndex + 1 });
         const phrase = getPhraseById(`${columnIndex + 1}×${rowIndex + 1}`);
         const state = completed.has(phrase.id) ? 'done' : current.currentPhraseId === phrase.id ? 'current' : 'pending';
-        return Object.freeze({ kind: 'phrase', row: rowIndex + 1, column: columnIndex + 1, state, phrase });
+        // 未背格只提供因数组合占位，完整口诀仅在成为当前项或完成后进入视图文本。
+        const phraseIndex = `${DIGITS[phrase.a]}${DIGITS[phrase.b]}`;
+        const displayText = state === 'pending' ? `${phraseIndex} ···` : phrase.text;
+        const ariaLabel = state === 'pending'
+          ? `${phraseIndex}，未背`
+          : `${phrase.text}，${state === 'done' ? '已背' : '当前口诀'}`;
+        return Object.freeze({ kind: 'phrase', row: rowIndex + 1, column: columnIndex + 1, state, phrase, displayText, ariaLabel });
       })
     )).flat()),
   });

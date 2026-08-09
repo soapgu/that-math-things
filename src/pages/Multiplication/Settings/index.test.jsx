@@ -2,7 +2,14 @@ import React from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import MultiplicationSettings from '.';
-import { ORDERING_MODES, completeCurrentPhrase, createEmptyRecitationSession, selectRecitationCoordinate, switchRecitationMode } from '../../../features/multiplication/recitation/model';
+import {
+  ORDERING_MODES,
+  RECITATION_PHRASES,
+  completeCurrentPhrase,
+  createEmptyRecitationSession,
+  selectRecitationCoordinate,
+  switchRecitationMode,
+} from '../../../features/multiplication/recitation/model';
 import { saveRecitationSession } from '../../../features/multiplication/recitation/storage';
 
 function SessionStateProbe() {
@@ -25,6 +32,12 @@ function renderSettings(initialEntry = '/multiplication') {
       </Routes>
     </MemoryRouter>,
   );
+}
+
+function createSequentialProgress(count) {
+  let session = createEmptyRecitationSession();
+  for (let index = 0; index < count; index += 1) session = completeCurrentPhrase(session);
+  return session;
 }
 
 describe('MultiplicationSettings', () => {
@@ -78,9 +91,33 @@ describe('MultiplicationSettings', () => {
     saveRecitationSession(session);
     renderSettings('/multiplication?mode=recitation');
     expect(screen.getByText('已背 1/45 句')).toBeInTheDocument();
+    expect(screen.getByText('上次方式：顺序背')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: /继续背诵/ }));
     await waitFor(() => expect(screen.getByTestId('session-state')).toBeInTheDocument());
     expect(JSON.parse(screen.getByTestId('session-state').textContent).recitationSession.completedPhraseIds).toEqual(['1×1']);
+  });
+
+  it.each([
+    { count: 44, button: '继续背诵', summary: '上次方式：顺序背' },
+    { count: RECITATION_PHRASES.length, button: '查看完成结果', summary: '整张口诀表已经背完' },
+  ])('$count/45会话显示正确设置状态', ({ count, button, summary }) => {
+    saveRecitationSession(createSequentialProgress(count));
+    renderSettings('/multiplication?mode=recitation');
+    expect(screen.getByText(`已背 ${count}/45 句`)).toBeInTheDocument();
+    expect(screen.getByText(summary)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: new RegExp(button) })).toBeInTheDocument();
+  });
+
+  it('查看完成结果会携带45/45会话进入背诵页', async () => {
+    saveRecitationSession(createSequentialProgress(RECITATION_PHRASES.length));
+    renderSettings('/multiplication?mode=recitation');
+    fireEvent.click(screen.getByRole('button', { name: /查看完成结果/ }));
+    await waitFor(() => expect(screen.getByTestId('session-state')).toBeInTheDocument());
+    expect(JSON.parse(screen.getByTestId('session-state').textContent).recitationSession).toMatchObject({
+      currentPhraseId: null,
+      selectedCoordinate: null,
+      completedPhraseIds: RECITATION_PHRASES.map(({ id }) => id),
+    });
   });
 
   it('首次保存失败仍携带内存会话进入背诵页', async () => {

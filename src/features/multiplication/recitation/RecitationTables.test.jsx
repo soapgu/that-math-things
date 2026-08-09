@@ -6,10 +6,14 @@ import { ORDERING_MODES, completeCurrentPhrase, createEmptyRecitationSession, se
 
 describe('recitation tables', () => {
   it('未背格不在DOM或辅助文本中泄露结果', () => {
-    const { container } = render(<RecitationMultiplicationTable session={createEmptyRecitationSession()} />);
+    const session = createEmptyRecitationSession();
+    const { container } = render(<><RecitationMultiplicationTable session={session} /><PhraseTable session={session} /></>);
     expect(container.querySelector('[aria-label="9乘9，未背"]')).toBeInTheDocument();
     expect(container.querySelector('[aria-label="9乘9，未背"]')).toHaveTextContent('');
     expect(container.querySelector('[aria-label="9乘9，未背"]')).not.toHaveAttribute('data-value');
+    expect(screen.getByLabelText('九九，未背')).toHaveTextContent('九九 ···');
+    expect(container).not.toHaveTextContent('九九八十一');
+    expect(container.innerHTML).not.toContain('九九八十一');
   });
 
   it('自定义格可通过按钮选择并保留方向', () => {

@@ -24,6 +24,7 @@ describe('recitation model', () => {
     expect(Array.from({ length: 9 }, (_, index) => RECITATION_PHRASES.filter(({ group }) => group === index + 1).length)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9]);
     expect(getPhraseById('1×1').text).toBe('一一得一');
     expect(getPhraseById('1×9').text).toBe('一九得九');
+    expect(getPhraseById('2×5').text).toBe('二五一十');
     expect(getPhraseById('3×4').text).toBe('三四十二');
     expect(getPhraseById('9×9').text).toBe('九九八十一');
   });
@@ -88,6 +89,16 @@ describe('recitation model', () => {
     expect(phraseView.cells.filter(({ kind }) => kind === 'phrase')).toHaveLength(45);
     expect(phraseView.cells.filter(({ kind }) => kind === 'placeholder')).toHaveLength(36);
     expect(phraseView.headers).toHaveLength(9);
+    expect(phraseView.cells.find(({ phrase }) => phrase?.id === '1×1')).toMatchObject({
+      state: 'current',
+      displayText: '一一得一',
+      ariaLabel: '一一得一，当前口诀',
+    });
+    expect(phraseView.cells.find(({ phrase }) => phrase?.id === '9×9')).toMatchObject({
+      state: 'pending',
+      displayText: '九九 ···',
+      ariaLabel: '九九，未背',
+    });
     expect(matrixView).toHaveLength(81);
     matrixView.filter(({ state }) => state !== 'done').forEach((cell) => {
       expect(cell).not.toHaveProperty('value');

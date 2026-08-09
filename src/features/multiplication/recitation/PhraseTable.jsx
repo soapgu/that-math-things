@@ -13,8 +13,8 @@ export default function PhraseTable({ session }) {
         {Array.from({ length: 9 }, (_, rowIndex) => (
           <div className="recitation-grid-row" role="row" key={rowIndex}>
             {view.cells.slice(rowIndex * 9, rowIndex * 9 + 9).map((cell) => (
-              <div className="recitation-cell phrase-cell" data-state={cell.kind === 'phrase' ? cell.state : 'placeholder'} role="gridcell" aria-label={cell.kind === 'phrase' ? `${cell.phrase.text}，${cell.state === 'done' ? '已背' : cell.state === 'current' ? '当前口诀' : '未背'}` : undefined} aria-hidden={cell.kind === 'placeholder' ? 'true' : undefined} key={`${cell.row}-${cell.column}`}>
-                {cell.kind === 'phrase' ? cell.phrase.text : null}
+              <div className="recitation-cell phrase-cell" data-state={cell.kind === 'phrase' ? cell.state : 'placeholder'} role="gridcell" aria-label={cell.kind === 'phrase' ? cell.ariaLabel : undefined} aria-hidden={cell.kind === 'placeholder' ? 'true' : undefined} key={`${cell.row}-${cell.column}`}>
+                {cell.kind === 'phrase' ? cell.displayText : null}
               </div>
             ))}
           </div>

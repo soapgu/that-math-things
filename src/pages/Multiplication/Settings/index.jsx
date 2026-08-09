@@ -8,7 +8,12 @@ import {
   generateMultiplicationQuestions,
   QUESTION_COUNTS,
 } from '../../../features/multiplication/model';
-import { ORDERING_MODES, createEmptyRecitationSession, switchRecitationMode } from '../../../features/multiplication/recitation/model';
+import {
+  ORDERING_MODES,
+  createEmptyRecitationSession,
+  isRecitationComplete,
+  switchRecitationMode,
+} from '../../../features/multiplication/recitation/model';
 import { loadRecitationSession, saveRecitationSession } from '../../../features/multiplication/recitation/storage';
 import './settings.css';
 
@@ -86,6 +91,7 @@ function RecitationSettings() {
   const hasSession = loaded.status === 'loaded';
   const session = hasSession ? loaded.session : createEmptyRecitationSession();
   const completed = session.completedPhraseIds.length;
+  const complete = hasSession && isRecitationComplete(session);
 
   const handleEnter = () => {
     const sourceSession = hasSession ? session : createEmptyRecitationSession();
@@ -110,9 +116,14 @@ function RecitationSettings() {
       <div className="recitation-settings-progress">
         <strong>{hasSession ? `已背 ${completed}/45 句` : '0/45'}</strong>
         <Progress percent={Math.round(completed / 45 * 100)} showInfo={false} />
+        {hasSession ? (
+          <span className="recitation-settings-session-meta">
+            {complete ? '整张口诀表已经背完' : '上次方式：顺序背'}
+          </span>
+        ) : null}
       </div>
       <Button type="primary" size="large" block icon={<PlayCircleOutlined />} onClick={handleEnter}>
-        {hasSession ? '继续背诵' : '开始背诵'}
+        {complete ? '查看完成结果' : hasSession ? '继续背诵' : '开始背诵'}
       </Button>
     </section>
   );
