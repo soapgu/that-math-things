@@ -1,6 +1,13 @@
+/**
+ * 创建浏览器中文领读控制器。
+ *
+ * 控制器不管理业务进度，只报告播放生命周期；语音不可用或异常时，
+ * 页面仍可进入手动确认流程。environment参数用于测试和非浏览器环境注入。
+ */
 export function createRecitationSpeechController(environment = globalThis) {
   const synthesis = environment?.speechSynthesis;
   const Utterance = environment?.SpeechSynthesisUtterance;
+  // 每次播放或取消都会推进序号，使旧语音迟到的回调无法污染当前页面状态。
   let generation = 0;
   let disposed = false;
 
@@ -15,6 +22,7 @@ export function createRecitationSpeechController(environment = globalThis) {
     }
   };
 
+  /** 先取消旧播报，再以固定中文语言和儿童跟读语速播放新口诀。 */
   const speak = (text, callbacks = {}) => {
     cancel();
     if (!isSupported() || typeof text !== 'string' || !text.trim()) {
@@ -43,6 +51,7 @@ export function createRecitationSpeechController(environment = globalThis) {
     }
   };
 
+  /** 组件卸载时永久停用控制器，并取消仍在队列中的浏览器语音。 */
   const dispose = () => {
     if (disposed) return;
     cancel();

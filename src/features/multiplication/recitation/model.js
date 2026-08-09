@@ -1,5 +1,11 @@
 import { assertMultiplicationCoordinate, getCellKey, getProduct } from '../coordinates';
 
+/**
+ * 九九乘法口诀背诵的纯领域模型。
+ *
+ * 这里统一负责45句口诀、81格交换律映射、会话状态转换和安全视图生成。
+ * 模块不访问浏览器存储或语音API，因此可以被生产页面、技术原型和测试共同复用。
+ */
 export const RECITATION_SCHEMA_VERSION = 1;
 export const ORDERING_MODES = Object.freeze({ SEQUENTIAL: 'sequential', CUSTOM: 'custom' });
 
@@ -25,6 +31,7 @@ function makePhrase(a, b) {
   });
 }
 
+/** 按第一组至第九组的传统顺序生成并冻结45句标准口诀。 */
 export const RECITATION_PHRASES = Object.freeze(
   Array.from({ length: 9 }, (_, groupIndex) => {
     const b = groupIndex + 1;
@@ -40,15 +47,21 @@ export function createPhraseId(a, b) {
   return getCellKey(Math.min(a, b), Math.max(a, b));
 }
 
+/** 根据规范ID查找口诀；无法识别时返回null，避免调用方直接操作内部索引。 */
 export function getPhraseById(id) {
   return PHRASE_BY_ID.get(id) ?? null;
 }
 
+/**
+ * 将有方向的乘法坐标转换为规范口诀。
+ * 例如9×1保留为所选坐标，但口诀ID和朗读文本统一映射到1×9。
+ */
 export function coordinateToPhrase(a, b) {
   const phrase = getPhraseById(createPhraseId(a, b));
   return Object.freeze({ ...phrase, selectedCoordinate: Object.freeze({ a, b }) });
 }
 
+/** 返回完成一句口诀后应展开的一个平方格或两个交换律对称格。 */
 export function getExpandedCoordinates(id) {
   const phrase = getPhraseById(id);
   if (!phrase) throw new RangeError(`无法识别的口诀 ID：${id}`);
@@ -58,6 +71,7 @@ export function getExpandedCoordinates(id) {
     : Object.freeze([first, Object.freeze({ a: phrase.b, b: phrase.a })]);
 }
 
+// 完成集合只接受规范口诀ID，并统一去重、恢复为传统背诵顺序。
 function normalizedCompletedIds(values) {
   if (!Array.isArray(values)) return null;
   const unique = new Set();
@@ -68,11 +82,13 @@ function normalizedCompletedIds(values) {
   return [...unique].sort((left, right) => PHRASE_ORDER.get(left) - PHRASE_ORDER.get(right));
 }
 
+/** 查找传统顺序中最早尚未完成的口诀。 */
 export function findFirstIncompletePhrase(completedIds = []) {
   const completed = new Set(completedIds);
   return RECITATION_PHRASES.find(({ id }) => !completed.has(id)) ?? null;
 }
 
+/** 分组标题只有在该组全部口诀完成后才进入已背状态。 */
 export function isPhraseGroupComplete(group, completedIds = []) {
   if (!Number.isInteger(group) || group < 1 || group > 9) return false;
   const completed = new Set(completedIds);
@@ -112,6 +128,7 @@ function isCoordinate(value) {
 }
 
 function normalizeSessionOrNull(input) {
+  // 会话中的字段彼此关联，任何不一致组合都整体判为无效，避免恢复出半损坏状态。
   if (!input || typeof input !== 'object' || Array.isArray(input)) return null;
   if (input.schemaVersion !== RECITATION_SCHEMA_VERSION) return null;
   if (!Object.values(ORDERING_MODES).includes(input.orderingMode)) return null;
@@ -141,18 +158,22 @@ function normalizeSessionOrNull(input) {
   };
 }
 
+/** 判断输入是否是内部状态完全一致的Schema v1会话。 */
 export function isValidRecitationSession(input) {
   return normalizeSessionOrNull(input) !== null;
 }
 
+/** 将外部输入规范化为安全会话；损坏或不兼容数据统一回退为空会话。 */
 export function normalizeRecitationSession(input) {
   return normalizeSessionOrNull(input) ?? createEmptyRecitationSession();
 }
 
+/** 判断45句口诀是否已经全部完成。 */
 export function isRecitationComplete(session) {
   return normalizedCompletedIds(session?.completedPhraseIds)?.length === RECITATION_PHRASES.length;
 }
 
+/** 在自定义模式选择一个尚未完成的坐标，并保留用户点击的显示方向。 */
 export function selectRecitationCoordinate(session, coordinate, updatedAt = nowIso()) {
   const current = normalizeRecitationSession(session);
   if (current.orderingMode !== ORDERING_MODES.CUSTOM || !isCoordinate(coordinate)) return current;
@@ -161,6 +182,7 @@ export function selectRecitationCoordinate(session, coordinate, updatedAt = nowI
   return { ...current, currentPhraseId: id, selectedCoordinate: { ...coordinate }, updatedAt };
 }
 
+/** 切换背诵方式；切回顺序背时自动定位最早未完成句。 */
 export function switchRecitationMode(session, orderingMode, updatedAt = nowIso()) {
   const current = normalizeRecitationSession(session);
   if (!Object.values(ORDERING_MODES).includes(orderingMode)) return current;
@@ -176,6 +198,10 @@ export function switchRecitationMode(session, orderingMode, updatedAt = nowIso()
   };
 }
 
+/**
+ * 完成当前口诀并推进会话。
+ * expectedPhraseId用于隔离快速重复确认产生的旧事件，防止误完成下一句。
+ */
 export function completeCurrentPhrase(session, updatedAt = nowIso(), expectedPhraseId = null) {
   const current = normalizeRecitationSession(session);
   if (expectedPhraseId !== null && current.currentPhraseId !== expectedPhraseId) return current;
@@ -193,10 +219,12 @@ export function completeCurrentPhrase(session, updatedAt = nowIso(), expectedPhr
   };
 }
 
+/** 创建一轮新的45句顺序背会话。 */
 export function resetRecitationSession(updatedAt = nowIso()) {
   return createEmptyRecitationSession(updatedAt);
 }
 
+/** 构建口诀表的9个分组标题、45个口诀格和36个占位格。 */
 export function buildRecitationTableView(session) {
   const current = normalizeRecitationSession(session);
   const completed = new Set(current.completedPhraseIds);
@@ -216,6 +244,10 @@ export function buildRecitationTableView(session) {
   });
 }
 
+/**
+ * 构建81格乘法表的安全视图。
+ * 未背格刻意不生成value，辅助名称中也不包含乘积，防止答案通过DOM泄露。
+ */
 export function buildRecitationMatrixView(session) {
   const current = normalizeRecitationSession(session);
   const completed = new Set(current.completedPhraseIds);
