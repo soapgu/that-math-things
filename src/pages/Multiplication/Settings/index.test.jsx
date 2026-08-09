@@ -2,24 +2,34 @@ import React from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import MultiplicationSettings from '.';
+import { ORDERING_MODES, completeCurrentPhrase, createEmptyRecitationSession, selectRecitationCoordinate, switchRecitationMode } from '../../../features/multiplication/recitation/model';
+import { saveRecitationSession } from '../../../features/multiplication/recitation/storage';
 
 function SessionStateProbe() {
   const location = useLocation();
   return <pre data-testid="session-state">{JSON.stringify(location.state)}</pre>;
 }
 
-function renderSettings() {
+function SettingsWithLocation() {
+  const location = useLocation();
+  return <><MultiplicationSettings /><span data-testid="settings-location">{`${location.pathname}${location.search}`}</span></>;
+}
+
+function renderSettings(initialEntry = '/multiplication') {
   return render(
-    <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }} initialEntries={['/multiplication']}>
+    <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }} initialEntries={[initialEntry]}>
       <Routes>
-        <Route path="/multiplication" element={<MultiplicationSettings />} />
+        <Route path="/multiplication" element={<SettingsWithLocation />} />
         <Route path="/multiplication/session" element={<SessionStateProbe />} />
+        <Route path="/multiplication/recitation" element={<SessionStateProbe />} />
       </Routes>
     </MemoryRouter>,
   );
 }
 
 describe('MultiplicationSettings', () => {
+  beforeEach(() => localStorage.clear());
+
   it('默认选择简单10题并展示全部配置', () => {
     renderSettings();
     expect(screen.getByRole('heading', { name: '九九乘法' })).toBeInTheDocument();
@@ -43,5 +53,58 @@ describe('MultiplicationSettings', () => {
     expect(state.settings).toEqual({ difficulty: 'hard', questionCount: 81 });
     expect(state.questions).toHaveLength(81);
     expect(new Set(state.questions.map(({ a, b }) => `${a}×${b}`)).size).toBe(81);
+  });
+
+  it.each(['/multiplication', '/multiplication?mode=challenge', '/multiplication?mode=unknown'])('默认和无效参数显示闯关：%s', (entry) => {
+    renderSettings(entry);
+    expect(screen.getByRole('tab', { name: '闯关' })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByRole('button', { name: /开始闯关/ })).toBeInTheDocument();
+  });
+
+  it('切换背诵Tab并开始空会话', async () => {
+    renderSettings();
+    fireEvent.click(screen.getByRole('tab', { name: '背诵' }));
+    expect(screen.getByRole('tab', { name: '背诵' })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByTestId('settings-location')).toHaveTextContent('/multiplication?mode=recitation');
+    expect(screen.getByText('0/45')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /开始背诵/ }));
+    await waitFor(() => expect(screen.getByTestId('session-state')).toBeInTheDocument());
+    const state = JSON.parse(screen.getByTestId('session-state').textContent);
+    expect(state.recitationSession).toMatchObject({ currentPhraseId: '1×1', completedPhraseIds: [] });
+  });
+
+  it('已有进度时显示继续背诵并传递会话', async () => {
+    const session = completeCurrentPhrase(createEmptyRecitationSession());
+    saveRecitationSession(session);
+    renderSettings('/multiplication?mode=recitation');
+    expect(screen.getByText('已背 1/45 句')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /继续背诵/ }));
+    await waitFor(() => expect(screen.getByTestId('session-state')).toBeInTheDocument());
+    expect(JSON.parse(screen.getByTestId('session-state').textContent).recitationSession.completedPhraseIds).toEqual(['1×1']);
+  });
+
+  it('首次保存失败仍携带内存会话进入背诵页', async () => {
+    const setItem = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new Error('blocked'); });
+    renderSettings('/multiplication?mode=recitation');
+    fireEvent.click(screen.getByRole('button', { name: /开始背诵/ }));
+    await waitFor(() => expect(screen.getByTestId('session-state')).toBeInTheDocument());
+    const state = JSON.parse(screen.getByTestId('session-state').textContent);
+    expect(state.recitationSession.currentPhraseId).toBe('1×1');
+    expect(state.storageWarning).toMatch(/无法保存/);
+    setItem.mockRestore();
+  });
+
+  it('第一轮继续技术原型的自定义会话时安全切回顺序背', async () => {
+    let session = switchRecitationMode(createEmptyRecitationSession(), ORDERING_MODES.CUSTOM);
+    session = selectRecitationCoordinate(session, { a: 9, b: 1 });
+    saveRecitationSession(session);
+    renderSettings('/multiplication?mode=recitation');
+    fireEvent.click(screen.getByRole('button', { name: /继续背诵/ }));
+    await waitFor(() => expect(screen.getByTestId('session-state')).toBeInTheDocument());
+    expect(JSON.parse(screen.getByTestId('session-state').textContent).recitationSession).toMatchObject({
+      orderingMode: 'sequential',
+      currentPhraseId: '1×1',
+      selectedCoordinate: null,
+    });
   });
 });

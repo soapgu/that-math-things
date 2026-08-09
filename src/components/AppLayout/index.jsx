@@ -47,7 +47,7 @@ export default function AppLayout({ children }) {
           className="app-menu"
         />
       </Header>
-      <Content style={{ padding: '24px', maxWidth: 960, margin: '0 auto', width: '100%' }}>
+      <Content className={`app-content${location.pathname === '/multiplication/recitation' ? ' app-content-recitation' : ''}`}>
         {children}
       </Content>
     </Layout>

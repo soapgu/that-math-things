@@ -14,6 +14,7 @@ const PracticeCorrection = lazy(() => import('./pages/Practice/Correction'));
 const MultiplicationSettings = lazy(() => import('./pages/Multiplication/Settings'));
 const MultiplicationSession = lazy(() => import('./pages/Multiplication/Session'));
 const MultiplicationResult = lazy(() => import('./pages/Multiplication/Result'));
+const MultiplicationRecitation = lazy(() => import('./pages/Multiplication/Recitation'));
 
 function App() {
   return (
@@ -31,6 +32,7 @@ function App() {
           <Route path="/multiplication" element={<MultiplicationSettings />} />
           <Route path="/multiplication/session" element={<MultiplicationSession />} />
           <Route path="/multiplication/result" element={<MultiplicationResult />} />
+          <Route path="/multiplication/recitation" element={<MultiplicationRecitation />} />
         </Routes>
       </Suspense>
     </AppLayout>

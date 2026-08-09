@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
 import { CheckCircleFilled, PlayCircleOutlined } from '@ant-design/icons';
-import { Button, Typography } from 'antd';
-import { useNavigate } from 'react-router-dom';
+import { Button, Progress, Tabs, Typography } from 'antd';
+import { useLocation, useNavigate } from 'react-router-dom';
 import {
   DEFAULT_MULTIPLICATION_SETTINGS,
   DIFFICULTIES,
   generateMultiplicationQuestions,
   QUESTION_COUNTS,
 } from '../../../features/multiplication/model';
+import { ORDERING_MODES, createEmptyRecitationSession, switchRecitationMode } from '../../../features/multiplication/recitation/model';
+import { loadRecitationSession, saveRecitationSession } from '../../../features/multiplication/recitation/storage';
 import './settings.css';
 
 const DIFFICULTY_OPTIONS = [
@@ -16,7 +18,7 @@ const DIFFICULTY_OPTIONS = [
   { value: DIFFICULTIES.HARD, label: '挑战', description: '隐藏其他乘积，在目标格内填写答案' },
 ];
 
-export default function MultiplicationSettings() {
+function ChallengeSettings() {
   const navigate = useNavigate();
   const [settings, setSettings] = useState(() => ({ ...DEFAULT_MULTIPLICATION_SETTINGS }));
 
@@ -30,12 +32,7 @@ export default function MultiplicationSettings() {
   };
 
   return (
-    <main className="multiplication-settings-page">
-      <Typography.Title level={2}>九九乘法</Typography.Title>
-      <Typography.Paragraph type="secondary">
-        沿着乘法矩阵找到答案，一题一题点亮九九乘法表。
-      </Typography.Paragraph>
-
+    <div className="multiplication-challenge-settings">
       <Typography.Title level={4}>难度</Typography.Title>
       <div className="multiplication-difficulty-options" aria-label="选择难度">
         {DIFFICULTY_OPTIONS.map((option) => {
@@ -79,6 +76,67 @@ export default function MultiplicationSettings() {
       <Button type="primary" size="large" block icon={<PlayCircleOutlined />} onClick={handleStart}>
         开始闯关
       </Button>
+    </div>
+  );
+}
+
+function RecitationSettings() {
+  const navigate = useNavigate();
+  const loaded = loadRecitationSession();
+  const hasSession = loaded.status === 'loaded';
+  const session = hasSession ? loaded.session : createEmptyRecitationSession();
+  const completed = session.completedPhraseIds.length;
+
+  const handleEnter = () => {
+    const sourceSession = hasSession ? session : createEmptyRecitationSession();
+    const nextSession = sourceSession.orderingMode === ORDERING_MODES.SEQUENTIAL
+      ? sourceSession
+      : switchRecitationMode(sourceSession, ORDERING_MODES.SEQUENTIAL);
+    const saveResult = saveRecitationSession(nextSession);
+    navigate('/multiplication/recitation', {
+      state: {
+        recitationSession: nextSession,
+        storageWarning: saveResult.ok ? null : '进度暂时无法保存，本次仍可继续背诵。',
+      },
+    });
+  };
+
+  return (
+    <section className="multiplication-recitation-settings" aria-labelledby="recitation-settings-title">
+      <Typography.Title id="recitation-settings-title" level={4}>口诀背诵</Typography.Title>
+      <Typography.Paragraph type="secondary">
+        跟着中文领读逐句背诵；背完一句，乘法表会同步展开相关算式。
+      </Typography.Paragraph>
+      <div className="recitation-settings-progress">
+        <strong>{hasSession ? `已背 ${completed}/45 句` : '0/45'}</strong>
+        <Progress percent={Math.round(completed / 45 * 100)} showInfo={false} />
+      </div>
+      <Button type="primary" size="large" block icon={<PlayCircleOutlined />} onClick={handleEnter}>
+        {hasSession ? '继续背诵' : '开始背诵'}
+      </Button>
+    </section>
+  );
+}
+
+export default function MultiplicationSettings() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const requestedMode = new URLSearchParams(location.search).get('mode');
+  const activeMode = requestedMode === 'recitation' ? 'recitation' : 'challenge';
+
+  const items = [
+    { key: 'challenge', label: '闯关', children: <ChallengeSettings /> },
+    { key: 'recitation', label: '背诵', children: <RecitationSettings /> },
+  ];
+
+  return (
+    <main className="multiplication-settings-page">
+      <Typography.Title level={2}>九九乘法</Typography.Title>
+      <Tabs
+        activeKey={activeMode}
+        items={items}
+        onChange={(mode) => navigate(`/multiplication?mode=${mode}`, { replace: true })}
+      />
     </main>
   );
 }

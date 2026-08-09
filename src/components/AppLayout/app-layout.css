@@ -26,6 +26,17 @@
   min-width: 0;
 }
 
+.app-content {
+  width: 100%;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.app-content-recitation {
+  max-width: 1448px;
+}
+
 @media (max-width: 800px) {
   .app-header {
     padding: 0 12px;
