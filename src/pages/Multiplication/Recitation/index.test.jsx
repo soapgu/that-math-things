@@ -88,6 +88,16 @@ describe('MultiplicationRecitation 完整顺序背', () => {
     expect(screen.getByLabelText('2乘1等于2，已背')).toBeInTheDocument();
   });
 
+  it('刷新保留旧路由状态时优先恢复更新时间更晚的本地进度', () => {
+    const enteredSession = createEmptyRecitationSession('2026-01-01T00:00:00.000Z');
+    const storedSession = completeCurrentPhrase(enteredSession, '2026-01-01T00:00:01.000Z');
+    saveRecitationSession(storedSession);
+    renderRecitation({ state: { recitationSession: enteredSession } });
+    expect(screen.getByText('1/45')).toBeInTheDocument();
+    expect(screen.getByText('1 × 2 = 2 · 一二得二')).toBeInTheDocument();
+    expect(screen.getByLabelText('1乘1等于1，已背')).toBeInTheDocument();
+  });
+
   it('没有有效会话时返回背诵设置Tab', async () => {
     renderRecitation({ withProbe: true });
     await waitFor(() => expect(screen.getByTestId('location')).toHaveTextContent('/multiplication?mode=recitation'));

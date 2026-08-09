@@ -14,13 +14,15 @@ import { loadRecitationSession, saveRecitationSession } from '../../../features/
 import './recitation.css';
 
 function resolveInitialSession(locationState) {
-  let session = null;
-  if (isValidRecitationSession(locationState?.recitationSession)) {
-    session = locationState.recitationSession;
-  } else {
-    const loaded = loadRecitationSession();
-    session = loaded.status === 'loaded' ? loaded.session : null;
-  }
+  const routeSession = isValidRecitationSession(locationState?.recitationSession)
+    ? locationState.recitationSession
+    : null;
+  const loaded = loadRecitationSession();
+  const storedSession = loaded.status === 'loaded' ? loaded.session : null;
+  // 浏览器刷新会保留进入页面时的history.state；按更新时间选择会话，避免旧路由快照覆盖最新存储进度。
+  const session = routeSession && (!storedSession || routeSession.updatedAt > storedSession.updatedAt)
+    ? routeSession
+    : storedSession;
   if (!session || session.orderingMode === ORDERING_MODES.SEQUENTIAL) return session;
   return switchRecitationMode(session, ORDERING_MODES.SEQUENTIAL);
 }
