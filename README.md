@@ -65,9 +65,9 @@
 
 **<https://soapgu.github.io/that-math-things>**
 
-当前版本：[**v2.6.0**](https://github.com/soapgu/that-math-things/releases/tag/v2.6.0)
+当前版本：[**v2.7.0**](https://github.com/soapgu/that-math-things/releases/tag/v2.7.0)
 
-下一版本：**v2.7.0 九九乘法口诀背诵（发布进行中）**
+下一版本：**暂未规划**
 
 ### 支持设备
 

@@ -21,7 +21,7 @@
 | Phase 8 | — | 🧪 | E2E 自动化 | 已完成 9 个 Playwright spec 文件、62 个用例，覆盖核心训练与订正流程 |
 | [v2.5.0](https://github.com/soapgu/that-math-things/releases/tag/v2.5.0) | 2026-07-29 | ✅ | 发布体系与质量基线 | 面向平板和电脑建立持续集成、版本管理与可重复发布流程 |
 | [v2.6.0](https://github.com/soapgu/that-math-things/releases/tag/v2.6.0) | 2026-08-06 | ✅ | 九九乘法闯关 | 新增完整九九表、三级矩阵提示、即时反馈和闯关评星 |
-| v2.7 | — | 🧪 | 九九乘法口诀背诵 | 在统一九九乘法入口中提供顺序背、自定义选背、交换律展开和语音领读 |
+| [v2.7.0](https://github.com/soapgu/that-math-things/releases/tag/v2.7.0) | 2026-08-10 | ✅ | 九九乘法口诀背诵 | 在统一九九乘法入口中提供顺序背、自定义选背、交换律展开和语音领读 |
 
 ## 历史演化
 
@@ -93,7 +93,7 @@
 - 按题记录辅助使用程度，并在结算页展示摘要；
 - 存储结构升级到 Schema v2，同时兼容旧记录。
 
-## 当前进展：v2.6.0 已发布
+## 当前进展：v2.7.0 已发布
 
 Phase 8 的端到端测试体系已随 v2.5.0 纳入持续集成和发布质量基线：
 
@@ -107,7 +107,7 @@ Phase 8 的端到端测试体系已随 v2.5.0 纳入持续集成和发布质量�
 
 详细实施和验收记录见 [STEP.md](./STEP.md) 与 [Phase 8 E2E 实施计划](./docs/phase8-e2e-implementation-plan.md)。
 
-当前最新已发布版本为 v2.6.0；“九九乘法闯关”八个步骤全部完成，通过 315 项 Vitest、73 项 Playwright E2E、生产构建、GitHub Actions、GitHub Pages 和用户线上体验验收。下一版本规划为 v2.7“九九乘法口诀背诵”。
+当前最新已发布版本为 v2.7.0；”九九乘法口诀背诵”八个步骤全部完成，通过 394 项 Vitest、82 项 Playwright E2E、生产构建、GitHub Actions、GitHub Pages 和用户线上体验验收。下一版本暂未规划。
 
 ## v2.5.0：发布体系与质量基线
 
