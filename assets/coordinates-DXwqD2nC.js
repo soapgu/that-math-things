@@ -1,0 +1,1 @@
+function t(e,r){if(!Number.isInteger(e)||!Number.isInteger(r)||e<1||e>9||r<1||r>9)throw new RangeError("乘法格坐标必须是 1–9 的整数")}function n(e,r){return t(e,r),`${e}×${r}`}function i(e,r){return t(e,r),e*r}export{i as a,t as b,n as g};
