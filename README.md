@@ -39,6 +39,8 @@
 >
 > v2.6 测试与体验验收：见 [docs/v2.6-九九乘法闯关测试与体验验收.md](./docs/v2.6-九九乘法闯关测试与体验验收.md)
 >
+> v2.7 九九乘法口诀背诵测试与体验验收：见 [docs/v2.7-九九乘法口诀背诵测试与体验验收.md](./docs/v2.7-九九乘法口诀背诵测试与体验验收.md)
+>
 > v2.6.0 发布检查清单：见 [docs/v2.6.0-release-checklist.md](./docs/v2.6.0-release-checklist.md)
 >
 > v2.6.0 Release Notes：见 [docs/v2.6.0-release-notes.md](./docs/v2.6.0-release-notes.md)
