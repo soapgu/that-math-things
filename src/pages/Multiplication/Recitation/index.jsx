@@ -47,6 +47,7 @@ export default function MultiplicationRecitation() {
   const confirmRef = useRef(null);
   const resetTriggerRef = useRef(null);
   const animationTimer = useRef(null);
+  const confirmFocusFrame = useRef(null);
   const pendingAnnouncement = useRef('');
   const resetOpenRef = useRef(false);
   const focusRequestSequence = useRef(0);
@@ -61,6 +62,7 @@ export default function MultiplicationRecitation() {
     return () => {
       speech.current?.dispose();
       if (animationTimer.current) window.clearTimeout(animationTimer.current);
+      if (confirmFocusFrame.current) window.cancelAnimationFrame(confirmFocusFrame.current);
     };
   }, []);
 
@@ -90,7 +92,13 @@ export default function MultiplicationRecitation() {
   const markSpeechReady = (state = 'ready') => {
     setSpeechState(state);
     if (state === 'unavailable') setAnnouncement('语音不可用，可以继续手动背诵。');
-    if (!resetOpenRef.current) window.requestAnimationFrame(() => confirmRef.current?.focus());
+    if (confirmFocusFrame.current) window.cancelAnimationFrame(confirmFocusFrame.current);
+    if (!resetOpenRef.current) {
+      confirmFocusFrame.current = window.requestAnimationFrame(() => {
+        confirmFocusFrame.current = null;
+        if (!resetOpenRef.current) confirmRef.current?.focus();
+      });
+    }
   };
 
   const speak = () => {
@@ -133,6 +141,10 @@ export default function MultiplicationRecitation() {
 
   const openReset = () => {
     resetOpenRef.current = true;
+    if (confirmFocusFrame.current) {
+      window.cancelAnimationFrame(confirmFocusFrame.current);
+      confirmFocusFrame.current = null;
+    }
     setResetOpen(true);
   };
 
@@ -166,6 +178,7 @@ export default function MultiplicationRecitation() {
     setAnimatePhraseId(phrase.id);
     if (animationTimer.current) window.clearTimeout(animationTimer.current);
     animationTimer.current = window.setTimeout(() => {
+      animationTimer.current = null;
       setAnimatePhraseId(null);
       setCompletionGlow(false);
     }, nextSession.completedPhraseIds.length === 45 ? 700 : 260);
@@ -185,6 +198,10 @@ export default function MultiplicationRecitation() {
   const reset = () => {
     speech.current?.cancel();
     closeReset();
+    if (animationTimer.current) {
+      window.clearTimeout(animationTimer.current);
+      animationTimer.current = null;
+    }
     setCompletionGlow(false);
     setAnimatePhraseId(null);
     const nextSession = resetRecitationSession();

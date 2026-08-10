@@ -302,6 +302,25 @@ describe('MultiplicationRecitation 顺序背与自定义背', () => {
     expect(restored.container.querySelector('.recitation-production-tables')).not.toHaveClass('is-completing');
   });
 
+  it('重新开始会取消上一句尚未结束的单元格动画计时器', async () => {
+    const setTimer = vi.spyOn(window, 'setTimeout');
+    const clearTimer = vi.spyOn(window, 'clearTimeout');
+    const session = createEmptyRecitationSession();
+    renderRecitation({ state: { recitationSession: session } });
+    act(() => spoken.at(-1).onend());
+    fireEvent.click(screen.getByRole('button', { name: '我背完了' }));
+    const animationCallIndex = setTimer.mock.calls.findIndex(([, delay]) => delay === 260);
+    const animationTimerId = setTimer.mock.results[animationCallIndex]?.value;
+    expect(animationTimerId).toBeDefined();
+
+    fireEvent.click(screen.getByRole('button', { name: '重新开始' }));
+    fireEvent.click(await screen.findByRole('button', { name: '清空并重新开始' }));
+    expect(clearTimer).toHaveBeenCalledWith(animationTimerId);
+
+    setTimer.mockRestore();
+    clearTimer.mockRestore();
+  });
+
   it('语音调用异常时立即降级并允许手动确认', () => {
     window.speechSynthesis.speak.mockImplementation(() => { throw new Error('speech failed'); });
     const session = createEmptyRecitationSession();
@@ -329,6 +348,37 @@ describe('MultiplicationRecitation 顺序背与自定义背', () => {
     act(() => spoken.at(-1).onend());
     await waitFor(() => expect(keep).toHaveFocus());
     expect(screen.getByRole('button', { name: '我背完了' })).not.toHaveFocus();
+  });
+
+  it('语音结束已排队的焦点任务会在打开重置弹窗时取消', async () => {
+    const queuedFrames = new Map();
+    let nextFrameId = 1;
+    const requestFrame = vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
+      const frameId = nextFrameId;
+      nextFrameId += 1;
+      queuedFrames.set(frameId, callback);
+      return frameId;
+    });
+    const cancelFrame = vi.spyOn(window, 'cancelAnimationFrame').mockImplementation((frameId) => {
+      queuedFrames.delete(frameId);
+    });
+    const session = createEmptyRecitationSession();
+    renderRecitation({ state: { recitationSession: session } });
+
+    act(() => spoken.at(-1).onend());
+    const confirmFocusFrameId = nextFrameId - 1;
+    const staleConfirmFocusCallback = queuedFrames.get(confirmFocusFrameId);
+    expect(queuedFrames.has(confirmFocusFrameId)).toBe(true);
+    fireEvent.click(screen.getByRole('button', { name: '重新开始' }));
+
+    expect(cancelFrame).toHaveBeenCalledWith(confirmFocusFrameId);
+    expect(queuedFrames.has(confirmFocusFrameId)).toBe(false);
+    await screen.findByRole('button', { name: '继续保留' });
+    act(() => staleConfirmFocusCallback?.(performance.now()));
+    expect(screen.getByRole('button', { name: '我背完了' })).not.toHaveFocus();
+
+    requestFrame.mockRestore();
+    cancelFrame.mockRestore();
   });
 
   it('恢复自定义等待会话时聚焦第一个未完成格', async () => {
