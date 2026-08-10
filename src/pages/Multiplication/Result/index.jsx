@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Button, Card, Col, Row, Statistic, Typography } from 'antd';
 import { ArrowLeftOutlined, ReloadOutlined, StarFilled } from '@ant-design/icons';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -14,7 +14,7 @@ import './result.css';
 export default function MultiplicationResult() {
   const navigate = useNavigate();
   const location = useLocation();
-  const reloadedDocument = isReloadNavigation();
+  const [reloadedDocument] = useState(isReloadNavigation);
   const validState = !reloadedDocument && isValidMultiplicationResultState(location.state);
 
   useEffect(() => {

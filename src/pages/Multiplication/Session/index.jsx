@@ -84,7 +84,11 @@ function revealDelayForHint({ position }) {
 export default function MultiplicationSession() {
   const navigate = useNavigate();
   const location = useLocation();
-  const reloadedDocument = isReloadNavigation();
+  // 刷新检测只在首次渲染执行一次并锁定。v7_startTransition 下 navigate 是异步的，
+  // 如果每次渲染都重新调用 isReloadNavigation()，transition 中间帧可能因
+  // markReloadNavigationHandled 已设为 true 而返回 false，导致 validState 短暂
+  // 变为 true 并闪现做题界面。用 useState 惰性初始化确保整个组件生命周期一致。
+  const [reloadedDocument] = useState(isReloadNavigation);
   const validState = !reloadedDocument && isValidMultiplicationSessionState(location.state);
   const settings = validState ? location.state.settings : null;
   const questions = validState ? location.state.questions : [];

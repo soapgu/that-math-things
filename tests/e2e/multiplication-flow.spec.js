@@ -83,6 +83,25 @@ test('首页入口、再来一局和返回设置', async ({ browser }, testInfo)
   await context.close();
 });
 
+test('设置页刷新后第一次点击即可开始闯关', async ({ browser }, testInfo) => {
+  const baseURL = testInfo.project.use.baseURL;
+  const { context, page, collector } = await createMultiplicationPage(browser, baseURL);
+  const settings = new MultiplicationSettingsPage(page);
+  const session = new MultiplicationSessionPage(page);
+
+  await settings.goto(baseURL);
+  await page.reload();
+  await settings.waitForReady();
+  await settings.start();
+  await session.waitForReady();
+  await expect(session.getProgress()).resolves.toEqual({ current: 1, total: 10 });
+  await page.waitForTimeout(500);
+  await expect(page).toHaveURL(/#\/multiplication\/session$/);
+
+  collector.expectClean('设置页刷新后首次开始');
+  await context.close();
+});
+
 test('20题和50题配置、离开保护及刷新回退', async ({ browser }, testInfo) => {
   const baseURL = testInfo.project.use.baseURL;
   const { context, page, collector } = await createMultiplicationPage(browser, baseURL);

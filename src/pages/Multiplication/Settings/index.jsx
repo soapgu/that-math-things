@@ -8,6 +8,7 @@ import {
   generateMultiplicationQuestions,
   QUESTION_COUNTS,
 } from '../../../features/multiplication/model';
+import { markReloadNavigationHandled } from '../../../features/multiplication/routeState';
 import {
   createEmptyRecitationSession,
   isRecitationComplete,
@@ -28,6 +29,9 @@ function ChallengeSettings() {
   const [settings, setSettings] = useState(() => ({ ...DEFAULT_MULTIPLICATION_SETTINGS }));
 
   const handleStart = () => {
+    // 设置页本身也可能由浏览器刷新产生。用户主动开始的新会话不能再被
+    // Session 当成刷新遗留的旧会话，因此在导航前先消费本次刷新标记。
+    markReloadNavigationHandled();
     navigate('/multiplication/session', {
       state: {
         settings: { ...settings },
