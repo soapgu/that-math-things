@@ -41,9 +41,23 @@
 >
 > v2.7 九九乘法口诀背诵测试与体验验收：见 [docs/v2.7-九九乘法口诀背诵测试与体验验收.md](./docs/v2.7-九九乘法口诀背诵测试与体验验收.md)
 >
+> v2.7 九九乘法口诀背诵实施计划：见 [docs/v2.7-九九乘法口诀背诵实施计划.md](./docs/v2.7-九九乘法口诀背诵实施计划.md)
+>
+> v2.7 UE 页面流程设计：见 [docs/v2.7-九九乘法口诀背诵UE页面流程设计.md](./docs/v2.7-九九乘法口诀背诵UE页面流程设计.md)
+>
+> v2.7 低保真交互原型：见 [docs/v2.7-九九乘法口诀背诵低保真交互原型.md](./docs/v2.7-九九乘法口诀背诵低保真交互原型.md)
+>
+> v2.7 UI 视觉设计：见 [docs/v2.7-九九乘法口诀背诵UI视觉设计.md](./docs/v2.7-九九乘法口诀背诵UI视觉设计.md)
+>
+> v2.7 技术原型与基础模型：见 [docs/v2.7-九九乘法口诀背诵技术原型与基础模型.md](./docs/v2.7-九九乘法口诀背诵技术原型与基础模型.md)
+>
 > v2.6.0 发布检查清单：见 [docs/v2.6.0-release-checklist.md](./docs/v2.6.0-release-checklist.md)
 >
 > v2.6.0 Release Notes：见 [docs/v2.6.0-release-notes.md](./docs/v2.6.0-release-notes.md)
+>
+> v2.7.0 发布检查清单：见 [docs/v2.7.0-release-checklist.md](./docs/v2.7.0-release-checklist.md)
+>
+> v2.7.0 Release Notes：见 [docs/v2.7.0-release-notes.md](./docs/v2.7.0-release-notes.md)
 
 ---
 
@@ -53,7 +67,7 @@
 
 当前版本：[**v2.6.0**](https://github.com/soapgu/that-math-things/releases/tag/v2.6.0)
 
-下一版本规划：**v2.7 九九乘法口诀背诵**
+下一版本：**v2.7.0 九九乘法口诀背诵（发布进行中）**
 
 ### 支持设备
 
