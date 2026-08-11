@@ -32,6 +32,8 @@ import {
   loadMultiplicationSoundEnabled,
   saveMultiplicationSoundEnabled,
 } from '../../../features/multiplication/sound';
+import { coordinateToPhrase } from '../../../features/multiplication/recitation/model';
+import { createRecitationSpeechController } from '../../../features/multiplication/recitation/speech';
 import './session.css';
 
 const PHASES = {
@@ -125,6 +127,8 @@ export default function MultiplicationSession() {
   const exitSourceRef = useRef(null);
   const focusRestorePhaseRef = useRef(null);
   const soundPlayerRef = useRef(null);
+  const speechRef = useRef(null);
+  const phraseSpeechTimerRef = useRef(null);
   const timer = useTimer();
   const current = questions[currentIndex];
   const isLast = currentIndex === questions.length - 1;
@@ -138,7 +142,10 @@ export default function MultiplicationSession() {
   useEffect(() => {
     const player = createMultiplicationSoundPlayer();
     soundPlayerRef.current = player;
-    return () => player.dispose();
+    return () => {
+      player.dispose();
+      speechRef.current?.dispose();
+    };
   }, []);
 
   const clearLocateTimers = useCallback(() => {
@@ -177,6 +184,8 @@ export default function MultiplicationSession() {
     clearTargetFeedbackTimer();
     timer.stop();
     soundPlayerRef.current?.stop();
+    speechRef.current?.cancel();
+    if (phraseSpeechTimerRef.current) { window.clearTimeout(phraseSpeechTimerRef.current); phraseSpeechTimerRef.current = null; }
     advanceLockRef.current = false;
     setPhase(PHASES.LOCATING);
     setLocateStage('idle');
@@ -279,6 +288,8 @@ export default function MultiplicationSession() {
     clearTargetFeedbackTimer();
     timer.stop();
     soundPlayerRef.current?.stop();
+    speechRef.current?.cancel();
+    if (phraseSpeechTimerRef.current) { window.clearTimeout(phraseSpeechTimerRef.current); phraseSpeechTimerRef.current = null; }
   }, [clearAutoTimer, clearLocateTimers, clearTargetFeedbackTimer, timer.stop]);
 
   if (!validState || !current) return null;
@@ -302,6 +313,14 @@ export default function MultiplicationSession() {
     if (soundEnabled) {
       if (correct) soundPlayerRef.current?.playCorrect();
       else soundPlayerRef.current?.playWrong();
+      // 蜂鸣音（约0.3秒）播完后再播报口诀，避免两者粘连、提升辨识度。
+      // 惰性创建控制器，避免影响页面挂载和定位动画时序。
+      if (phraseSpeechTimerRef.current) window.clearTimeout(phraseSpeechTimerRef.current);
+      phraseSpeechTimerRef.current = window.setTimeout(() => {
+        phraseSpeechTimerRef.current = null;
+        if (!speechRef.current) speechRef.current = createRecitationSpeechController(window);
+        speechRef.current.speak(coordinateToPhrase(current.a, current.b).text);
+      }, 400);
     }
     setPhase(correct ? PHASES.FEEDBACK_CORRECT : PHASES.FEEDBACK_WRONG);
     setLocateStage('feedback');
@@ -341,6 +360,8 @@ export default function MultiplicationSession() {
     clearLocateTimers();
     clearTargetFeedbackTimer();
     soundPlayerRef.current?.stop();
+    speechRef.current?.cancel();
+    if (phraseSpeechTimerRef.current) { window.clearTimeout(phraseSpeechTimerRef.current); phraseSpeechTimerRef.current = null; }
     if (isLast) {
       if (resultLockRef.current) return;
       resultLockRef.current = true;
@@ -404,6 +425,8 @@ export default function MultiplicationSession() {
     clearTargetFeedbackTimer();
     timer.stop();
     soundPlayerRef.current?.stop();
+    speechRef.current?.cancel();
+    if (phraseSpeechTimerRef.current) { window.clearTimeout(phraseSpeechTimerRef.current); phraseSpeechTimerRef.current = null; }
     exitSourceRef.current = null;
     focusRestorePhaseRef.current = null;
     blocker.proceed?.();
@@ -470,7 +493,11 @@ export default function MultiplicationSession() {
             aria-pressed={soundEnabled}
             onClick={() => {
               const nextEnabled = !soundEnabled;
-              if (!nextEnabled) soundPlayerRef.current?.stop();
+              if (!nextEnabled) {
+                soundPlayerRef.current?.stop();
+                speechRef.current?.cancel();
+                if (phraseSpeechTimerRef.current) { window.clearTimeout(phraseSpeechTimerRef.current); phraseSpeechTimerRef.current = null; }
+              }
               setSoundEnabled(nextEnabled);
               saveMultiplicationSoundEnabled(nextEnabled);
             }}
