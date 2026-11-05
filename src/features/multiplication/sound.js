@@ -104,6 +104,14 @@ export function createMultiplicationSoundPlayer() {
   };
 
   return {
+    playShot(combo, perfect = false) {
+      const frequency = [523.25, 587.33, 659.25, 783.99, 880][Math.min(4, Math.floor(Math.max(0, combo - 1) / 5))];
+      playNotes(perfect ? [
+        { frequency, offset: 0, duration: 0.18, volume: 0.04 },
+        { frequency: frequency * 1.25, offset: 0, duration: 0.2, volume: 0.03 },
+        { frequency: frequency * 1.5, offset: 0.04, duration: 0.22, volume: 0.03 },
+      ] : [{ frequency, offset: 0, duration: 0.1, volume: 0.055 }]);
+    },
     playCorrect() {
       playNotes([
         { frequency: 659.25, offset: 0, duration: 0.12, volume: 0.055 },

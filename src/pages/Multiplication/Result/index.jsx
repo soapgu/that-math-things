@@ -1,3 +1,4 @@
+import { SharpshooterResult } from '../../../features/multiplication/sharpshooter/Pages';
 import React, { useEffect, useState } from 'react';
 import { Button, Card, Col, Row, Statistic, Typography } from 'antd';
 import { ArrowLeftOutlined, ReloadOutlined, StarFilled } from '@ant-design/icons';
@@ -11,7 +12,7 @@ import { generateMultiplicationQuestions } from '../../../features/multiplicatio
 import { formatTimerDuration } from '../../../hooks/useTimer';
 import './result.css';
 
-export default function MultiplicationResult() {
+function ClassicMultiplicationResult() {
   const navigate = useNavigate();
   const location = useLocation();
   const [reloadedDocument] = useState(isReloadNavigation);
@@ -73,4 +74,10 @@ export default function MultiplicationResult() {
       </div>
     </main>
   );
+}
+
+export default function MultiplicationResult() {
+  const location = useLocation();
+  return location.state?.settings?.difficulty === 'sharpshooter'
+    ? <SharpshooterResult /> : <ClassicMultiplicationResult />;
 }

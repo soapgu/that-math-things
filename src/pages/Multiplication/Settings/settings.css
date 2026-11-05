@@ -134,3 +134,7 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+.multiplication-difficulty-options { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.multiplication-difficulty-option[data-difficulty="sharpshooter"] { --option-color: #b35c00; --option-soft: #fff4dc; }
+.multiplication-fixed-count { text-align: center; padding: 12px; background: #fff4dc; border-radius: 8px; margin-bottom: 24px; }

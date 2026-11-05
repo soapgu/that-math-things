@@ -1154,3 +1154,13 @@ v2.6.0 已于 2026-08-06 发布，新增独立于现有加减法“计算训练�
 - [docs/nginx-deploy.md](./docs/nginx-deploy.md)：Nginx 部署参考
 - [docs/playwright-cli-usage.md](./docs/playwright-cli-usage.md)：Playwright CLI 使用说明
 - [docs/fisher-yates-shuffle.md](./docs/fisher-yates-shuffle.md)：Fisher–Yates 洗牌算法笔记
+
+
+## v2.8.0 九九神枪手
+
+- 已实现：36轮/81发独立射击模型、第四档设置入口、累计开图与轮末揭晓。
+- 已实现：跨轮连击、里程碑动画、射击音阶、打空音效、完美和弦、单轮评价。
+- 已实现：结算、重开、键盘、计时、刷新回退与独立路由校验。
+- 验证：413项Vitest通过；原有83项E2E通过，新增7项复验通过；生产构建与四种宽度截图检查通过。音效人耳试听和平板实机验收留待发布前完成。
+- 测试与体验验收记录见 [v2.8实施计划](./docs/v2.8-九九神枪手实施计划.md)。
+- 尚未提交或发布；正式发布时再统一升级版本号。

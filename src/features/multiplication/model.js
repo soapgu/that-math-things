@@ -23,11 +23,12 @@ export { getCellKey } from './coordinates';
  * @typedef {Record<string, AnsweredCell>} AnsweredCells
  */
 
-/** 三档难度的稳定内部值；Object.freeze 防止运行时被意外改写。 */
+/** 四档难度的稳定内部值；Object.freeze 防止运行时被意外改写。 */
 export const DIFFICULTIES = Object.freeze({
   EASY: 'easy',
   MEDIUM: 'medium',
   HARD: 'hard',
+  SHARPSHOOTER: 'sharpshooter',
 });
 
 /** 产品允许的单局题量；81 题代表完整打开九九乘法表。 */
@@ -47,10 +48,10 @@ export const DEFAULT_MULTIPLICATION_SETTINGS = Object.freeze({
 });
 
 /** 缓存难度值数组，供所有公开函数执行统一输入校验。 */
-const DIFFICULTY_VALUES = Object.freeze(Object.values(DIFFICULTIES));
+const DIFFICULTY_VALUES = Object.freeze([DIFFICULTIES.EASY, DIFFICULTIES.MEDIUM, DIFFICULTIES.HARD]);
 
 /**
- * 确认难度属于产品定义的三档之一。
+ * 确认难度属于传统单格玩法的三档之一；神枪手使用独立模型。
  * @param {string} difficulty
  * @throws {RangeError} 难度无效时抛出，避免错误配置静默进入评分或矩阵逻辑。
  */

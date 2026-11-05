@@ -37,7 +37,7 @@ function createResultState(settings) {
 }
 
 describe('multiplication route state', () => {
-  it.each(Object.values(DIFFICULTIES).flatMap((difficulty) => (
+  it.each([DIFFICULTIES.EASY, DIFFICULTIES.MEDIUM, DIFFICULTIES.HARD].flatMap((difficulty) => (
     QUESTION_COUNTS.map((questionCount) => [difficulty, questionCount])
   )))('接受 %s 难度 %i 题的完整会话与结算', (difficulty, questionCount) => {
     const settings = { difficulty, questionCount };

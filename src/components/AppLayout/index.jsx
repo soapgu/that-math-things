@@ -47,7 +47,7 @@ export default function AppLayout({ children }) {
           className="app-menu"
         />
       </Header>
-      <Content className={`app-content${location.pathname === '/multiplication/recitation' ? ' app-content-recitation' : ''}`}>
+      <Content className={`app-content${location.pathname === '/multiplication/recitation' ? ' app-content-recitation' : ''}${location.state?.settings?.difficulty === 'sharpshooter' ? ' app-content-sharpshooter' : ''}`}>
         {children}
       </Content>
     </Layout>

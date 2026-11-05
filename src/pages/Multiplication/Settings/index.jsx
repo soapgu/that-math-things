@@ -1,3 +1,4 @@
+import { createSharpshooterRouteState } from '../../../features/multiplication/sharpshooter/model';
 import React, { useRef, useState } from 'react';
 import { CheckCircleFilled, PlayCircleOutlined } from '@ant-design/icons';
 import { Button, Progress, Tabs, Typography } from 'antd';
@@ -22,6 +23,7 @@ const DIFFICULTY_OPTIONS = [
   { value: DIFFICULTIES.EASY, label: '简单', description: '显示目标所在整行和整列，使用四选一作答' },
   { value: DIFFICULTIES.MEDIUM, label: '提升', description: '只显示目标格上下左右的相邻乘积' },
   { value: DIFFICULTIES.HARD, label: '挑战', description: '隐藏其他乘积，在目标格内填写答案' },
+  { value: DIFFICULTIES.SHARPSHOOTER, label: '九九神枪手', description: '看乘积找位置，子弹有限' },
 ];
 
 function ChallengeSettings() {
@@ -33,7 +35,7 @@ function ChallengeSettings() {
     // Session 当成刷新遗留的旧会话，因此在导航前先消费本次刷新标记。
     markReloadNavigationHandled();
     navigate('/multiplication/session', {
-      state: {
+      state: settings.difficulty === DIFFICULTIES.SHARPSHOOTER ? createSharpshooterRouteState() : {
         settings: { ...settings },
         questions: generateMultiplicationQuestions(settings.questionCount),
       },
@@ -65,23 +67,25 @@ function ChallengeSettings() {
         })}
       </div>
 
-      <Typography.Title level={4}>题目数量</Typography.Title>
-      <div className="multiplication-count-options" aria-label="选择题目数量">
-        {QUESTION_COUNTS.map((count) => (
-          <button
-            type="button"
-            aria-pressed={settings.questionCount === count}
-            onClick={() => setSettings((previous) => ({ ...previous, questionCount: count }))}
-            key={count}
-          >
-            {count} 题
-          </button>
-        ))}
-      </div>
-      <div className="multiplication-count-note" aria-live="polite">
-        {settings.questionCount === 81 ? '完成整张九九乘法表' : '\u00a0'}
-      </div>
+      {settings.difficulty === DIFFICULTIES.SHARPSHOOTER ? <p className="multiplication-fixed-count">固定36轮 · 共81发</p> : <>
+        <Typography.Title level={4}>题目数量</Typography.Title>
+        <div className="multiplication-count-options" aria-label="选择题目数量">
+          {QUESTION_COUNTS.map((count) => (
+            <button
+              type="button"
+              aria-pressed={settings.questionCount === count}
+              onClick={() => setSettings((previous) => ({ ...previous, questionCount: count }))}
+              key={count}
+            >
+              {count} 题
+            </button>
+          ))}
+        </div>
+        <div className="multiplication-count-note" aria-live="polite">
+          {settings.questionCount === 81 ? '完成整张九九乘法表' : '\u00a0'}
+        </div>
 
+      </>}
       <Button type="primary" size="large" block icon={<PlayCircleOutlined />} onClick={handleStart}>
         开始闯关
       </Button>

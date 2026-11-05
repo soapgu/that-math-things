@@ -15,8 +15,8 @@ import {
 const fixedRng = (value = 0) => () => value;
 
 describe('乘法配置', () => {
-  it('提供三档难度、四档题量和默认设置', () => {
-    expect(Object.values(DIFFICULTIES)).toEqual(['easy', 'medium', 'hard']);
+  it('提供四档难度、传统题量和默认设置', () => {
+    expect(Object.values(DIFFICULTIES)).toEqual(['easy', 'medium', 'hard', 'sharpshooter']);
     expect(QUESTION_COUNTS).toEqual([10, 20, 50, 81]);
     expect(SPEED_TARGETS).toEqual({ easy: 8, medium: 10, hard: 12 });
     expect(DEFAULT_MULTIPLICATION_SETTINGS).toEqual({ difficulty: 'easy', questionCount: 10 });

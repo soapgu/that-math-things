@@ -1,3 +1,4 @@
+import { SharpshooterSession } from '../../../features/multiplication/sharpshooter/Pages';
 import React, {
   useCallback,
   useEffect,
@@ -83,7 +84,7 @@ function revealDelayForHint({ position }) {
   return Math.round((position / 9) * FIRING_MS);
 }
 
-export default function MultiplicationSession() {
+function ClassicMultiplicationSession() {
   const navigate = useNavigate();
   const location = useLocation();
   // 刷新检测只在首次渲染执行一次并锁定。v7_startTransition 下 navigate 是异步的，
@@ -602,4 +603,10 @@ export default function MultiplicationSession() {
       </Modal>
     </main>
   );
+}
+
+export default function MultiplicationSession() {
+  const location = useLocation();
+  return location.state?.settings?.difficulty === 'sharpshooter'
+    ? <SharpshooterSession /> : <ClassicMultiplicationSession />;
 }

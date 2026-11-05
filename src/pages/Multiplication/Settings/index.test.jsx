@@ -54,6 +54,21 @@ describe('MultiplicationSettings', () => {
     });
   });
 
+  it('神枪手固定36轮并且切回旧难度保留原题量', async () => {
+    renderSettings();
+    fireEvent.click(screen.getByRole('button', { name: '20 题' }));
+    fireEvent.click(screen.getByRole('button', { name: /九九神枪手/ }));
+    expect(screen.queryByRole('button', { name: '20 题' })).not.toBeInTheDocument();
+    expect(screen.getByText('固定36轮 · 共81发')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /挑战/ }));
+    expect(screen.getByRole('button', { name: '20 题' })).toHaveAttribute('aria-pressed', 'true');
+    fireEvent.click(screen.getByRole('button', { name: /九九神枪手/ }));
+    fireEvent.click(screen.getByRole('button', { name: /开始闯关/ }));
+    const state = JSON.parse((await screen.findByTestId('session-state')).textContent);
+    expect(state.settings).toEqual({ difficulty: 'sharpshooter', questionCount: 36 });
+    expect(new Set(state.rounds).size).toBe(36);
+  });
+
   it('按选择的挑战81题生成完整无重复会话', async () => {
     renderSettings();
     fireEvent.click(screen.getByRole('button', { name: /挑战/ }));

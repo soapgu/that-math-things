@@ -1,3 +1,4 @@
+import { SHARPSHOOTER, isValidSharpshooterRoute, isValidSharpshooterResult } from './sharpshooter/model';
 import {
   calculateMultiplicationResult,
   DEFAULT_MULTIPLICATION_SETTINGS,
@@ -9,6 +10,7 @@ import {
 let reloadNavigationHandled = false;
 
 export function isValidMultiplicationSettings(settings) {
+  if (settings?.difficulty === SHARPSHOOTER) return settings.questionCount === 36;
   return Object.values(DIFFICULTIES).includes(settings?.difficulty)
     && QUESTION_COUNTS.includes(settings?.questionCount);
 }
@@ -25,6 +27,7 @@ export function isValidQuestion(question) {
 }
 
 export function isValidMultiplicationSessionState(state) {
+  if (state?.settings?.difficulty === SHARPSHOOTER) return isValidSharpshooterRoute(state);
   if (!isValidMultiplicationSettings(state?.settings)
     || !Array.isArray(state?.questions)
     || state.questions.length !== state.settings.questionCount) {
@@ -37,6 +40,7 @@ export function isValidMultiplicationSessionState(state) {
 }
 
 export function isValidMultiplicationResultState(state) {
+  if (state?.settings?.difficulty === SHARPSHOOTER) return isValidSharpshooterResult(state);
   if (!isValidMultiplicationSettings(state?.settings)
     || !state?.result
     || !state?.answeredCells

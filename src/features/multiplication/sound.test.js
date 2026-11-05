@@ -79,6 +79,21 @@ describe('九九乘法轻量答题音效', () => {
     expect(oscillators[1].stop).toHaveBeenCalledTimes(2);
   });
 
+  it('射击音阶封顶，完美收束合为和弦，新射击替换旧音且关闭后不再发声', () => {
+    const { oscillators } = installAudioContextMock();
+    const player = createMultiplicationSoundPlayer();
+    player.playShot(1);
+    expect(oscillators[0].frequency.setValueAtTime).toHaveBeenCalledWith(523.25, 1);
+    player.playShot(81);
+    expect(oscillators[1].frequency.setValueAtTime).toHaveBeenCalledWith(880, 1);
+    expect(oscillators[0].stop).toHaveBeenCalledTimes(2);
+    player.playShot(81, true);
+    expect(oscillators).toHaveLength(5);
+    player.dispose();
+    player.playShot(2);
+    expect(oscillators).toHaveLength(5);
+  });
+
   it('停止未完成声音，浏览器不支持或初始化失败时静默降级', () => {
     const { close, oscillators } = installAudioContextMock();
     const player = createMultiplicationSoundPlayer();
