@@ -5,8 +5,22 @@
 .sharpshooter-board { display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 5px; }
 .sharpshooter-axis, .sharpshooter-cell { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; font-size: clamp(16px, 2vw, 25px); font-weight: 700; min-width: 0; }
 .sharpshooter-axis { color: #48647b; }
-.sharpshooter-cell { position: relative; border: 1px solid #bacfdf; border-radius: 9px; background: white; color: #56748a; cursor: crosshair; }
+.sharpshooter-cell { position: relative; border: 1px solid #bacfdf; border-radius: 9px; background: white; color: #56748a; cursor: url("./crosshair.svg") 16 16, crosshair; }
 .sharpshooter-cell[aria-disabled="true"] { cursor: default; }
+.sharpshooter-cell[data-kind="hidden"] {
+  background: linear-gradient(155deg, #fff, #f5f9fc);
+  border-color: #c5d7e5;
+}
+.sharpshooter-cell[data-kind="hidden"]::before {
+  content: '';
+  box-sizing: border-box;
+  width: 8px;
+  height: 8px;
+  border: 1px solid #b7ccdb;
+  border-radius: 50%;
+  background: radial-gradient(circle, #a5bfce 1px, transparent 1px);
+  pointer-events: none;
+}
 .sharpshooter-cell:not([aria-disabled="true"]):hover { background: #e2efff; border-color: #1677ff; }
 .sharpshooter-cell:focus-visible { outline: 3px solid #164ecb; outline-offset: 1px; z-index: 1; }
 .sharpshooter-cell.hit { color: #095c42; background: #d6f4e8; border-color: #4caa87; }
@@ -22,8 +36,42 @@
 .sharpshooter-eyebrow { color: #597086; font-size: 16px; }
 .sharpshooter-target { font-size: 68px; line-height: 1.2; font-weight: 800; color: #174d85; }
 .sharpshooter-target small { font-size: 20px; }
-.sharpshooter-ammo { display: flex; gap: 14px; justify-content: center; font-size: 26px; color: #dce3ea; margin-bottom: 10px; }
-.sharpshooter-ammo .loaded { color: #bf7a0b; }
+.sharpshooter-ammo { display: flex; gap: 8px; justify-content: center; margin-bottom: 10px; }
+.sharpshooter-ammo-slot {
+  position: relative;
+  display: grid;
+  place-items: center;
+  flex: 0 0 20px;
+  min-width: 0;
+  height: 32px;
+  font-size: 22px;
+  line-height: 1;
+  font-weight: 800;
+}
+.sharpshooter-ammo-slot[data-outcome="hit"] { color: #095c42; }
+.sharpshooter-ammo-slot[data-outcome="miss"] { color: #a33134; }
+.sharpshooter-ammo-slot::after {
+  position: absolute;
+  width: 10px;
+  height: 24px;
+  border: 1px solid #935807;
+  border-radius: 50% 50% 2px 2px / 34% 34% 2px 2px;
+  background: linear-gradient(#eeb858 42%, #b87316 43%, #edb852 83%, #935807 84%);
+}
+.sharpshooter-ammo-slot[data-outcome="loaded"]::after { content: ''; }
+@media (prefers-reduced-motion: no-preference) {
+  .sharpshooter-ammo-slot:not([data-outcome="loaded"])::after {
+    content: '';
+    animation: shooter-ammo-fire 200ms ease-out both;
+  }
+  .sharpshooter-ammo-result { animation: shooter-ammo-result 200ms ease-out both; }
+}
+@keyframes shooter-ammo-fire {
+  to { opacity: 0; transform: translateY(-12px); }
+}
+@keyframes shooter-ammo-result {
+  from { opacity: 0; }
+}
 .sharpshooter-combo { height: 68px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 25px; font-weight: 800; color: #7953b5; }
 .sharpshooter-aim { display: inline-flex; align-items: center; gap: 8px; }
 .sharpshooter-aim .anticon { font-size: 18px; }

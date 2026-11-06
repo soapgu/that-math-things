@@ -14,12 +14,10 @@ async function roundInfo(page) {
   for (let a = 1; a <= 9; a += 1) for (let b = 1; b <= 9; b += 1) if (a * b === product) cells.push(`${a}×${b}`);
   return { product, cells };
 }
-async function finishRound(page, mode = 'perfect') {
+async function finishRound(page) {
   const { cells } = await roundInfo(page);
-  const shots = mode === 'perfect' ? cells : await page.locator('.sharpshooter-cell[data-kind="hidden"]').evaluateAll(
-    (nodes, correct) => nodes.map((el) => el.dataset.cell).filter((key) => !correct.includes(key)).slice(0, correct.length), cells);
   // 在一次浏览器任务内发出多次输入，验证快速射击不丢事件、不多扣弹。
-  await page.evaluate((keys) => keys.forEach((key) => document.querySelector(`[data-cell="${key}"]`).click()), shots);
+  await page.evaluate((keys) => keys.forEach((key) => document.querySelector(`[data-cell="${key}"]`).click()), cells);
   await expect(page.locator('.sharpshooter-round-result')).toBeVisible();
   return cells;
 }
@@ -55,7 +53,21 @@ test('打空、漏射揭晓、清理、锁定与静音记忆', async ({ page }) 
   await enter(page);
   await page.getByRole('button', { name: '关闭音效' }).click();
   await page.getByRole('button', { name: '开始射击', exact: true }).click();
-  const cells = await finishRound(page, 'wrong');
+  const { cells } = await roundInfo(page);
+  const wrongKeys = await page.locator('.sharpshooter-cell[data-kind="hidden"]').evaluateAll(
+    (nodes, correct) => nodes.map((node) => node.dataset.cell).filter((key) => !correct.includes(key)).slice(0, correct.length),
+    cells,
+  );
+  const ammoSlots = page.locator('.sharpshooter-ammo-slot');
+  await expect(ammoSlots).toHaveCount(cells.length);
+  const wrongTarget = page.locator(`[data-cell="${wrongKeys[0]}"]`);
+  await wrongTarget.hover();
+  await expect(wrongTarget).toHaveCSS('cursor', /^url\(.*\) 16 16, crosshair$/);
+  await wrongTarget.click();
+  await expect(ammoSlots.first()).toHaveText('×');
+  await expect(wrongTarget).toHaveCSS('cursor', 'default');
+  await page.evaluate((keys) => keys.forEach((key) => document.querySelector(`[data-cell="${key}"]`).click()), wrongKeys.slice(1));
+  await expect(page.locator('.sharpshooter-ammo-slot[data-outcome="miss"]')).toHaveCount(cells.length);
   await expect(page.locator('.sharpshooter-round-result')).toContainText('再试试');
   await expect(page.locator('.sharpshooter-cell.missed')).toHaveCount(cells.length);
   await expect(page.locator('.sharpshooter-cell.hit')).toHaveCount(0);
@@ -63,6 +75,7 @@ test('打空、漏射揭晓、清理、锁定与静音记忆', async ({ page }) 
   await expect(page.locator('.sharpshooter-cell.hit')).toHaveCount(0);
   await page.getByRole('button', { name: '下一轮', exact: true }).click();
   await expect(page.locator('.sharpshooter-cell.missed, .sharpshooter-cell.wrong')).toHaveCount(0);
+  await expect(page.locator('.sharpshooter-ammo-slot:not([data-outcome="loaded"])')).toHaveCount(0);
   await page.reload();
   await expect(page.getByRole('heading', { name: '九九乘法', exact: true })).toBeVisible();
   await page.getByRole('button', { name: /九九神枪手/ }).click();
@@ -84,6 +97,9 @@ test('键盘射击、重复输入、减少动态与音频不可用', async ({ pa
   await target.focus();
   await page.keyboard.press('Enter');
   await expect(target).toHaveAttribute('data-kind', 'hit');
+  const firedSlot = page.locator('.sharpshooter-ammo-slot').first();
+  await expect(firedSlot).toHaveText('✓');
+  await expect(firedSlot.locator('.sharpshooter-ammo-result')).toHaveCSS('animation-name', 'none');
   const ammo = await page.locator('.sharpshooter-ammo').getAttribute('aria-label');
   await target.focus();
   await page.keyboard.press('Space');
@@ -106,6 +122,9 @@ for (const width of [768, 1024, 1440, 1920]) {
       expect(back.y + back.height).toBeCloseTo(board.y + board.height, 0);
     };
     await expect(page.locator('.sharpshooter-aim svg')).toBeVisible();
+    if (width === 768 || width === 1440) {
+      await page.screenshot({ path: testInfo.outputPath(`sharpshooter-${width}-ready.png`), fullPage: true });
+    }
     await assertDesktopAlignment();
     await page.getByRole('button', { name: '开始射击', exact: true }).click();
     await assertDesktopAlignment();
@@ -119,7 +138,12 @@ for (const width of [768, 1024, 1440, 1920]) {
       const stickyCard = await targetCard.boundingBox();
       expect(focusedCell.y).toBeGreaterThan(stickyCard.y + stickyCard.height);
     }
+    const ammo = page.locator('.sharpshooter-ammo');
+    const before = await ammo.boundingBox();
     const hits = (await finishRound(page)).length;
+    const after = await ammo.boundingBox();
+    expect(after.width).toBe(before.width);
+    expect(after.height).toBe(before.height);
     await expect(targetCard.getByText(`第 1 / 36 轮 · 累计命中 ${hits} / 81`)).toBeVisible();
     await expect(page.locator('.sharpshooter-round-result')).toContainText('完美');
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);

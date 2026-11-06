@@ -125,7 +125,7 @@ function ShootingGame({ route }) {
                 tabIndex={focusIndex === index ? 0 : -1} onFocus={() => setFocusIndex(index)}
                 onKeyDown={(event) => { moveFocus(event, index); if (event.repeat && ['Enter', ' '].includes(event.key)) event.preventDefault(); }}
                 onClick={() => { if (!blocked) fire(cell.key); }}>
-                {hit || missed ? cell.product : shot ? '×' : <span aria-hidden="true">·</span>}
+                {hit || missed ? cell.product : shot ? '×' : null}
               </button>;
             })}
           </React.Fragment>)}
@@ -152,7 +152,17 @@ function ShootingGame({ route }) {
           </div>
           <div className="sharpshooter-eyebrow">寻找乘积</div><div className="sharpshooter-target">{product}</div>
           <p>找出全部 <strong>{targets.length}</strong> 格</p>
-          <div className="sharpshooter-ammo" aria-label={`剩余子弹${remaining}发`}>{Array.from({ length: targets.length }, (_, i) => <span key={i} className={i < remaining ? 'loaded' : ''}>●</span>)}</div>
+          <div className="sharpshooter-ammo" role="group" aria-label={`剩余子弹${remaining}发`}>
+            {Array.from({ length: targets.length }, (_, index) => {
+              const shot = shots[index];
+              const outcome = shot ? (shot.hit ? 'hit' : 'miss') : 'loaded';
+              return (
+                <span className="sharpshooter-ammo-slot" data-outcome={outcome} key={index} aria-hidden="true">
+                  {shot && <span className="sharpshooter-ammo-result">{shot.hit ? '✓' : '×'}</span>}
+                </span>
+              );
+            })}
+          </div>
           <div>剩余 {remaining} 发 · 作答用时 {timer.formatted}</div>
         </Card>
         <div className={`sharpshooter-combo ${flash?.milestone ? 'milestone' : ''}`} aria-hidden="true">
