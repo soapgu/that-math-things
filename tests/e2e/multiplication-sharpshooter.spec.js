@@ -6,7 +6,7 @@ async function enter(page) {
   await expect(page.getByText('固定36轮 · 共81发')).toBeVisible();
   await expect(page.getByRole('button', { name: '81 题' })).toHaveCount(0);
   await page.getByRole('button', { name: /开始闯关/ }).click();
-  await expect(page.getByRole('heading', { name: '九九神枪手', exact: true })).toBeVisible();
+  await expect(page.getByRole('main', { name: '九九神枪手', exact: true })).toBeVisible();
 }
 async function roundInfo(page) {
   const product = Number(await page.locator('.sharpshooter-target').textContent());
@@ -67,7 +67,11 @@ test('打空、漏射揭晓、清理、锁定与静音记忆', async ({ page }) 
   await expect(page.getByRole('heading', { name: '九九乘法', exact: true })).toBeVisible();
   await page.getByRole('button', { name: /九九神枪手/ }).click();
   await page.getByRole('button', { name: /开始闯关/ }).click();
-  await expect(page.getByRole('button', { name: '开启音效' })).toBeVisible();
+  const enableSound = page.getByRole('button', { name: '开启音效' });
+  await expect(enableSound).toHaveAttribute('aria-pressed', 'false');
+  await enableSound.click();
+  await expect(page.getByRole('button', { name: '关闭音效' })).toHaveAttribute('aria-pressed', 'true');
+  expect(await page.evaluate(() => localStorage.getItem('multiplication-sound-enabled'))).toBe('true');
 });
 
 test('键盘射击、重复输入、减少动态与音频不可用', async ({ page }) => {
@@ -93,8 +97,30 @@ for (const width of [768, 1024, 1440, 1920]) {
   test(`${width}px：布局、射击反馈与截图`, async ({ page }, testInfo) => {
     await page.setViewportSize({ width, height: width === 768 ? 1024 : 900 });
     await enter(page);
+    const assertDesktopAlignment = async () => {
+      if (width < 1440) return;
+      const board = await page.locator('.sharpshooter-board-panel').boundingBox();
+      const controls = await page.locator('.sharpshooter-controls').boundingBox();
+      const back = await page.getByRole('button', { name: '返回难度选择' }).boundingBox();
+      expect(controls.y).toBeCloseTo(board.y, 0);
+      expect(back.y + back.height).toBeCloseTo(board.y + board.height, 0);
+    };
+    await expect(page.locator('.sharpshooter-aim svg')).toBeVisible();
+    await assertDesktopAlignment();
     await page.getByRole('button', { name: '开始射击', exact: true }).click();
-    await finishRound(page);
+    await assertDesktopAlignment();
+    const targetCard = page.locator('.sharpshooter-target-card');
+    await expect(page.getByRole('heading', { name: '九九神枪手', exact: true })).toHaveCount(0);
+    await expect(targetCard.getByText('第 1 / 36 轮 · 累计命中 0 / 81')).toBeVisible();
+    await expect(targetCard.getByRole('button', { name: '关闭音效' })).toBeVisible();
+    if (width <= 1100) {
+      await page.keyboard.press('ArrowRight');
+      const focusedCell = await page.locator('.sharpshooter-cell:focus-visible').boundingBox();
+      const stickyCard = await targetCard.boundingBox();
+      expect(focusedCell.y).toBeGreaterThan(stickyCard.y + stickyCard.height);
+    }
+    const hits = (await finishRound(page)).length;
+    await expect(targetCard.getByText(`第 1 / 36 轮 · 累计命中 ${hits} / 81`)).toBeVisible();
     await expect(page.locator('.sharpshooter-round-result')).toContainText('完美');
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     const first = await page.locator('.sharpshooter-cell').first().boundingBox();
@@ -103,9 +129,15 @@ for (const width of [768, 1024, 1440, 1920]) {
     await page.evaluate(() => window.scrollTo(0, 0));
     await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
     const board = await page.locator('.sharpshooter-board-panel').boundingBox();
+    expect(board.width).toBeLessThanOrEqual(560);
+    if (width <= 1100) expect(board.height).toBeLessThanOrEqual(590);
+    await assertDesktopAlignment();
     const controls = await page.locator('.sharpshooter-controls > .ant-card').first().boundingBox();
     if (width >= 1440) expect(controls.x).toBeGreaterThan(board.x + board.width);
     else expect(board.y).toBeGreaterThan(controls.y + controls.height);
     await page.screenshot({ path: testInfo.outputPath(`sharpshooter-${width}.png`), fullPage: true });
+    await page.getByRole('button', { name: '下一轮', exact: true }).click();
+    await expect(page.locator('.sharpshooter-round-result')).toHaveCount(0);
+    await expect(targetCard.getByText(`第 2 / 36 轮 · 累计命中 ${hits} / 81`)).toBeVisible();
   });
 }

@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Button, Card, Typography } from 'antd';
+import { AimOutlined, AudioMutedOutlined, SoundFilled } from '@ant-design/icons';
 import { useLocation, useNavigate } from 'react-router-dom';
 import useTimer, { formatTimerDuration } from '../../../hooks/useTimer';
 import { isReloadNavigation, markReloadNavigationHandled } from '../routeState';
@@ -102,15 +103,7 @@ function ShootingGame({ route }) {
     buttons.current[next]?.focus();
   };
 
-  return <main className="sharpshooter-page">
-    <header className="sharpshooter-heading">
-      <div><Typography.Title level={2}>九九神枪手</Typography.Title><span>第 {game.roundIndex + 1} / 36 轮 · 累计命中 {game.hits.length} / 81</span></div>
-      <Button aria-pressed={soundEnabled} onClick={() => {
-        const enabled = !soundEnabled;
-        setSoundEnabled(enabled); saveMultiplicationSoundEnabled(enabled);
-        if (!enabled) playerRef.current?.stop();
-      }}>{soundEnabled ? '关闭音效' : '开启音效'}</Button>
-    </header>
+  return <main className="sharpshooter-page" aria-label="九九神枪手">
     <div className="sharpshooter-layout">
       <section className="sharpshooter-board-panel" aria-label="射击区">
         <div className="sharpshooter-board" role="group" aria-label="九九乘法射击表">
@@ -140,7 +133,23 @@ function ShootingGame({ route }) {
         <p className="sharpshooter-legend">绿色：命中　橙色虚线：漏射　叉号：打空</p>
       </section>
       <aside className="sharpshooter-controls">
-        <Card>
+        <Card className="sharpshooter-target-card">
+          <div className="sharpshooter-progress">
+            <span>第 {game.roundIndex + 1} / 36 轮 · 累计命中 {game.hits.length} / 81</span>
+            <Button
+              type="text"
+              size="small"
+              icon={soundEnabled ? <SoundFilled /> : <AudioMutedOutlined />}
+              aria-label={soundEnabled ? '关闭音效' : '开启音效'}
+              aria-pressed={soundEnabled}
+              onClick={() => {
+                const enabled = !soundEnabled;
+                setSoundEnabled(enabled);
+                saveMultiplicationSoundEnabled(enabled);
+                if (!enabled) playerRef.current?.stop();
+              }}
+            />
+          </div>
           <div className="sharpshooter-eyebrow">寻找乘积</div><div className="sharpshooter-target">{product}</div>
           <p>找出全部 <strong>{targets.length}</strong> 格</p>
           <div className="sharpshooter-ammo" aria-label={`剩余子弹${remaining}发`}>{Array.from({ length: targets.length }, (_, i) => <span key={i} className={i < remaining ? 'loaded' : ''}>●</span>)}</div>
@@ -148,7 +157,9 @@ function ShootingGame({ route }) {
         </Card>
         <div className={`sharpshooter-combo ${flash?.milestone ? 'milestone' : ''}`} aria-hidden="true">
           <div key={flash?.id ?? `round-${game.roundIndex}`} className={flash ? 'combo-pop' : ''}>
-            {flash?.broken ? '连击中断' : game.combo >= 2 ? `${game.combo} 连击` : '瞄准，再出手'}
+            {flash?.broken ? '连击中断' : game.combo >= 2 ? `${game.combo} 连击` : (
+              <span className="sharpshooter-aim"><AimOutlined aria-hidden="true" />瞄准，再出手</span>
+            )}
             {flash?.milestone && <small>连续命中，势不可挡！</small>}
           </div>
         </div>
@@ -160,7 +171,7 @@ function ShootingGame({ route }) {
             <ul>{targets.map((cell) => <li key={cell.key}>{cell.a} × {cell.b} = {product}</li>)}</ul>
             <Button ref={nextButton} type="primary" size="large" onClick={advance}>{game.roundIndex === 35 ? '查看结果' : '下一轮'}</Button>
           </Card> : <p className="sharpshooter-tip">连续命中可跨轮累计，慢慢思考也不会断连。</p>}
-        <Button onClick={() => { if (!started || window.confirm('离开后本局进度不会保留，确定返回？')) { startedRef.current = false; navigate('/multiplication'); } }}>返回难度选择</Button>
+        <Button className="sharpshooter-back" onClick={() => { if (!started || window.confirm('离开后本局进度不会保留，确定返回？')) { startedRef.current = false; navigate('/multiplication'); } }}>返回难度选择</Button>
       </aside>
     </div>
   </main>;

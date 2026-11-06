@@ -1,6 +1,6 @@
 .sharpshooter-page { max-width: 1200px; margin: 0 auto; color: #18344b; }
-.sharpshooter-heading { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; gap: 16px; }
-.sharpshooter-layout { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 28px; align-items: start; }
+.sharpshooter-layout { max-width: 908px; margin-inline: auto; }
+.sharpshooter-layout { display: grid; grid-template-columns: minmax(0, 560px) 320px; gap: 28px; }
 .sharpshooter-board-panel { padding: 20px; background: #f3f8fc; border: 1px solid #cbdde9; border-radius: 20px; }
 .sharpshooter-board { display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 5px; }
 .sharpshooter-axis, .sharpshooter-cell { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; font-size: clamp(16px, 2vw, 25px); font-weight: 700; min-width: 0; }
@@ -14,15 +14,19 @@
 .sharpshooter-cell.missed { color: #8c5000; background: #fff4db; border: 2px dashed #b87916; }
 .sharpshooter-cell.hit.shot-flash::after { content: ''; position: absolute; inset: 2px; border: 2px solid #24a47b; border-radius: 50%; animation: shooter-ring .4s ease-out both; pointer-events: none; }
 .sharpshooter-cell.wrong.shot-flash { animation: shooter-shake .25s ease-out; }
-.sharpshooter-legend { text-align: center; font-size: 13px; margin: 16px 0 0; }
+.sharpshooter-legend { text-align: center; font-size: 13px; margin: 8px 0 0; }
 .sharpshooter-controls { display: flex; flex-direction: column; gap: 14px; }
-.sharpshooter-controls > .ant-card:first-child { text-align: center; border-color: #cbdde9; }
+.sharpshooter-target-card { text-align: center; border-color: #cbdde9; }
+.sharpshooter-progress { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 13px; text-align: left; }
+.sharpshooter-progress .ant-btn { flex: none; color: #52677a; }
 .sharpshooter-eyebrow { color: #597086; font-size: 16px; }
 .sharpshooter-target { font-size: 68px; line-height: 1.2; font-weight: 800; color: #174d85; }
 .sharpshooter-target small { font-size: 20px; }
 .sharpshooter-ammo { display: flex; gap: 14px; justify-content: center; font-size: 26px; color: #dce3ea; margin-bottom: 10px; }
 .sharpshooter-ammo .loaded { color: #bf7a0b; }
 .sharpshooter-combo { height: 68px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 25px; font-weight: 800; color: #7953b5; }
+.sharpshooter-aim { display: inline-flex; align-items: center; gap: 8px; }
+.sharpshooter-aim .anticon { font-size: 18px; }
 .sharpshooter-combo small { display: block; font-size: 13px; }
 .sharpshooter-combo.milestone { color: #a45300; background: #fff2cf; border-radius: 12px; }
 .combo-pop { animation: shooter-pop .3s ease-out; }
@@ -37,10 +41,16 @@
 @keyframes shooter-pop { 0% { transform: scale(.9); } 40% { transform: scale(1.12); } 100% { transform: scale(1); } }
 @keyframes shooter-ring { from { opacity: 1; transform: scale(.7); } to { opacity: 0; transform: scale(1.35); } }
 @keyframes shooter-shake { 25% { transform: translateX(-3px); } 75% { transform: translateX(3px); } }
+@media (width > 1100px) {
+  .sharpshooter-controls { gap: 10px; }
+  .sharpshooter-controls > .ant-card > .ant-card-head { min-height: 44px; padding-inline: 16px; }
+  .sharpshooter-controls > .ant-card > .ant-card-body { padding: 14px 16px; }
+  .sharpshooter-controls > .ant-card > .ant-card-body p { margin: 0 0 8px; }
+  .sharpshooter-controls .sharpshooter-ammo { margin-bottom: 4px; }
+  .sharpshooter-combo { height: 48px; }
+  .sharpshooter-back { margin-top: auto; }
+}
 @media (max-width: 1100px) {
-  .sharpshooter-layout { grid-template-columns: minmax(0, 1fr); max-width: 720px; margin: auto; }
-  .sharpshooter-controls { display: grid; grid-template-columns: 1fr 1fr; align-items: start; }
-  .sharpshooter-combo { align-self: center; }
   .sharpshooter-cell { font-size: 23px; }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -51,20 +61,19 @@
 .sharpshooter-combo.milestone::after { content: ''; position: absolute; inset: 8px; border: 2px solid #d39c30; border-radius: 12px; pointer-events: none; animation: shooter-ring .45s ease-out both; }
 .sharpshooter-round-result { animation: shooter-pop .3s ease-out; }
 
-/* 棋盘保持适合儿童操作的尺寸，桌面不用横向剩余空间无限放大。 */
-.sharpshooter-layout { grid-template-columns: minmax(0, 650px) 320px; max-width: 998px; margin: 0 auto; }
-.sharpshooter-heading { max-width: 998px; margin-left: auto; margin-right: auto; }
 .sharpshooter-round-result { animation: shooter-reveal .25s ease-out; }
 @keyframes shooter-reveal { from { opacity: .4; } to { opacity: 1; } }
 @media (max-width: 1100px) {
-  .sharpshooter-layout { grid-template-columns: minmax(0, 1fr); max-width: 650px; gap: 16px; }
+  .sharpshooter-layout { max-width: 560px; }
+  .sharpshooter-layout { grid-template-columns: minmax(0, 1fr); gap: 16px; align-items: start; }
   .sharpshooter-controls { display: contents; }
-  .sharpshooter-controls > .ant-card:first-child { order: -3; position: sticky; top: 8px; z-index: 3; box-shadow: 0 4px 16px #18344b12; }
-  .sharpshooter-controls > .ant-card:first-child .ant-card-body { display: grid; grid-template-columns: auto auto 1fr auto; align-items: center; gap: 8px 14px; padding: 12px 18px; }
-  .sharpshooter-controls > .ant-card:first-child p { margin: 0; }
-  .sharpshooter-controls > .ant-card:first-child .ant-card-body > div:last-child { grid-column: 1 / -1; }
+  .sharpshooter-target-card { order: -3; position: sticky; top: 8px; z-index: 3; box-shadow: 0 4px 16px #18344b12; }
+  .sharpshooter-target-card .ant-card-body { display: grid; grid-template-columns: auto auto 1fr auto; align-items: center; gap: 8px 14px; padding: 12px 18px; }
+  .sharpshooter-progress { grid-column: 1 / -1; }
+  .sharpshooter-target-card p { margin: 0; }
+  .sharpshooter-target-card .ant-card-body > div:last-child { grid-column: 1 / -1; }
   .sharpshooter-target { font-size: 40px; }
   .sharpshooter-ammo { margin: 0; }
   .sharpshooter-combo { order: -2; height: 48px; }
-  .sharpshooter-cell { scroll-margin-top: 120px; }
+  .sharpshooter-cell { scroll-margin-top: 160px; }
 }
