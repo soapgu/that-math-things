@@ -70,7 +70,7 @@ function ShootingGame({ route }) {
     flashTimer.current = setTimeout(() => setFlash(null), 650);
     if (soundEnabled) {
       if (next.event.hit) playerRef.current?.playShot(next.event.combo, next.event.perfect);
-      else playerRef.current?.playWrong();
+      else playerRef.current?.playMiss();
     }
     if (isRoundOver(next)) timer.stop();
   };

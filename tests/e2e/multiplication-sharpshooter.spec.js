@@ -72,7 +72,7 @@ test('打空、漏射揭晓、清理、锁定与静音记忆', async ({ page }) 
 
 test('键盘射击、重复输入、减少动态与音频不可用', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  await page.addInitScript(() => { window.AudioContext = undefined; window.webkitAudioContext = undefined; });
+  await page.addInitScript(() => { window.Audio = undefined; });
   await enter(page);
   await page.getByRole('button', { name: '开始射击', exact: true }).click();
   const { cells } = await roundInfo(page);

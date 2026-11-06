@@ -1,3 +1,6 @@
+import shotUrl from './sharpshooter/audio/shot.mp3?url';
+import missUrl from './sharpshooter/audio/miss.mp3?url';
+
 export const MULTIPLICATION_SOUND_STORAGE_KEY = 'multiplication-sound-enabled';
 
 export function loadMultiplicationSoundEnabled() {
@@ -25,8 +28,15 @@ export function createMultiplicationSoundPlayer() {
   let context = null;
   let activeNodes = [];
   let disposed = false;
+  let activeClip = null;
+  const clips = new Map();
 
   const stop = () => {
+    if (activeClip) {
+      activeClip.pause();
+      activeClip.currentTime = 0;
+      activeClip = null;
+    }
     activeNodes.forEach(({ oscillator, gain }) => {
       try {
         oscillator.stop();
@@ -90,10 +100,28 @@ export function createMultiplicationSoundPlayer() {
     }
   };
 
+  const playClip = (url, volume) => {
+    if (disposed || typeof Audio !== 'function') return;
+    try {
+      stop();
+      let clip = clips.get(url);
+      if (!clip) {
+        clip = new Audio(url);
+        clips.set(url, clip);
+      }
+      clip.volume = volume;
+      activeClip = clip;
+      clip.play()?.catch(() => {});
+    } catch {
+      // 浏览器无法播放时，继续答题。
+    }
+  };
+
   const dispose = () => {
     if (disposed) return;
     disposed = true;
     stop();
+    clips.clear();
     const audioContext = context;
     context = null;
     try {
@@ -105,12 +133,11 @@ export function createMultiplicationSoundPlayer() {
 
   return {
     playShot(combo, perfect = false) {
-      const frequency = [523.25, 587.33, 659.25, 783.99, 880][Math.min(4, Math.floor(Math.max(0, combo - 1) / 5))];
-      playNotes(perfect ? [
-        { frequency, offset: 0, duration: 0.18, volume: 0.04 },
-        { frequency: frequency * 1.25, offset: 0, duration: 0.2, volume: 0.03 },
-        { frequency: frequency * 1.5, offset: 0.04, duration: 0.22, volume: 0.03 },
-      ] : [{ frequency, offset: 0, duration: 0.1, volume: 0.055 }]);
+      const level = Math.min(4, Math.floor(Math.max(0, combo - 1) / 5));
+      playClip(shotUrl, 0.3 + level * 0.04 + (perfect ? 0.06 : 0));
+    },
+    playMiss() {
+      playClip(missUrl, 0.35);
     },
     playCorrect() {
       playNotes([

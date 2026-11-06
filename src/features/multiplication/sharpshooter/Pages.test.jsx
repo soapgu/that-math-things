@@ -4,7 +4,7 @@ import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { SharpshooterSession } from './Pages';
 import { PRODUCTS } from './model';
 
-const sound = vi.hoisted(() => ({ playShot: vi.fn(), playWrong: vi.fn(), stop: vi.fn(), dispose: vi.fn() }));
+const sound = vi.hoisted(() => ({ playShot: vi.fn(), playMiss: vi.fn(), stop: vi.fn(), dispose: vi.fn() }));
 vi.mock('../sound', () => ({
   createMultiplicationSoundPlayer: () => sound,
   loadMultiplicationSoundEnabled: () => true,
@@ -49,7 +49,7 @@ describe('神枪手页面事件与计时', () => {
     fireEvent.click(cell(3, 8));
     fireEvent.click(cell(1, 1));
     fireEvent.click(cell(1, 1));
-    expect(sound.playWrong).toHaveBeenCalledTimes(1);
+    expect(sound.playMiss).toHaveBeenCalledTimes(1);
     expect(screen.getByText('连击中断')).toBeInTheDocument();
     act(() => vi.advanceTimersByTime(650));
     expect(screen.queryByText('连击中断')).not.toBeInTheDocument();

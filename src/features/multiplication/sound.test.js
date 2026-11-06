@@ -79,19 +79,39 @@ describe('九九乘法轻量答题音效', () => {
     expect(oscillators[1].stop).toHaveBeenCalledTimes(2);
   });
 
-  it('射击音阶封顶，完美收束合为和弦，新射击替换旧音且关闭后不再发声', () => {
-    const { oscillators } = installAudioContextMock();
-    const player = createMultiplicationSoundPlayer();
-    player.playShot(1);
-    expect(oscillators[0].frequency.setValueAtTime).toHaveBeenCalledWith(523.25, 1);
-    player.playShot(81);
-    expect(oscillators[1].frequency.setValueAtTime).toHaveBeenCalledWith(880, 1);
-    expect(oscillators[0].stop).toHaveBeenCalledTimes(2);
-    player.playShot(81, true);
-    expect(oscillators).toHaveLength(5);
-    player.dispose();
-    player.playShot(2);
-    expect(oscillators).toHaveLength(5);
+  it('神枪手区分开枪与打空，连点重播并在释放后停止', () => {
+    const clips = [];
+    vi.stubGlobal('Audio', class {
+      constructor(url) {
+        this.url = url;
+        this.play = vi.fn().mockResolvedValue(undefined);
+        this.pause = vi.fn();
+        clips.push(this);
+      }
+    });
+
+    try {
+      const player = createMultiplicationSoundPlayer();
+      player.playShot(1);
+      const [shot] = clips;
+      shot.currentTime = 0.1;
+      player.playShot(81, true);
+      expect(shot.currentTime).toBe(0);
+      expect(shot.play).toHaveBeenCalledTimes(2);
+
+      player.playMiss();
+      const miss = clips[1];
+      expect(miss.url).not.toBe(shot.url);
+      expect(shot.pause).toHaveBeenCalledTimes(2);
+      expect(miss.play).toHaveBeenCalledOnce();
+
+      player.dispose();
+      expect(miss.pause).toHaveBeenCalledOnce();
+      player.playShot(2);
+      expect(shot.play).toHaveBeenCalledTimes(2);
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 
   it('停止未完成声音，浏览器不支持或初始化失败时静默降级', () => {
