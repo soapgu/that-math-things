@@ -22,6 +22,63 @@ async function finishRound(page) {
   return cells;
 }
 
+test('行列柔光跟随悬停和键盘，并在离开矩阵或结算时清除', async ({ page }) => {
+  await enter(page);
+  const row = page.locator('[data-aim="row"]');
+  const column = page.locator('[data-aim="column"]');
+  const cell = page.locator('[data-cell="9×9"]');
+  await cell.hover();
+  await expect(row).toHaveCount(0);
+  await page.getByRole('button', { name: '开始射击', exact: true }).click();
+
+  for (const width of [1280, 768]) {
+    await page.setViewportSize({ width, height: 900 });
+    await cell.hover();
+    await expect(row).toHaveText('9');
+    await expect(column).toHaveText('9');
+    const bounds = await cell.boundingBox();
+    const rowLight = await page.locator('.sharpshooter-aim-row').boundingBox();
+    const columnLight = await page.locator('.sharpshooter-aim-column').boundingBox();
+    expect(rowLight.y).toBeCloseTo(bounds.y, 1);
+    expect(rowLight.height).toBeCloseTo(bounds.height, 1);
+    expect(columnLight.x).toBeCloseTo(bounds.x, 1);
+    expect(columnLight.width).toBeCloseTo(bounds.width, 1);
+  }
+
+  await page.locator('[data-cell="2×7"]').hover();
+  await expect(row).toHaveText('2');
+  await expect(column).toHaveText('7');
+  await page.locator('.sharpshooter-target').hover();
+  await expect(row).toHaveText('1');
+  await page.keyboard.press('ArrowDown');
+  await expect(row).toHaveText('2');
+  await expect(column).toHaveText('1');
+  await page.getByRole('button', { name: /音效/ }).focus();
+  await expect(row).toHaveCount(0);
+  await finishRound(page);
+  await expect(column).toHaveCount(0);
+  await page.getByRole('button', { name: '下一轮', exact: true }).click();
+  await expect(row).toHaveCount(1);
+});
+
+test.describe('触屏坐标提示', () => {
+  test.use({ hasTouch: true, isMobile: true, viewport: { width: 768, height: 1024 } });
+
+  test('点击格子后对齐对应行列', async ({ page }) => {
+    await enter(page);
+    await page.getByRole('button', { name: '开始射击', exact: true }).tap();
+    // 从有多发子弹的轮次验证点击后的高亮，避免第一发直接结束本轮。
+    while ((await roundInfo(page)).cells.length === 1) {
+      await finishRound(page);
+      await page.getByRole('button', { name: '下一轮', exact: true }).tap();
+    }
+    const [row, column] = (await roundInfo(page)).cells[0].split('×');
+    await page.locator(`[data-cell="${row}×${column}"]`).tap();
+    await expect(page.locator('[data-aim="row"]')).toHaveText(row);
+    await expect(page.locator('[data-aim="column"]')).toHaveText(column);
+  });
+});
+
 test('完整36轮：81连击、结算、重开与原数据隔离', async ({ page }) => {
   const errors = [];
   page.on('pageerror', (error) => errors.push(error.message));

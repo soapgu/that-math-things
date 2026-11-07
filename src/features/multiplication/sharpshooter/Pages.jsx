@@ -40,10 +40,15 @@ function ShootingGame({ route }) {
   const [flash, setFlash] = useState(null);
   const flashTimer = useRef(null);
   const [focusIndex, setFocusIndex] = useState(0);
+  const [boardFocused, setBoardFocused] = useState(false);
+  const [hoverIndex, setHoverIndex] = useState(null);
   const buttons = useRef([]);
   const nextButton = useRef(null);
   const timer = useTimer();
   const over = isRoundOver(game);
+  const aimIndex = started && !over ? hoverIndex ?? (boardFocused ? focusIndex : null) : null;
+  const aimRow = aimIndex === null ? -1 : Math.floor(aimIndex / 9);
+  const aimColumn = aimIndex === null ? -1 : aimIndex % 9;
   const product = game.rounds[game.roundIndex];
   const targets = targetCells(product);
   const shots = roundShots(game);
@@ -88,6 +93,7 @@ function ShootingGame({ route }) {
     gameRef.current = next;
     setGame(next);
     setFlash(null);
+    setHoverIndex(null);
     playerRef.current?.stop();
     timer.start();
     const index = CELLS.findIndex((cell) => !next.hits.includes(cell.key));
@@ -98,6 +104,7 @@ function ShootingGame({ route }) {
     const delta = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -9, ArrowDown: 9 }[event.key];
     if (!delta) return;
     event.preventDefault();
+    setHoverIndex(null);
     const next = Math.max(0, Math.min(80, index + delta));
     setFocusIndex(next);
     buttons.current[next]?.focus();
@@ -106,11 +113,15 @@ function ShootingGame({ route }) {
   return <main className="sharpshooter-page" aria-label="九九神枪手">
     <div className="sharpshooter-layout">
       <section className="sharpshooter-board-panel" aria-label="射击区">
-        <div className="sharpshooter-board" role="group" aria-label="九九乘法射击表">
+        <div className="sharpshooter-board" role="group" aria-label="九九乘法射击表"
+          onFocus={() => setBoardFocused(true)}
+          onBlur={(event) => {
+            if (!event.currentTarget.contains(event.relatedTarget)) setBoardFocused(false);
+          }}>
           <span className="sharpshooter-axis" aria-hidden="true">×</span>
-          {Array.from({ length: 9 }, (_, i) => <span className="sharpshooter-axis" key={`col${i}`}>{i + 1}</span>)}
+          {Array.from({ length: 9 }, (_, i) => <span className="sharpshooter-axis" data-aim={aimColumn === i ? 'column' : undefined} key={`col${i}`}>{i + 1}</span>)}
           {Array.from({ length: 9 }, (_, row) => <React.Fragment key={row}>
-            <span className="sharpshooter-axis">{row + 1}</span>
+            <span className="sharpshooter-axis" data-aim={aimRow === row ? 'row' : undefined}>{row + 1}</span>
             {CELLS.slice(row * 9, row * 9 + 9).map((cell, column) => {
               const index = row * 9 + column;
               const shot = shots.find((entry) => entry.key === cell.key);
@@ -123,12 +134,21 @@ function ShootingGame({ route }) {
                 data-cell={cell.key} data-kind={kind} className={`sharpshooter-cell ${kind} ${flash?.key === cell.key ? 'shot-flash' : ''}`}
                 aria-label={`${cell.a}乘${cell.b}，${label}`} aria-disabled={blocked}
                 tabIndex={focusIndex === index ? 0 : -1} onFocus={() => setFocusIndex(index)}
+                onPointerMove={(event) => { if (event.pointerType === 'mouse') setHoverIndex(index); }}
+                onPointerLeave={() => setHoverIndex(null)}
                 onKeyDown={(event) => { moveFocus(event, index); if (event.repeat && ['Enter', ' '].includes(event.key)) event.preventDefault(); }}
-                onClick={() => { if (!blocked) fire(cell.key); }}>
+                onClick={(event) => {
+                  if (started && !over && event.detail > 0) event.currentTarget.focus({ preventScroll: true });
+                  if (!blocked) fire(cell.key);
+                }}>
                 {hit || missed ? cell.product : shot ? '×' : null}
               </button>;
             })}
           </React.Fragment>)}
+          {aimIndex !== null && <>
+            <span aria-hidden="true" className="sharpshooter-aim-row" style={{ gridRow: `${aimRow + 2} / span 1` }} />
+            <span aria-hidden="true" className="sharpshooter-aim-column" style={{ gridColumn: `${aimColumn + 2} / span 1` }} />
+          </>}
         </div>
         <p className="sharpshooter-legend">绿色：命中　橙色虚线：漏射　叉号：打空</p>
       </section>

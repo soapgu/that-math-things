@@ -2,9 +2,25 @@
 .sharpshooter-layout { max-width: 908px; margin-inline: auto; }
 .sharpshooter-layout { display: grid; grid-template-columns: minmax(0, 560px) 320px; gap: 28px; }
 .sharpshooter-board-panel { padding: 20px; background: #f3f8fc; border: 1px solid #cbdde9; border-radius: 20px; }
-.sharpshooter-board { display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 5px; }
+.sharpshooter-board { position: relative; display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 5px; }
 .sharpshooter-axis, .sharpshooter-cell { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; font-size: clamp(16px, 2vw, 25px); font-weight: 700; min-width: 0; }
 .sharpshooter-axis { color: #48647b; }
+.sharpshooter-axis[data-aim="row"] { color: #174d85; }
+.sharpshooter-axis[data-aim="column"] { color: #62399b; }
+.sharpshooter-aim-row, .sharpshooter-aim-column {
+  position: absolute;
+  inset: 0;
+  border-radius: 9px;
+  pointer-events: none;
+}
+.sharpshooter-aim-row {
+  grid-column: 1 / -1;
+  background: linear-gradient(transparent, #347fd418, transparent);
+}
+.sharpshooter-aim-column {
+  grid-row: 1 / 11;
+  background: linear-gradient(90deg, transparent, #8654cf18, transparent);
+}
 .sharpshooter-cell { position: relative; border: 1px solid #bacfdf; border-radius: 9px; background: white; color: #56748a; cursor: url("./crosshair.svg") 16 16, crosshair; }
 .sharpshooter-cell[aria-disabled="true"] { cursor: default; }
 .sharpshooter-cell[data-kind="hidden"] {
